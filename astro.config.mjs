@@ -5,5 +5,8 @@ import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: cloudflare()
+  // Pre-optimize images at build time and avoid provisioning the IMAGES binding.
+  adapter: cloudflare({ imageService: 'compile' }),
+  // Sessions are unused; disabling avoids the implicit SESSION KV binding.
+  session: false,
 });
