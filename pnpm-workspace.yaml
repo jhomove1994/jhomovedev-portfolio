@@ -1,0 +1,14 @@
+# Pre-approve build scripts for the packages C3 itself installs that need
+# them: `workerd` downloads the platform binary and `esbuild` downloads/
+# builds native bindings. Without these, pnpm 11+ aborts the install with
+# ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  esbuild: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - '@astrojs/internal-helpers@0.13.0'
+  - '@astrojs/markdown-satteri@0.4.4'
+  - '@astrojs/prism@4.1.0'
+  - '@astrojs/telemetry@3.4.0'
+  - astro@7.4.0
+  - '@astrojs/cloudflare@14.4.0'
