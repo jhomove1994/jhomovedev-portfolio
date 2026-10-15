@@ -9,7 +9,9 @@ export default defineConfig({
     baseURL: 'http://localhost:4321',
   },
   webServer: {
-    command: 'pnpm preview',
+    // --ignore-lock keeps the server in the foreground (Astro 7 auto-backgrounds the preview when it
+    // detects an agent/CI shell, which makes Playwright think the process exited early).
+    command: 'pnpm build && pnpm astro preview --ignore-lock',
     url: 'http://localhost:4321/',
     timeout: 180_000,
     reuseExistingServer: !process.env.CI,

@@ -40,4 +40,4 @@ pnpm exec playwright install chromium
 ```
 
 The suite runs two projects, `desktop` (1440x900) and `mobile` (390x844), both on Chromium.
-The web server is started automatically with `pnpm preview` and reused locally when running.
+The web server is started automatically (`pnpm build && astro preview --ignore-lock`, the foreground variant of `pnpm preview`) and reused locally when running.
