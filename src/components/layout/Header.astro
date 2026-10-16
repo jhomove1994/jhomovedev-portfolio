@@ -1,0 +1,46 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t, type UiKey } from '../../i18n/ui';
+import { localizedPath } from '../../lib/i18n/paths';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+export interface NavItem {
+  /** In-page anchor of a rendered section, without the leading `#`. */
+  id: string;
+  labelKey: UiKey;
+}
+
+interface Props {
+  locale: Locale;
+  brand: string;
+  /** Only sections that are actually rendered; the nav is omitted when there are none. */
+  items?: NavItem[];
+}
+
+const { locale, brand, items = [] } = Astro.props;
+---
+
+<header class="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
+  <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-6 px-5 py-1 lg:px-8">
+    <a href={localizedPath(locale)} class="font-display text-lg font-semibold">
+      {brand}
+    </a>
+    {items.length > 0 && (
+      <nav
+        aria-label={t(locale, 'aria.mainNavigation')}
+        class="order-last w-full sm:order-none sm:w-auto"
+      >
+        <ul class="flex flex-wrap gap-x-5">
+          {items.map(({ id, labelKey }) => (
+            <li>
+              <a href={`#${id}`} class="inline-flex min-h-10 items-center text-sm text-muted">
+                {t(locale, labelKey)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+    <LanguageSwitcher locale={locale} pathname={Astro.url.pathname} />
+  </div>
+</header>

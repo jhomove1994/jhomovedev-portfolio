@@ -1,0 +1,34 @@
+---
+import { LOCALES, type Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import { switchLocalePath } from '../../lib/i18n/paths';
+
+interface Props {
+  locale: Locale;
+  /** Current pathname; the switch lands on the same page in the other language. */
+  pathname: string;
+}
+
+const { locale, pathname } = Astro.props;
+---
+
+<nav aria-label={t(locale, 'aria.languageSwitcher')}>
+  <ul class="flex items-center gap-1">
+    {LOCALES.map((lang) => (
+      <li>
+        <a
+          href={switchLocalePath(pathname, lang)}
+          lang={lang}
+          hreflang={lang}
+          aria-current={lang === locale ? 'page' : undefined}
+          class:list={[
+            'inline-flex min-h-10 items-center px-2 text-sm',
+            lang === locale ? 'font-semibold text-text underline' : 'text-muted',
+          ]}
+        >
+          {t(lang, `localeNames.${lang}`)}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

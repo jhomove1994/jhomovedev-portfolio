@@ -1,0 +1,14 @@
+---
+interface Props {
+  name: string;
+}
+
+const { name } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-16 border-t border-border">
+  <p class="mx-auto w-full max-w-5xl px-5 py-8 text-sm text-muted lg:px-8">
+    © {year} {name}
+  </p>
+</footer>
