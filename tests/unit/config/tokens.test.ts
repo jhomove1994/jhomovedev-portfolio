@@ -1,0 +1,58 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+const tokens = readFileSync('src/styles/tokens.css', 'utf8');
+const globalCss = readFileSync('src/styles/global.css', 'utf8');
+
+function token(name: string): string | undefined {
+  return tokens.match(new RegExp(`--${name}\\s*:\\s*([^;]+);`))?.[1]?.trim();
+}
+
+describe('design tokens (REQUERIMIENTOS section 6)', () => {
+  it('pins the base palette', () => {
+    expect(token('color-bg')?.toUpperCase()).toBe('#0A0E0D');
+    expect(token('color-accent')?.toUpperCase()).toBe('#3DDC97');
+  });
+
+  it.each(['surface', 'border', 'text', 'muted', 'accent-soft', 'warn'])(
+    'defines the %s colour as a hex or rgba value',
+    (name) => {
+      expect(token(`color-${name}`)).toMatch(/^(#[0-9a-f]{3,8}|rgba?\(.+\))$/i);
+    },
+  );
+
+  it('defines the three font stacks with self-hosted families and fallbacks', () => {
+    expect(token('font-display')).toMatch(/^'Space Grotesk Variable'.*sans-serif$/);
+    expect(token('font-sans')).toMatch(/^'IBM Plex Sans Variable'.*sans-serif$/);
+    expect(token('font-mono')).toMatch(/^'JetBrains Mono Variable'.*monospace$/);
+  });
+
+  it('defines the 1.25 type scale 17/21/27/33/42/52 px', () => {
+    const sizes = ['base', 'lg', 'xl', '2xl', '3xl', '4xl'].map((n) => token(`text-${n}`));
+    expect(sizes).toEqual(['17px', '21px', '27px', '33px', '42px', '52px']);
+  });
+
+  it('caps reading lines at 68ch', () => {
+    expect(token('measure')).toBe('68ch');
+    expect(globalCss).toContain('var(--measure)');
+  });
+});
+
+describe('global styles', () => {
+  it('imports Tailwind, the tokens and the three self-hosted font packages', () => {
+    expect(globalCss).toMatch(/@import\s+("|')tailwindcss\1/);
+    expect(globalCss).toContain('tokens.css');
+    for (const pkg of ['space-grotesk', 'ibm-plex-sans', 'jetbrains-mono']) {
+      expect(globalCss).toContain(`@fontsource-variable/${pkg}`);
+    }
+  });
+
+  it('respects prefers-reduced-motion and shows a visible focus ring', () => {
+    expect(globalCss).toContain('prefers-reduced-motion');
+    expect(globalCss).toContain(':focus-visible');
+  });
+
+  it('does not use the Matrix-style glow beyond a subtle bloom', () => {
+    expect(globalCss).not.toMatch(/text-shadow\s*:[^;]*\b(\d{2,})px/);
+  });
+});

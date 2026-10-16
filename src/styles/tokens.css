@@ -1,0 +1,32 @@
+/*
+ * Design tokens (REQUERIMIENTOS section 6). Contained terminal look: the accent is a spot colour,
+ * never a surface. Used as Tailwind v4 theme variables (bg-bg, text-muted, border-border, ...).
+ */
+@theme {
+  --color-bg: #0a0e0d;
+  --color-surface: #111816;
+  --color-border: #1f2a26;
+  --color-text: #d7e2dd;
+  --color-muted: #7c8b85;
+  --color-accent: #3ddc97;
+  --color-accent-soft: rgb(61 220 151 / 0.12);
+  --color-warn: #e0b45a;
+
+  --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* 1.25 type scale from a 17px body. */
+  --text-base: 17px;
+  --text-lg: 21px;
+  --text-xl: 27px;
+  --text-2xl: 33px;
+  --text-3xl: 42px;
+  --text-4xl: 52px;
+
+  /* Maximum reading line length. */
+  --measure: 68ch;
+
+  /* Subtle bloom: a faint halo, never a neon glow. */
+  --shadow-bloom: 0 0 24px rgb(61 220 151 / 0.1);
+}
