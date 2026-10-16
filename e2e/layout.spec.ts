@@ -65,3 +65,28 @@ test('the 404 page links to both languages and is not indexable', async ({ page 
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
   await expect(page.locator('link[rel="alternate"]')).toHaveCount(0);
 });
+
+for (const locale of ['es', 'en'] as const) {
+  test(`/${locale}/ section titles never collide with their content`, async ({ page }) => {
+    await page.goto(`/${locale}/`);
+    const sections = page.locator('main section[id]:not(#hero)');
+    const count = await sections.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      const section = sections.nth(i);
+      const title = section.locator('> h2').first();
+      const content = section.locator('> :not(h2)').first();
+      const id = await section.getAttribute('id');
+      const [t, c] = await Promise.all([title.boundingBox(), content.boundingBox()]);
+      expect(t, `#${id} title`).not.toBeNull();
+      expect(c, `#${id} content`).not.toBeNull();
+      // Titles must not spill out of their own box...
+      const clipped = await title.evaluate((el) => el.scrollWidth - el.clientWidth);
+      expect(clipped, `#${id} title overflows its box`).toBeLessThanOrEqual(0);
+      // ...and keep a visible gap: beside the content (side by side) or above it (stacked).
+      const stacked = c!.y >= t!.y + t!.height - 1;
+      const gap = stacked ? c!.y - (t!.y + t!.height) : c!.x - (t!.x + t!.width);
+      expect(gap, `#${id} gap to content`).toBeGreaterThanOrEqual(16);
+    }
+  });
+}

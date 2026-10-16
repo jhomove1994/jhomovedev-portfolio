@@ -38,6 +38,8 @@
     font-weight: 600;
     line-height: 1.15;
     letter-spacing: -0.02em;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   h1 {
