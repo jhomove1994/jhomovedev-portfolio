@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { LOCALES, DEFAULT_LOCALE } from '../i18n/locales';
+import { localizedPath } from '../lib/i18n/paths';
+import { t } from '../i18n/ui';
+
+// Neutral on purpose: the URL carries no usable locale, so the copy is shown in every language.
+const locale = DEFAULT_LOCALE;
+---
+
+<BaseLayout locale={locale} title={`404 · ${t(locale, 'notFound.title')}`} noindex>
+  <main id="main" class="mx-auto w-full max-w-3xl px-5 py-16 lg:px-8 lg:py-24">
+    <h1>404</h1>
+    {LOCALES.map((lang) => (
+      <p lang={lang}>
+        {t(lang, 'notFound.title')}. {t(lang, 'notFound.hint')}{' '}
+        <a class="text-accent underline" href={localizedPath(lang)}>
+          {t(lang, `localeNames.${lang}`)}
+        </a>
+      </p>
+    ))}
+  </main>
+</BaseLayout>

@@ -1,0 +1,27 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LOCALES, DEFAULT_LOCALE, type Locale } from '../../i18n/locales';
+import { getMedia, getProfile } from '../../lib/content/queries';
+
+export const getStaticPaths = (() =>
+  LOCALES.map((lang) => ({ params: { lang } }))) satisfies GetStaticPaths;
+
+const locale = Astro.params.lang as Locale;
+const profile = (await getProfile(locale)).entry.data;
+// The share image falls back to the default locale when this locale has none.
+const ogImage =
+  (await getMedia(locale))?.entry.data.ogImage ??
+  (await getMedia(DEFAULT_LOCALE))?.entry.data.ogImage;
+---
+
+<BaseLayout
+  locale={locale}
+  title={profile.seo.title}
+  description={profile.seo.description}
+  ogImage={ogImage}
+>
+  <main id="main" class="mx-auto w-full max-w-5xl px-5 py-16 lg:px-8 lg:py-24">
+    <h1>{profile.name}</h1>
+  </main>
+</BaseLayout>

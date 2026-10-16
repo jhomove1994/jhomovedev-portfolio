@@ -78,3 +78,16 @@ describe('ui dictionary', () => {
     }
   });
 });
+
+describe('404 copy', () => {
+  it.each(['es', 'en'] as const)('has a title, a hint and the language name for %s', (locale) => {
+    expect(t(locale, 'notFound.title')).not.toBe('');
+    expect(t(locale, 'notFound.hint')).not.toBe('');
+    expect(t(locale, `localeNames.${locale}`)).not.toBe('');
+  });
+
+  it('names each language in its own language', () => {
+    expect(t('en', 'localeNames.es')).toBe('Español');
+    expect(t('es', 'localeNames.en')).toBe('English');
+  });
+});

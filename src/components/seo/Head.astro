@@ -1,0 +1,46 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { buildHeadMeta } from '../../lib/seo/alternates';
+
+interface Props {
+  locale: Locale;
+  /** Current pathname, with or without the locale prefix. */
+  path: string;
+  title: string;
+  description?: string | undefined;
+  /** Public path or absolute URL; the og:image tags are omitted when unset. */
+  ogImage?: string | undefined;
+  /** Utility pages (404) are not indexable and carry no canonical or alternates. */
+  noindex?: boolean;
+}
+
+const { locale, path, title, description, ogImage, noindex = false } = Astro.props;
+const meta = noindex ? undefined : buildHeadMeta({ site: Astro.site?.href, locale, path, ogImage });
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="generator" content={Astro.generator} />
+<title>{title}</title>
+{description && <meta name="description" content={description} />}
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" href="/favicon.ico" />
+{noindex && <meta name="robots" content="noindex" />}
+{meta && (
+  <>
+    <link rel="canonical" href={meta.canonical} />
+    {meta.alternates.map(({ hreflang, href }) => (
+      <link rel="alternate" hreflang={hreflang} href={href} />
+    ))}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={meta.canonical} />
+    <meta property="og:locale" content={meta.ogLocale} />
+    {meta.ogLocaleAlternates.map((alternate) => (
+      <meta property="og:locale:alternate" content={alternate} />
+    ))}
+    {meta.ogImage && <meta property="og:image" content={meta.ogImage} />}
+    <meta name="twitter:card" content={meta.ogImage ? 'summary_large_image' : 'summary'} />
+  </>
+)}

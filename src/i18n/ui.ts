@@ -32,6 +32,12 @@ export interface UiDict {
     inProgress: string;
     email: string;
   };
+  /** Language names, each written in its own language so they read the same on every page. */
+  localeNames: Record<Locale, string>;
+  notFound: {
+    title: string;
+    hint: string;
+  };
 }
 
 export const ui = {
@@ -75,6 +81,11 @@ export const ui = {
       inProgress: 'En curso',
       email: 'Correo',
     },
+    localeNames: { es: 'Español', en: 'English' },
+    notFound: {
+      title: 'Página no encontrada',
+      hint: 'Elige un idioma para volver al inicio.',
+    },
   },
   en: {
     nav: {
@@ -115,6 +126,11 @@ export const ui = {
       present: 'Present',
       inProgress: 'In progress',
       email: 'Email',
+    },
+    localeNames: { es: 'Español', en: 'English' },
+    notFound: {
+      title: 'Page not found',
+      hint: 'Choose a language to go back to the home page.',
     },
   },
 } satisfies Record<Locale, UiDict>;
