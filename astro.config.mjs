@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 
 import cloudflare from '@astrojs/cloudflare';
+import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
 import { SITE_URL } from './src/lib/site.ts';
@@ -12,6 +13,7 @@ export default defineConfig({
   site: SITE_URL,
   // Pre-optimize images at build time and avoid provisioning the IMAGES binding.
   adapter: cloudflare({ imageService: 'compile' }),
+  integrations: [react()],
   // Sessions are unused; disabling avoids the implicit SESSION KV binding.
   session: false,
   trailingSlash: 'ignore',

@@ -28,6 +28,11 @@ describe('astro.config.mjs', () => {
     expect(config).toMatch(/plugins:\s*\[\s*tailwindcss\(\)\s*\]/);
   });
 
+  it('registers the React integration for the hero island', () => {
+    expect(config).toMatch(/import\s+react\s+from\s*'@astrojs\/react'/);
+    expect(config).toMatch(/integrations:\s*\[\s*react\(\)\s*\]/);
+  });
+
   it('keeps the existing no-binding adapter settings', () => {
     expect(config).toContain("imageService: 'compile'");
     expect(config).toMatch(/session:\s*false/);
