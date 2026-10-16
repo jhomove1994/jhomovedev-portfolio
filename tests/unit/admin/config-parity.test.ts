@@ -1,0 +1,199 @@
+import { describe, expect, it } from 'vitest';
+import { z } from 'astro/zod';
+import { compareSchemaToConfig, type AdminConfig, type SchemaRegistry } from '../../helpers/parity';
+
+type Field = Record<string, unknown>;
+
+function makeRegistry(): SchemaRegistry {
+  return {
+    experience: z.object({
+      role: z.string(),
+      kind: z.enum(['full', 'part']),
+      end: z.string().optional(),
+      featured: z.boolean().default(false),
+      meta: z.object({ url: z.string() }),
+      links: z.array(z.object({ label: z.string() })),
+      stack: z.array(z.string()),
+    }),
+    profile: z.object({ name: z.string(), badge: z.preprocess((v) => v, z.string().optional()) }),
+  };
+}
+
+function makeConfig(): { collections: Record<string, unknown>[] } {
+  return {
+    collections: [
+      {
+        name: 'experience',
+        folder: 'src/content/experience',
+        i18n: true,
+        fields: [
+          { name: 'role', widget: 'string', i18n: true },
+          {
+            name: 'kind',
+            widget: 'select',
+            options: [
+              { label: 'Full', value: 'full' },
+              { label: 'Part', value: 'part' },
+            ],
+            i18n: 'duplicate',
+          },
+          { name: 'end', widget: 'string', required: false, i18n: 'duplicate' },
+          { name: 'featured', widget: 'boolean', required: false, i18n: 'duplicate' },
+          {
+            name: 'meta',
+            widget: 'object',
+            i18n: true,
+            fields: [{ name: 'url', widget: 'string' }],
+          },
+          {
+            name: 'links',
+            widget: 'list',
+            i18n: true,
+            fields: [{ name: 'label', widget: 'string' }],
+          },
+          { name: 'stack', widget: 'list', i18n: 'duplicate' },
+        ],
+      },
+      {
+        name: 'settings',
+        i18n: true,
+        files: [
+          {
+            name: 'profile',
+            file: 'src/content/profile/{{locale}}.json',
+            fields: [
+              { name: 'name', widget: 'string', i18n: true },
+              { name: 'badge', widget: 'image', required: false, i18n: true },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function experienceFields(config: ReturnType<typeof makeConfig>): Field[] {
+  return config.collections[0].fields as Field[];
+}
+
+function check(config: ReturnType<typeof makeConfig>, registry = makeRegistry()): string[] {
+  return compareSchemaToConfig(registry, config as AdminConfig);
+}
+
+describe('compareSchemaToConfig', () => {
+  it('passes when schema and config are in sync', () => {
+    expect(check(makeConfig())).toEqual([]);
+  });
+
+  it('fails naming a field that exists only in the schema', () => {
+    const registry = makeRegistry();
+    registry.experience = registry.experience.extend({ foo: z.string() });
+    expect(check(makeConfig(), registry)).toEqual([expect.stringContaining('experience.foo')]);
+  });
+
+  it('fails naming a field that exists only in the config', () => {
+    const config = makeConfig();
+    experienceFields(config).push({ name: 'bar', widget: 'string', i18n: true });
+    expect(check(config)).toEqual([expect.stringContaining('experience.bar')]);
+  });
+
+  it('fails on select options that drift from the schema enum', () => {
+    const config = makeConfig();
+    experienceFields(config)[1].options = [
+      { label: 'Full', value: 'full' },
+      { label: 'Intern', value: 'intern' },
+    ];
+    expect(check(config)).toEqual([expect.stringContaining('experience.kind')]);
+  });
+
+  it('accepts plain string select options in the same order-insensitive set', () => {
+    const config = makeConfig();
+    experienceFields(config)[1].options = ['part', 'full'];
+    expect(check(config)).toEqual([]);
+  });
+
+  it('fails when an optional schema field is required in the config', () => {
+    const config = makeConfig();
+    delete experienceFields(config)[2].required;
+    expect(check(config)).toEqual([expect.stringContaining('experience.end')]);
+  });
+
+  it('fails when a required schema field is marked required:false in the config', () => {
+    const config = makeConfig();
+    experienceFields(config)[0].required = false;
+    expect(check(config)).toEqual([expect.stringContaining('experience.role')]);
+  });
+
+  it('treats schema defaults as not required', () => {
+    const config = makeConfig();
+    delete experienceFields(config)[3].required;
+    expect(check(config)).toEqual([expect.stringContaining('experience.featured')]);
+  });
+
+  it('fails on a config collection that has no schema', () => {
+    const config = makeConfig();
+    config.collections.push({ name: 'ghost', folder: 'src/content/ghost', fields: [] });
+    expect(check(config)).toEqual([expect.stringContaining('ghost')]);
+  });
+
+  it('fails on a schema that has no config collection', () => {
+    const config = makeConfig();
+    config.collections.splice(0, 1);
+    expect(check(config)).toEqual([expect.stringContaining('experience')]);
+  });
+
+  it('maps files collection entries to registry keys by file name', () => {
+    const config = makeConfig();
+    const settings = config.collections[1] as { files: { name: string }[] };
+    settings.files[0].name = 'media';
+    const issues = check(config);
+    expect(issues).toHaveLength(2);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('media'),
+        expect.stringContaining('profile'),
+      ]),
+    );
+  });
+
+  it('checks nested object and list-of-object fields', () => {
+    const config = makeConfig();
+    (experienceFields(config)[4].fields as Field[]).push({ name: 'extra', widget: 'string' });
+    (experienceFields(config)[5].fields as Field[]).push({ name: 'bar', widget: 'string' });
+    const issues = check(config);
+    expect(issues).toHaveLength(2);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('experience.meta.extra'),
+        expect.stringContaining('experience.links.bar'),
+      ]),
+    );
+  });
+
+  it('fails when a field in an i18n collection declares i18n:false', () => {
+    const config = makeConfig();
+    experienceFields(config)[0].i18n = false;
+    expect(check(config)).toEqual([expect.stringContaining('experience.role')]);
+  });
+
+  it('fails when a field in an i18n collection omits the i18n mode', () => {
+    const config = makeConfig();
+    delete experienceFields(config)[0].i18n;
+    expect(check(config)).toEqual([expect.stringContaining('experience.role')]);
+  });
+
+  it('does not require i18n modes in a non-i18n collection', () => {
+    const registry: SchemaRegistry = { stack: z.object({ name: z.string() }) };
+    const config = {
+      collections: [
+        {
+          name: 'stack',
+          folder: 'src/content/stack',
+          i18n: false,
+          fields: [{ name: 'name', widget: 'string' }],
+        },
+      ],
+    };
+    expect(check(config as ReturnType<typeof makeConfig>, registry)).toEqual([]);
+  });
+});
