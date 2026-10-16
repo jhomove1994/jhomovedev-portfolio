@@ -7,17 +7,13 @@ const LOCALES = [
 
 for (const { locale, other, ogLocale, ogAlternate } of LOCALES) {
   test.describe(`/${locale}/`, () => {
-    test('serves a localized document with one heading', async ({ page }, testInfo) => {
+    test('serves a localized document with one heading', async ({ page }) => {
       const response = await page.goto(`/${locale}/`);
       expect(response?.status()).toBe(200);
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       await expect(page.locator('h1')).toHaveCount(1);
       await expect(page.locator('h1')).not.toBeEmpty();
       await expect(page.locator('main')).toHaveCount(1);
-      await page.screenshot({
-        path: `test-results/screens/${testInfo.project.name}-${locale}.png`,
-        fullPage: true,
-      });
     });
 
     test('declares canonical, hreflang trio and Open Graph metadata', async ({ page }) => {
