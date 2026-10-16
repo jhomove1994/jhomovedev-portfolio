@@ -1,0 +1,17 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  isFallback: boolean;
+}
+
+const { locale, isFallback } = Astro.props;
+---
+
+{import.meta.env.DEV && isFallback && (
+  <span class="mb-1 inline-block border border-dashed border-warn px-2 text-sm text-warn">
+    {t(locale, 'labels.fallbackBadge')}
+  </span>
+)}

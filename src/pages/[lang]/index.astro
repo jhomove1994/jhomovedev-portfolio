@@ -1,20 +1,47 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Header from '../../components/layout/Header.astro';
+import Header, { type NavItem } from '../../components/layout/Header.astro';
 import Footer from '../../components/layout/Footer.astro';
+import Hero from '../../components/sections/Hero.astro';
+import About from '../../components/sections/About.astro';
+import TechLeadPath, { type Milestone } from '../../components/sections/TechLeadPath.astro';
 import { LOCALES, DEFAULT_LOCALE, type Locale } from '../../i18n/locales';
-import { getMedia, getProfile } from '../../lib/content/queries';
+import { getLeadership, getMedia, getProfile } from '../../lib/content/queries';
+import { withTodoVisibility } from '../../lib/content/todo';
 
 export const getStaticPaths = (() =>
   LOCALES.map((lang) => ({ params: { lang } }))) satisfies GetStaticPaths;
 
 const locale = Astro.params.lang as Locale;
-const profile = (await getProfile(locale)).entry.data;
+const localizedProfile = await getProfile(locale);
+const profile = localizedProfile.entry.data;
 // The share image falls back to the default locale when this locale has none.
 const ogImage =
   (await getMedia(locale))?.entry.data.ogImage ??
   (await getMedia(DEFAULT_LOCALE))?.entry.data.ogImage;
+
+const asText = (value: unknown) => (typeof value === 'string' ? value : undefined);
+
+// G1 default: TODO(autor) milestones are hidden in production and dashed-marked in development.
+const milestones: Milestone[] = withTodoVisibility(
+  await getLeadership(locale),
+  ({ entry }) => [entry.data.title, entry.data.evidence],
+  import.meta.env.DEV,
+).map(({ item, marked }) => ({
+  title: item.entry.data.title,
+  evidence: item.entry.data.evidence,
+  // optionalText() types its output as unknown (the preprocess step); narrow it here.
+  date: asText(item.entry.data.date),
+  link: asText(item.entry.data.link),
+  isFallback: item.isFallback,
+  marked,
+}));
+
+const navItems: NavItem[] = [
+  { id: 'about', labelKey: 'nav.about' },
+  ...(milestones.length > 0 ? [{ id: 'path', labelKey: 'nav.pathToTechLead' } as const] : []),
+];
 ---
 
 <BaseLayout
@@ -23,9 +50,17 @@ const ogImage =
   description={profile.seo.description}
   ogImage={ogImage}
 >
-  <Header slot="header" locale={locale} brand={profile.brand} />
-  <main id="main" class="mx-auto w-full max-w-5xl px-5 py-16 lg:px-8 lg:py-24">
-    <h1>{profile.name}</h1>
+  <Header slot="header" locale={locale} brand={profile.brand} items={navItems} />
+  <main id="main" class="mx-auto w-full max-w-5xl px-5 pt-10 lg:px-8 lg:pt-16">
+    <Hero
+      locale={locale}
+      name={profile.name}
+      headline={profile.headline}
+      location={profile.location}
+      remote={profile.remote}
+    />
+    <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />
+    <TechLeadPath locale={locale} milestones={milestones} />
   </main>
   <Footer slot="footer" name={profile.name} />
 </BaseLayout>

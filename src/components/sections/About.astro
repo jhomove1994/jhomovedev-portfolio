@@ -1,0 +1,27 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
+
+interface Props {
+  locale: Locale;
+  bio: string;
+  isFallback?: boolean;
+}
+
+const { locale, bio, isFallback = false } = Astro.props;
+---
+
+<section
+  id="about"
+  aria-labelledby="about-title"
+  class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[12rem_1fr] lg:gap-x-12 lg:py-16"
+>
+  <h2 id="about-title" class="mb-5 lg:mb-0">
+    {t(locale, 'nav.about')}
+  </h2>
+  <div>
+    <DevFallbackBadge locale={locale} isFallback={isFallback} />
+    <p>{bio}</p>
+  </div>
+</section>

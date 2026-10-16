@@ -1,0 +1,64 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import { formatDate } from '../../lib/content/period';
+import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
+
+export interface Milestone {
+  title: string;
+  evidence: string;
+  date?: string | undefined;
+  link?: string | undefined;
+  isFallback: boolean;
+  /** Development only: the entry still carries a TODO(autor) placeholder. */
+  marked: boolean;
+}
+
+interface Props {
+  locale: Locale;
+  /** Already ordered and filtered by the page (G1); the block is omitted when empty. */
+  milestones: Milestone[];
+}
+
+const { locale, milestones } = Astro.props;
+---
+
+{milestones.length > 0 && (
+  <section
+    id="path"
+    aria-labelledby="path-title"
+    class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[12rem_1fr] lg:gap-x-12 lg:py-16"
+  >
+    <h2 id="path-title" class="mb-8 lg:mb-0">
+      {t(locale, 'nav.pathToTechLead')}
+    </h2>
+    <ol class="relative before:absolute before:top-2 before:bottom-2 before:left-[5px] before:w-px before:bg-border before:content-['']">
+      {milestones.map(({ title, evidence, date, link, isFallback, marked }) => (
+        <li class="relative pb-10 pl-9 last:pb-0">
+          <span
+            data-commit-node
+            aria-hidden="true"
+            class:list={[
+              'absolute top-[0.45rem] left-0 size-[11px] rounded-full',
+              marked ? 'border border-dashed border-warn' : 'bg-accent',
+            ]}
+          />
+          <div class:list={[marked && 'border border-dashed border-warn p-3']}>
+            <DevFallbackBadge locale={locale} isFallback={isFallback} />
+            {date && <p class="text-sm text-muted">{formatDate(date, locale)}</p>}
+            <h3 class="text-lg">
+              {link ? (
+                <a href={link} rel="noopener" class="underline">
+                  {title}
+                </a>
+              ) : (
+                title
+              )}
+            </h3>
+            <p class="mt-2">{evidence}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+)}

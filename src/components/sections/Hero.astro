@@ -1,0 +1,28 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  name: string;
+  headline: string;
+  location: string;
+  remote: boolean;
+}
+
+// Availability is deliberately not a prop: it is not rendered until the author confirms the value.
+const { locale, name, headline, location, remote } = Astro.props;
+---
+
+<section aria-labelledby="hero-title" class="pt-4 pb-14 lg:pt-12 lg:pb-20">
+  <h1 id="hero-title" class="text-balance">
+    {name}
+  </h1>
+  <p class="mt-5 max-w-[32ch] font-display text-lg leading-snug lg:max-w-[40ch] lg:text-xl">
+    {headline}
+  </p>
+  <p class="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-muted">
+    <span>{location}</span>
+    {remote && <span>{t(locale, 'labels.remote')}</span>}
+  </p>
+</section>
