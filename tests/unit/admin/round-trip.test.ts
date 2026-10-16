@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'astro/zod';
 import {
+  certificationSchema,
   experienceSchema,
   leadershipSchema,
   mediaSchema,
@@ -47,5 +48,18 @@ describe('Sveltia output round-trip', () => {
       stack: ['typescript', 'nestjs'],
     });
     expect(result.data?.achievements).toContain('- Reviewed example pull requests.');
+  });
+
+  it('parses a certification whose cleared optionals are ""', () => {
+    const result = certificationSchema.safeParse(sveltiaFixture('certification'));
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({
+      kind: 'training',
+      name: 'Example Training',
+      issuer: 'Example Issuer',
+      year: 2026,
+      status: 'in-progress',
+      order: 3,
+    });
   });
 });

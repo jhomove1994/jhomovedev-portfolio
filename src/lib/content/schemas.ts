@@ -90,6 +90,22 @@ export const experienceSchema = ({ stackRef }: { stackRef: z.ZodType }) =>
       path: ['end'],
     });
 
+export const CERTIFICATION_KINDS = ['certification', 'education', 'training'] as const;
+export const CERTIFICATION_STATUSES = ['completed', 'in-progress'] as const;
+
+/** A credential, degree or course. "Course" is only a UI label for `training`. */
+export const certificationSchema = z.object({
+  kind: z.enum(CERTIFICATION_KINDS),
+  name: z.string(),
+  code: optionalText(),
+  issuer: z.string(),
+  year: z.number().int().min(1000).max(9999),
+  status: z.enum(CERTIFICATION_STATUSES).default('completed'),
+  credentialUrl: optionalText(z.url()),
+  badge: uploadPath(),
+  order: z.number().int(),
+});
+
 /** Collection name -> schema; the admin parity guard compares this against config.yml. */
 export const schemaRegistry = {
   stack: stackSchema,
@@ -97,4 +113,5 @@ export const schemaRegistry = {
   media: mediaSchema,
   leadership: leadershipSchema,
   experience: experienceSchema({ stackRef: z.string() }),
+  certifications: certificationSchema,
 };

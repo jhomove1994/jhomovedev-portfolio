@@ -1,0 +1,11 @@
+{
+  "kind": "certification",
+  "name": "Example Cloud Practitioner",
+  "code": "EX-01",
+  "issuer": "Example Issuer",
+  "year": 2026,
+  "status": "completed",
+  "credentialUrl": "https://example.com/credential",
+  "badge": "/uploads/example-badge.png",
+  "order": 1
+}

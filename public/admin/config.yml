@@ -167,3 +167,58 @@ collections:
         multiple: true
         i18n: duplicate
       - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }
+
+  - name: certifications
+    label: Certifications and education
+    label_singular: Credential
+    folder: src/content/certifications
+    extension: json
+    format: json
+    create: true
+    i18n: true
+    identifier_field: name
+    fields:
+      - name: kind
+        label: Kind (training is shown as "Course")
+        widget: select
+        options:
+          - certification
+          - education
+          - training
+        i18n: duplicate
+      - { name: name, label: Name, widget: string, i18n: true }
+      - {
+          name: code,
+          label: Exam or credential code,
+          widget: string,
+          required: false,
+          i18n: duplicate,
+        }
+      - { name: issuer, label: Issuer, widget: string, i18n: duplicate }
+      - {
+          name: year,
+          label: Year,
+          widget: number,
+          value_type: int,
+          min: 1000,
+          max: 9999,
+          i18n: duplicate,
+        }
+      - name: status
+        label: Status
+        widget: select
+        options:
+          - completed
+          - in-progress
+        default: completed
+        required: false
+        i18n: duplicate
+      - {
+          name: credentialUrl,
+          label: Credential URL,
+          widget: string,
+          required: false,
+          i18n: duplicate,
+        }
+      - { name: badge, label: Badge image, widget: image, required: false, i18n: duplicate }
+      - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }

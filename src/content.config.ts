@@ -2,6 +2,7 @@ import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { entryIdFromPath } from './lib/content/entry-id';
 import {
+  certificationSchema,
   experienceSchema,
   leadershipSchema,
   mediaSchema,
@@ -54,4 +55,14 @@ const experience = defineCollection({
   schema: experienceSchema({ stackRef: reference('stack') }),
 });
 
-export const collections = { stack, profile, media, leadership, experience };
+// `certifications/<locale>/<slug>.json` -> id `<locale>/<slug>`.
+const certifications = defineCollection({
+  loader: glob({
+    pattern: '*/*.json',
+    base: './src/content/certifications',
+    generateId: ({ entry }) => entryIdFromPath(entry),
+  }),
+  schema: certificationSchema,
+});
+
+export const collections = { stack, profile, media, leadership, experience, certifications };

@@ -1,0 +1,11 @@
+{
+  "kind": "training",
+  "name": "Example Training",
+  "code": "",
+  "issuer": "Example Issuer",
+  "year": 2026,
+  "status": "in-progress",
+  "credentialUrl": "",
+  "badge": "",
+  "order": 3
+}

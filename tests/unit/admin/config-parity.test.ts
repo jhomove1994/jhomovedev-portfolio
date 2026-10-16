@@ -278,6 +278,22 @@ describe('public/admin/config.yml', () => {
     }
   });
 
+  it('declares certifications as an i18n JSON folder collection with enum selects', () => {
+    const certifications = (realConfig().collections as Record<string, unknown>[]).find(
+      (collection) => collection.name === 'certifications',
+    ) as { fields: { name: string; default?: unknown; required?: boolean }[] };
+
+    expect(certifications).toMatchObject({
+      folder: 'src/content/certifications',
+      extension: 'json',
+      format: 'json',
+      i18n: true,
+    });
+    const status = certifications.fields.find((field) => field.name === 'status');
+    // The Zod default is "completed", so the widget must preselect it and not demand a value.
+    expect(status).toMatchObject({ default: 'completed', required: false });
+  });
+
   it('keeps the repo placeholder flagged until the owner is confirmed', () => {
     expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
   });
