@@ -237,6 +237,16 @@ describe('seed: certifications', () => {
     expect(ofKind('training')).toHaveLength(2);
   });
 
+  it('uses the Spanish CV name of the UNIR master in the Spanish files', () => {
+    const name =
+      'Máster de Formación Permanente en Inteligencia Artificial para el Sector Financiero';
+    const cert = certifications.find((file) => file.id === 'es/unir-ai-finance-master');
+    const milestone = leadership.find((file) => file.id === 'es/unir-ai-finance-master');
+    expect(cert?.data.name).toBe(name);
+    expect(String(milestone?.data.evidence)).toContain(name);
+    expect(JSON.stringify([cert?.data, milestone?.data])).not.toContain('Lifelong');
+  });
+
   it('marks only the UNIR master as in progress', () => {
     const inProgress = certifications
       .filter((file) => parseEntryId(file.id).locale === 'es' && file.data.status === 'in-progress')

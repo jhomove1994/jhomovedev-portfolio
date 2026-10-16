@@ -17,7 +17,7 @@ for (const { locale, about, path } of LOCALES) {
       const hero = page.locator('main').getByRole('region', { name: profile.name });
       await expect(hero).toContainText(profile.headline);
       await expect(hero).toContainText(profile.location);
-      await expect(hero).toContainText(locale === 'es' ? 'Trabajo en remoto' : 'Works remotely');
+      await expect(hero).toContainText(locale === 'es' ? 'Trabajo en remoto' : 'Remote');
     });
 
     test('never renders the availability value', async ({ page }) => {

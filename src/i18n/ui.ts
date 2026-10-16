@@ -130,7 +130,7 @@ export const ui = {
       present: 'Present',
       inProgress: 'In progress',
       email: 'Email',
-      remote: 'Works remotely',
+      remote: 'Remote',
       fallbackBadge: 'Spanish fallback',
     },
     localeNames: { es: 'Español', en: 'English' },

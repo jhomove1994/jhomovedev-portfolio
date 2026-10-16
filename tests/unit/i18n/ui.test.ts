@@ -98,6 +98,10 @@ describe('section copy', () => {
     expect(t(locale, 'labels.fallbackBadge')).not.toBe('');
   });
 
+  it('uses a short, natural English remote label', () => {
+    expect(t('en', 'labels.remote')).toBe('Remote');
+  });
+
   it('translates the remote label', () => {
     expect(t('en', 'labels.remote')).not.toBe(t('es', 'labels.remote'));
   });
