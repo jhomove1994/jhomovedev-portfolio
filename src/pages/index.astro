@@ -1,16 +1,20 @@
 ---
----
+import { DEFAULT_LOCALE, LOCALES } from '../i18n/locales';
+import { pickLocale } from '../lib/i18n/accept-language';
+import { localizedPath } from '../lib/i18n/paths';
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
-  </head>
-  <body>
-    <h1>Astro</h1>
-  </body>
-</html>
+// The only on-demand route: it negotiates the language once and every other page stays static.
+export const prerender = false;
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'), LOCALES, DEFAULT_LOCALE);
+
+// The target comes from the locale allowlist only, never from request input.
+return new Response(null, {
+  status: 302,
+  headers: {
+    Location: localizedPath(locale),
+    Vary: 'Accept-Language',
+    'Cache-Control': 'private, no-store',
+  },
+});
+---
