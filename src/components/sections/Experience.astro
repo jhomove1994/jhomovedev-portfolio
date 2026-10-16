@@ -1,0 +1,69 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import Chip from '../ui/Chip.astro';
+import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
+
+export interface Role {
+  role: string;
+  company: string;
+  location: string;
+  /** Already formatted, e.g. "mayo 2024 - Actualidad". */
+  period: string;
+  /** Plain-text bullets parsed from the Markdown achievements. */
+  achievements: string[];
+  /** Catalog display names. */
+  stack: string[];
+  isFallback: boolean;
+}
+
+interface Props {
+  locale: Locale;
+  /** Ordered newest first by the page; the section is omitted when empty. */
+  roles: Role[];
+}
+
+const { locale, roles } = Astro.props;
+---
+
+{roles.length > 0 && (
+  <section
+    id="experience"
+    aria-labelledby="experience-title"
+    class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[12rem_1fr] lg:gap-x-12 lg:py-16"
+  >
+    <h2 id="experience-title" class="mb-8 lg:mb-0">
+      {t(locale, 'nav.experience')}
+    </h2>
+    <ol class="space-y-12">
+      {roles.map(({ role, company, location, period, achievements, stack, isFallback }) => (
+        <li>
+          <DevFallbackBadge locale={locale} isFallback={isFallback} />
+          <p data-period class="text-sm text-muted">
+            {period}
+          </p>
+          <h3 class="text-lg">{role}</h3>
+          <p class="text-muted">
+            {company} · {location}
+          </p>
+          {achievements.length > 0 && (
+            <ul data-achievements class="mt-4 list-disc space-y-2 pl-5 marker:text-muted">
+              {achievements.map((achievement) => (
+                <li>{achievement}</li>
+              ))}
+            </ul>
+          )}
+          {stack.length > 0 && (
+            <ul class="mt-4 flex flex-wrap gap-2" aria-label={t(locale, 'aria.stack')}>
+              {stack.map((name) => (
+                <li>
+                  <Chip>{name}</Chip>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ol>
+  </section>
+)}

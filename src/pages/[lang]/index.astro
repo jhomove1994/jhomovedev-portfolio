@@ -6,8 +6,26 @@ import Footer from '../../components/layout/Footer.astro';
 import Hero from '../../components/sections/Hero.astro';
 import About from '../../components/sections/About.astro';
 import TechLeadPath, { type Milestone } from '../../components/sections/TechLeadPath.astro';
+import Experience, { type Role } from '../../components/sections/Experience.astro';
+import Certifications, {
+  type Credential,
+  type CredentialGroup,
+} from '../../components/sections/Certifications.astro';
 import { LOCALES, DEFAULT_LOCALE, type Locale } from '../../i18n/locales';
-import { getLeadership, getMedia, getProfile } from '../../lib/content/queries';
+import {
+  getCertifications,
+  getExperience,
+  getLeadership,
+  getMedia,
+  getProfile,
+  getStack,
+} from '../../lib/content/queries';
+import { groupByKind } from '../../lib/content/group';
+import { parseBulletList } from '../../lib/content/markdown-list';
+import { formatPeriod } from '../../lib/content/period';
+import { CERTIFICATION_KINDS } from '../../lib/content/schemas';
+import { resolveStackNames } from '../../lib/content/stack-names';
+import { t } from '../../i18n/ui';
 import { withTodoVisibility } from '../../lib/content/todo';
 
 export const getStaticPaths = (() =>
@@ -38,9 +56,40 @@ const milestones: Milestone[] = withTodoVisibility(
   marked,
 }));
 
+const stackCatalog = await getStack();
+const roles: Role[] = (await getExperience(locale)).map(({ entry, isFallback }) => ({
+  role: entry.data.role,
+  company: entry.data.company,
+  location: entry.data.location,
+  period: formatPeriod(entry.data.start, entry.data.end, locale, t(locale, 'labels.present')),
+  achievements: parseBulletList(entry.data.achievements),
+  stack: resolveStackNames(entry.data.stack, stackCatalog),
+  isFallback,
+}));
+
+const credentialGroups: CredentialGroup[] = groupByKind(
+  (await getCertifications(locale)).map(({ entry, isFallback }) => ({
+    kind: entry.data.kind,
+    credential: {
+      name: entry.data.name,
+      code: asText(entry.data.code),
+      issuer: entry.data.issuer,
+      year: entry.data.year,
+      inProgress: entry.data.status === 'in-progress',
+      credentialUrl: asText(entry.data.credentialUrl),
+      isFallback,
+    } satisfies Credential,
+  })),
+  CERTIFICATION_KINDS,
+).map(({ kind, items }) => ({ kind, items: items.map(({ credential }) => credential) }));
+
 const navItems: NavItem[] = [
   { id: 'about', labelKey: 'nav.about' },
   ...(milestones.length > 0 ? [{ id: 'path', labelKey: 'nav.pathToTechLead' } as const] : []),
+  ...(roles.length > 0 ? [{ id: 'experience', labelKey: 'nav.experience' } as const] : []),
+  ...(credentialGroups.length > 0
+    ? [{ id: 'certifications', labelKey: 'nav.certifications' } as const]
+    : []),
 ];
 ---
 
@@ -61,6 +110,8 @@ const navItems: NavItem[] = [
     />
     <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />
     <TechLeadPath locale={locale} milestones={milestones} />
+    <Experience locale={locale} roles={roles} />
+    <Certifications locale={locale} groups={credentialGroups} />
   </main>
   <Footer slot="footer" name={profile.name} />
 </BaseLayout>

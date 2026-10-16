@@ -23,6 +23,7 @@ export interface UiDict {
     mainNavigation: string;
     languageSwitcher: string;
     copyEmail: string;
+    stack: string;
   };
   clusters: Record<(typeof CLUSTERS)[number] | 'languages' | 'tools', string>;
   certificationKinds: Record<(typeof CERTIFICATION_KINDS)[number], string>;
@@ -61,6 +62,7 @@ export const ui = {
       mainNavigation: 'Navegación principal',
       languageSwitcher: 'Cambiar idioma',
       copyEmail: 'Copiar el correo electrónico',
+      stack: 'Tecnologías',
     },
     clusters: {
       frontend: 'Frontend',
@@ -109,6 +111,7 @@ export const ui = {
       mainNavigation: 'Main navigation',
       languageSwitcher: 'Change language',
       copyEmail: 'Copy email address',
+      stack: 'Technologies',
     },
     clusters: {
       frontend: 'Frontend',

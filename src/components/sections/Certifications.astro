@@ -1,0 +1,73 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import type { CERTIFICATION_KINDS } from '../../lib/content/schemas';
+import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
+
+export interface Credential {
+  name: string;
+  code?: string | undefined;
+  issuer: string;
+  year: number;
+  inProgress: boolean;
+  credentialUrl?: string | undefined;
+  isFallback: boolean;
+}
+
+export interface CredentialGroup {
+  kind: (typeof CERTIFICATION_KINDS)[number];
+  items: Credential[];
+}
+
+interface Props {
+  locale: Locale;
+  /** Already grouped by kind in display order; the section is omitted when empty. */
+  groups: CredentialGroup[];
+}
+
+const { locale, groups } = Astro.props;
+---
+
+{groups.length > 0 && (
+  <section
+    id="certifications"
+    aria-labelledby="certifications-title"
+    class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[12rem_1fr] lg:gap-x-12 lg:py-16"
+  >
+    <h2 id="certifications-title" class="mb-8 lg:mb-0">
+      {t(locale, 'nav.certifications')}
+    </h2>
+    <div class="space-y-10">
+      {groups.map(({ kind, items }) => (
+        <div>
+          <h3 class="mb-3 text-lg">{t(locale, `certificationKinds.${kind}`)}</h3>
+          <ul class="space-y-4">
+            {items.map(({ name, code, issuer, year, inProgress, credentialUrl, isFallback }) => (
+              <li>
+                <DevFallbackBadge locale={locale} isFallback={isFallback} />
+                <p>
+                  {credentialUrl ? (
+                    <a href={credentialUrl} rel="noopener noreferrer" class="underline">
+                      {name}
+                    </a>
+                  ) : (
+                    name
+                  )}
+                  {code && <span class="text-muted"> · {code}</span>}
+                </p>
+                <p class="text-sm text-muted">
+                  {issuer} · {year}
+                  {inProgress && (
+                    <span class="ml-2 rounded-sm border border-accent/40 px-2 text-text">
+                      {t(locale, 'labels.inProgress')}
+                    </span>
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
