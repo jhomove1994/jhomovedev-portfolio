@@ -91,3 +91,14 @@ describe('404 copy', () => {
     expect(t('es', 'localeNames.en')).toBe('English');
   });
 });
+
+describe('section copy', () => {
+  it.each(['es', 'en'] as const)('has the remote and fallback labels for %s', (locale) => {
+    expect(t(locale, 'labels.remote')).not.toBe('');
+    expect(t(locale, 'labels.fallbackBadge')).not.toBe('');
+  });
+
+  it('translates the remote label', () => {
+    expect(t('en', 'labels.remote')).not.toBe(t('es', 'labels.remote'));
+  });
+});

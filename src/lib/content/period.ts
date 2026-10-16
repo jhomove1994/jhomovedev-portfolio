@@ -21,6 +21,14 @@ function formatYearMonth(value: string, locale: Locale): string {
   return `${month} ${year}`;
 }
 
+const YEAR_ONLY = /^\d{4}$/;
+
+/** A milestone date: `YYYY-MM` becomes "May 2024" (localized), a bare `YYYY` stays as is. */
+export function formatDate(value: string, locale: Locale): string {
+  if (YEAR_ONLY.test(value)) return value;
+  return formatYearMonth(value, locale);
+}
+
 /**
  * Human period such as `May 2024 - Present`. `end` is `YYYY-MM` or the literal `present`,
  * which is replaced by the localized `presentLabel` (copy lives in the UI dictionary).

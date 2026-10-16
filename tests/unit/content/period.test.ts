@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPeriod } from '../../../src/lib/content/period';
+import { formatDate, formatPeriod } from '../../../src/lib/content/period';
 
 describe('formatPeriod', () => {
   it('formats an open range in English with the present label', () => {
@@ -26,5 +26,21 @@ describe('formatPeriod', () => {
     expect(() => formatPeriod('2024-13', 'present', 'en', 'Present')).toThrow(/2024-13/);
     expect(() => formatPeriod('2024-05', '2023', 'en', 'Present')).toThrow(/2023/);
     expect(() => formatPeriod('2024-05', 'now', 'en', 'Present')).toThrow(/now/);
+  });
+});
+
+describe('formatDate', () => {
+  it('formats a month in both locales', () => {
+    expect(formatDate('2019-04', 'es')).toBe('abril 2019');
+    expect(formatDate('2019-04', 'en')).toBe('April 2019');
+  });
+
+  it('returns a bare year unchanged', () => {
+    expect(formatDate('2026', 'es')).toBe('2026');
+    expect(formatDate('2026', 'en')).toBe('2026');
+  });
+
+  it.each(['2019-13', '19', '2019-4', 'soon'])('rejects %s', (value) => {
+    expect(() => formatDate(value, 'en')).toThrow(/Invalid/);
   });
 });

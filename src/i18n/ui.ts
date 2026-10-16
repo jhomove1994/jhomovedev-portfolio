@@ -31,6 +31,8 @@ export interface UiDict {
     present: string;
     inProgress: string;
     email: string;
+    remote: string;
+    fallbackBadge: string;
   };
   /** Language names, each written in its own language so they read the same on every page. */
   localeNames: Record<Locale, string>;
@@ -80,6 +82,8 @@ export const ui = {
       present: 'Actualidad',
       inProgress: 'En curso',
       email: 'Correo',
+      remote: 'Trabajo en remoto',
+      fallbackBadge: 'Sin traducción',
     },
     localeNames: { es: 'Español', en: 'English' },
     notFound: {
@@ -126,6 +130,8 @@ export const ui = {
       present: 'Present',
       inProgress: 'In progress',
       email: 'Email',
+      remote: 'Works remotely',
+      fallbackBadge: 'Spanish fallback',
     },
     localeNames: { es: 'Español', en: 'English' },
     notFound: {
