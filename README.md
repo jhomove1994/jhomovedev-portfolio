@@ -1,43 +1,27 @@
-# Astro Starter Kit: Minimal
+# JhomoveDev
+
+Bilingual (ES/EN) portfolio of Jhonatan Moreno. Astro static site with React islands, content in `src/content/` edited from `/admin` (Sveltia CMS, Git-based), served by Cloudflare Workers.
+
+## Quick path
 
 ```sh
-pnpm create astro@latest -- --template minimal
+pnpm install
+pnpm dev        # http://localhost:4321
+pnpm verify     # format, lint, typecheck, unit tests, build
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Commands
 
-## 🚀 Project Structure
+| Command                         | Action                                         |
+| ------------------------------- | ---------------------------------------------- |
+| `pnpm dev`                      | Local dev server                               |
+| `pnpm build`                    | Production build to `dist/`                    |
+| `pnpm test`                     | Unit tests (Vitest)                            |
+| `E2E_PORT=4399 pnpm test:e2e`   | Browser tests and screenshots (Playwright)     |
+| `pnpm wrangler deploy --dry-run` | Validate the Worker without deploying          |
 
-Inside of your Astro project, you'll see the following folders and files:
+## Docs
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [`docs/DEPLOY.md`](docs/DEPLOY.md): author checklist to go live and pending decisions.
+- [`docs/REQUERIMIENTOS.md`](docs/REQUERIMIENTOS.md): product requirements.
+- [`docs/TESTING.md`](docs/TESTING.md): testing approach.
