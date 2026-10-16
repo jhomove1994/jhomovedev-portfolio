@@ -1,0 +1,4 @@
+{
+  "name": "AWS Lambda",
+  "cluster": "aws-serverless"
+}

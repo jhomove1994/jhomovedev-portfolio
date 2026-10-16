@@ -1,0 +1,4 @@
+{
+  "name": "EC2",
+  "cluster": "aws-serverless"
+}

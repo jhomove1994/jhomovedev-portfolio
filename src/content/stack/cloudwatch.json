@@ -1,0 +1,4 @@
+{
+  "name": "CloudWatch",
+  "cluster": "aws-serverless"
+}
