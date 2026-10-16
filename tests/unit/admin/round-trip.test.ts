@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { mediaSchema, profileSchema } from '../../../src/lib/content/schemas';
+import { leadershipSchema, mediaSchema, profileSchema } from '../../../src/lib/content/schemas';
 
 /** Files shaped like Sveltia output, including `""` for cleared optional fields. */
 function sveltiaFixture(name: string): unknown {
@@ -18,5 +18,15 @@ describe('Sveltia output round-trip', () => {
 
   it('parses media whose cleared cv and ogImage are ""', () => {
     expect(mediaSchema.parse(sveltiaFixture('media'))).toEqual({});
+  });
+
+  it('parses a milestone whose cleared date and link are ""', () => {
+    const result = leadershipSchema.safeParse(sveltiaFixture('leadership'));
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({
+      title: 'Mentoring',
+      evidence: 'TODO(autor): mentoring example',
+      order: 5,
+    });
   });
 });

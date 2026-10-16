@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { mediaSchema, profileSchema } from '../../../src/lib/content/schemas';
+import { leadershipSchema, mediaSchema, profileSchema } from '../../../src/lib/content/schemas';
 
 function fixture(dir: string, name: string): unknown {
   const url = new URL(`../../fixtures/content/${dir}/${name}.json`, import.meta.url);
@@ -109,5 +109,66 @@ describe('mediaSchema', () => {
     const result = mediaSchema.safeParse({ cv: '/tmp/x.pdf' });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0].path).toEqual(['cv']);
+  });
+});
+
+const validLeadership = (): Json => fixture('leadership', 'valid') as Json;
+const withLeadership = (overrides: Json): Json => ({ ...validLeadership(), ...overrides });
+
+describe('leadershipSchema', () => {
+  it('accepts a complete milestone', () => {
+    const result = leadershipSchema.safeParse(validLeadership());
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({
+      title: 'Project leadership',
+      evidence: 'Led a small team through a delivery, used only by tests.',
+      date: '2023-01',
+      link: 'https://example.com/evidence',
+      order: 1,
+    });
+  });
+
+  it('rejects empty evidence naming the field', () => {
+    const result = leadershipSchema.safeParse(withLeadership({ evidence: '' }));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(['evidence']);
+  });
+
+  it('rejects whitespace-only evidence', () => {
+    expect(leadershipSchema.safeParse(withLeadership({ evidence: '   ' })).success).toBe(false);
+  });
+
+  it('accepts a TODO(autor) evidence placeholder', () => {
+    const evidence = 'TODO(autor): mentoring example';
+    expect(leadershipSchema.parse(withLeadership({ evidence })).evidence).toBe(evidence);
+  });
+
+  it.each(['2023-01', '2023'])('accepts the date %s', (date) => {
+    expect(leadershipSchema.parse(withLeadership({ date })).date).toBe(date);
+  });
+
+  it.each(['2023-13', '23', 'May 2023', '2023-1'])('rejects the date %s', (date) => {
+    const result = leadershipSchema.safeParse(withLeadership({ date }));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(['date']);
+  });
+
+  it('turns cleared optionals ("") into undefined', () => {
+    const result = leadershipSchema.parse(withLeadership({ date: '', link: '' }));
+    expect(result.date).toBeUndefined();
+    expect(result.link).toBeUndefined();
+  });
+
+  it('rejects a link that is not a URL naming the field', () => {
+    const result = leadershipSchema.safeParse(withLeadership({ link: 'not a url' }));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(['link']);
+  });
+
+  it('requires an integer order', () => {
+    expect(leadershipSchema.safeParse(withLeadership({ order: 1.5 })).success).toBe(false);
+    const withoutOrder = validLeadership();
+    delete withoutOrder.order;
+    expect(leadershipSchema.safeParse(withoutOrder).success).toBe(false);
   });
 });

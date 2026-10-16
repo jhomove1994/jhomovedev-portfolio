@@ -111,3 +111,24 @@ collections:
         fields:
           - { name: cv, label: CV (PDF), widget: file, required: false, i18n: true }
           - { name: ogImage, label: Social share image, widget: image, required: false, i18n: true }
+
+  - name: leadership
+    label: Path to Tech Lead
+    label_singular: Milestone
+    folder: src/content/leadership
+    extension: json
+    format: json
+    create: true
+    i18n: true
+    fields:
+      - { name: title, label: Title, widget: string, i18n: true }
+      - { name: evidence, label: Evidence, widget: text, i18n: true }
+      - {
+          name: date,
+          label: Date (YYYY-MM or YYYY),
+          widget: string,
+          required: false,
+          i18n: duplicate,
+        }
+      - { name: link, label: Evidence link, widget: string, required: false, i18n: duplicate }
+      - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }

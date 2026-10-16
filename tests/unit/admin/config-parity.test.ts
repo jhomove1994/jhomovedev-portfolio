@@ -245,6 +245,19 @@ describe('public/admin/config.yml', () => {
     expect(settings.files.map((file) => file.i18n)).toEqual([true, true]);
   });
 
+  it('declares leadership as an i18n folder collection loaded from */*.json', () => {
+    const leadership = (realConfig().collections as Record<string, unknown>[]).find(
+      (collection) => collection.name === 'leadership',
+    );
+
+    expect(leadership).toMatchObject({
+      folder: 'src/content/leadership',
+      extension: 'json',
+      format: 'json',
+      i18n: true,
+    });
+  });
+
   it('keeps the repo placeholder flagged until the owner is confirmed', () => {
     expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
   });

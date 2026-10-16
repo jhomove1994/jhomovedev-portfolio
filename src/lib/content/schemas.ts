@@ -31,7 +31,7 @@ export const stackSchema = z.object({
 export const AVAILABILITY = ['open-to-offers', 'freelance', 'not-available'] as const;
 
 /** Optional text the CMS writes as `""` when cleared; normalised to `undefined`. */
-const optionalText = (schema: z.ZodString = z.string()) =>
+const optionalText = (schema: z.ZodType = z.string()) =>
   z.preprocess(emptyToUndefined, schema.optional());
 
 /** Per-locale singleton (`profile/<locale>.json`). Shared fields are duplicated by the CMS. */
@@ -59,9 +59,19 @@ export const mediaSchema = z.object({
   ogImage: uploadPath(),
 });
 
+/** A dated milestone toward the Tech Lead path; `evidence` is mandatory (rule: no claim without proof). */
+export const leadershipSchema = z.object({
+  title: z.string(),
+  evidence: z.string().trim().min(1),
+  date: optionalText(z.string().regex(/^\d{4}(-(0[1-9]|1[0-2]))?$/, 'Expected YYYY-MM or YYYY')),
+  link: optionalText(z.url()),
+  order: z.number().int(),
+});
+
 /** Collection name -> schema; the admin parity guard compares this against config.yml. */
 export const schemaRegistry = {
   stack: stackSchema,
   profile: profileSchema,
   media: mediaSchema,
+  leadership: leadershipSchema,
 };
