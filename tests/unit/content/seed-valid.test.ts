@@ -10,6 +10,7 @@ import {
   leadershipSchema,
   mediaSchema,
   profileSchema,
+  projectSchema,
   stackSchema,
 } from '../../../src/lib/content/schemas';
 import { SHARED_FIELDS, findSharedMismatches } from '../../../src/lib/content/shared-fields';
@@ -241,5 +242,62 @@ describe('seed: certifications', () => {
       .filter((file) => parseEntryId(file.id).locale === 'es' && file.data.status === 'in-progress')
       .map((file) => parseEntryId(file.id).slug);
     expect(inProgress).toEqual(['unir-ai-finance-master']);
+  });
+});
+
+const projects = loadCollection('projects');
+const projectValidator = projectSchema({ stackRef: z.string() });
+
+describe('seed: projects', () => {
+  it('has entries in both locales', () => {
+    const locales = new Set(projects.map((file) => parseEntryId(file.id).locale));
+    expect([...locales].sort()).toEqual(['en', 'es']);
+  });
+
+  it.each(projects.map((file) => [file.id, file] as const))('%s validates', (_id, file) => {
+    const result = projectValidator.safeParse(file.data);
+    expect(result.error?.issues ?? []).toEqual([]);
+  });
+
+  it('every stack id resolves to the catalog', () => {
+    const refs = projects.map((file) => ({
+      file: file.path,
+      ids: (file.data.stack as string[] | undefined) ?? [],
+    }));
+    expect(
+      findDanglingRefs(
+        refs,
+        stack.map((file) => file.id),
+      ),
+    ).toEqual([]);
+  });
+
+  it('has the same slugs in es and en', () => {
+    const slugs = (locale: string) =>
+      projects
+        .map((file) => parseEntryId(file.id))
+        .filter((parsed) => parsed.locale === locale)
+        .map((parsed) => parsed.slug)
+        .sort();
+    expect(slugs('es')).toEqual([
+      'fraud-pilot',
+      'legacy-to-nest',
+      'this-portfolio',
+      'virtual-card',
+    ]);
+    expect(slugs('en')).toEqual(slugs('es'));
+  });
+
+  it('keeps shared fields equal across locales with no unpaired entry', () => {
+    const report = findSharedMismatches(projects, SHARED_FIELDS.projects);
+    expect(report.mismatches).toEqual([]);
+    expect(report.unpaired).toEqual([]);
+  });
+
+  it('keeps every seeded project an unpublished draft without a repository link', () => {
+    for (const file of projects) {
+      expect(file.data.published, file.id).toBe(false);
+      expect(file.data.repoUrl, file.id).toBeUndefined();
+    }
   });
 });
