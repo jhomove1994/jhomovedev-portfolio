@@ -68,10 +68,33 @@ export const leadershipSchema = z.object({
   order: z.number().int(),
 });
 
+/**
+ * One role. `stackRef` is injected: the registry passes `z.string()`, the Astro collection passes
+ * `reference('stack')`. `achievements` is ONE per-locale Markdown string (a bullet list), not an
+ * array, because Sveltia 0.245 cannot add items to a translatable list outside the default locale.
+ */
+export const experienceSchema = ({ stackRef }: { stackRef: z.ZodType }) =>
+  z
+    .object({
+      role: z.string(),
+      company: z.string(),
+      location: z.string(),
+      start: yearMonth,
+      end: z.union([yearMonth, z.literal('present')]),
+      achievements: z.string().trim().min(1),
+      stack: z.array(stackRef),
+      order: z.number().int(),
+    })
+    .refine((role) => role.end === 'present' || role.end >= role.start, {
+      message: 'end must not be before start',
+      path: ['end'],
+    });
+
 /** Collection name -> schema; the admin parity guard compares this against config.yml. */
 export const schemaRegistry = {
   stack: stackSchema,
   profile: profileSchema,
   media: mediaSchema,
   leadership: leadershipSchema,
+  experience: experienceSchema({ stackRef: z.string() }),
 };

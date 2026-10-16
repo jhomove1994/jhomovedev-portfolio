@@ -1,0 +1,10 @@
+{
+  "role": "Senior Full Stack Developer",
+  "company": "Example Corp",
+  "location": "Example City, Country",
+  "start": "2024-05",
+  "end": "present",
+  "achievements": "- Built an example service used only by tests.\n- Reviewed example pull requests.\n- Documented an example architecture decision.",
+  "stack": ["typescript", "nestjs"],
+  "order": 1
+}

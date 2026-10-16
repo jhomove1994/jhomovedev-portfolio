@@ -1,0 +1,10 @@
+{
+  "role": "Full Stack Developer",
+  "company": "Example Corp",
+  "location": "Example City, Country",
+  "start": "2023-01",
+  "end": "2024-05",
+  "achievements": "- Built an example service used only by tests.\n- Reviewed example pull requests.\n",
+  "stack": ["typescript", "nestjs"],
+  "order": 2
+}

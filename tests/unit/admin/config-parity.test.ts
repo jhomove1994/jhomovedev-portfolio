@@ -258,6 +258,26 @@ describe('public/admin/config.yml', () => {
     });
   });
 
+  it('declares experience as an i18n Markdown front matter collection', () => {
+    const experience = (realConfig().collections as Record<string, unknown>[]).find(
+      (collection) => collection.name === 'experience',
+    ) as { fields: { name: string; widget?: string; i18n?: unknown; multiple?: boolean }[] };
+
+    expect(experience).toMatchObject({
+      folder: 'src/content/experience',
+      extension: 'md',
+      format: 'frontmatter',
+      i18n: true,
+    });
+    const field = (name: string) => experience.fields.find((candidate) => candidate.name === name);
+    // One Markdown string per locale instead of a list (Sveltia cannot grow translatable lists).
+    expect(field('achievements')).toMatchObject({ widget: 'markdown', i18n: true });
+    expect(field('stack')).toMatchObject({ widget: 'relation', multiple: true, i18n: 'duplicate' });
+    for (const name of ['start', 'end', 'order', 'location']) {
+      expect(field(name)?.i18n).toBe('duplicate');
+    }
+  });
+
   it('keeps the repo placeholder flagged until the owner is confirmed', () => {
     expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
   });

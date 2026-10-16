@@ -132,3 +132,38 @@ collections:
         }
       - { name: link, label: Evidence link, widget: string, required: false, i18n: duplicate }
       - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }
+
+  # One Markdown file per locale; no body, everything lives in the front matter. `achievements` is a
+  # single translatable Markdown field (a bullet list) because Sveltia 0.245 cannot add items to a
+  # translatable list outside the default locale.
+  - name: experience
+    label: Experience
+    label_singular: Role
+    folder: src/content/experience
+    extension: md
+    format: frontmatter
+    create: true
+    i18n: true
+    identifier_field: company
+    fields:
+      - { name: role, label: Role, widget: string, i18n: true }
+      - { name: company, label: Company, widget: string, i18n: duplicate }
+      - { name: location, label: Location, widget: string, i18n: duplicate }
+      - { name: start, label: Start (YYYY-MM), widget: string, i18n: duplicate }
+      - { name: end, label: End (YYYY-MM or "present"), widget: string, i18n: duplicate }
+      - {
+          name: achievements,
+          label: Achievements (Markdown bullet list),
+          widget: markdown,
+          i18n: true,
+        }
+      - name: stack
+        label: Stack
+        widget: relation
+        collection: stack
+        search_fields: [name]
+        value_field: '{{slug}}'
+        display_fields: [name]
+        multiple: true
+        i18n: duplicate
+      - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }

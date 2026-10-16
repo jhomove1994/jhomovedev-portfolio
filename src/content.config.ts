@@ -1,7 +1,13 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { entryIdFromPath } from './lib/content/entry-id';
-import { leadershipSchema, mediaSchema, profileSchema, stackSchema } from './lib/content/schemas';
+import {
+  experienceSchema,
+  leadershipSchema,
+  mediaSchema,
+  profileSchema,
+  stackSchema,
+} from './lib/content/schemas';
 
 // Stack ids come from the kebab-case filename (default glob id), not from a field.
 const stack = defineCollection({
@@ -38,4 +44,14 @@ const leadership = defineCollection({
   schema: leadershipSchema,
 });
 
-export const collections = { stack, profile, media, leadership };
+// `experience/<locale>/<slug>.md` -> id `<locale>/<slug>`; `stack` ids resolve against the catalog.
+const experience = defineCollection({
+  loader: glob({
+    pattern: '*/*.md',
+    base: './src/content/experience',
+    generateId: ({ entry }) => entryIdFromPath(entry),
+  }),
+  schema: experienceSchema({ stackRef: reference('stack') }),
+});
+
+export const collections = { stack, profile, media, leadership, experience };

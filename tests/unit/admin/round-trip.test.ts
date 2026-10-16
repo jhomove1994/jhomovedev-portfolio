@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { leadershipSchema, mediaSchema, profileSchema } from '../../../src/lib/content/schemas';
+import { z } from 'astro/zod';
+import {
+  experienceSchema,
+  leadershipSchema,
+  mediaSchema,
+  profileSchema,
+} from '../../../src/lib/content/schemas';
 
 /** Files shaped like Sveltia output, including `""` for cleared optional fields. */
 function sveltiaFixture(name: string): unknown {
@@ -28,5 +34,18 @@ describe('Sveltia output round-trip', () => {
       evidence: 'TODO(autor): mentoring example',
       order: 5,
     });
+  });
+
+  it('parses a closed role whose achievements are one Markdown string', () => {
+    const result = experienceSchema({ stackRef: z.string() }).safeParse(
+      sveltiaFixture('experience'),
+    );
+    expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({
+      start: '2023-01',
+      end: '2024-05',
+      stack: ['typescript', 'nestjs'],
+    });
+    expect(result.data?.achievements).toContain('- Reviewed example pull requests.');
   });
 });
