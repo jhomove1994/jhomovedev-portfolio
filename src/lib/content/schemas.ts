@@ -106,6 +106,29 @@ export const certificationSchema = z.object({
   order: z.number().int(),
 });
 
+/**
+ * One case study. Projects are private, so every narrative field is anonymised prose (or
+ * `TODO(autor): ...` until the author writes it). `decisions` is ONE per-locale Markdown string (a
+ * bullet list), not an array, for the same Sveltia 0.245 reason as experience `achievements`.
+ * `published` has no default on purpose: publishing is an explicit act (the admin widget defaults
+ * to false); `repoUrl` is only for projects whose repository is public.
+ */
+export const projectSchema = ({ stackRef }: { stackRef: z.ZodType }) =>
+  z.object({
+    title: z.string(),
+    summary: z.string(),
+    context: z.string(),
+    challenge: z.string(),
+    role: z.string(),
+    decisions: z.string().trim().min(1),
+    result: z.string(),
+    stack: z.array(stackRef),
+    featured: z.boolean().default(false),
+    order: z.number().int(),
+    published: z.boolean(),
+    repoUrl: optionalText(z.url()),
+  });
+
 /** Collection name -> schema; the admin parity guard compares this against config.yml. */
 export const schemaRegistry = {
   stack: stackSchema,
@@ -114,4 +137,5 @@ export const schemaRegistry = {
   leadership: leadershipSchema,
   experience: experienceSchema({ stackRef: z.string() }),
   certifications: certificationSchema,
+  projects: projectSchema({ stackRef: z.string() }),
 };

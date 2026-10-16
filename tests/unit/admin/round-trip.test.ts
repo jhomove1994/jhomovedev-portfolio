@@ -7,6 +7,7 @@ import {
   leadershipSchema,
   mediaSchema,
   profileSchema,
+  projectSchema,
 } from '../../../src/lib/content/schemas';
 
 /** Files shaped like Sveltia output, including `""` for cleared optional fields. */
@@ -48,6 +49,14 @@ describe('Sveltia output round-trip', () => {
       stack: ['typescript', 'nestjs'],
     });
     expect(result.data?.achievements).toContain('- Reviewed example pull requests.');
+  });
+
+  it('parses a project whose cleared repoUrl is "" and whose decisions are one string', () => {
+    const result = projectSchema({ stackRef: z.string() }).safeParse(sveltiaFixture('project'));
+    expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({ featured: true, published: true, stack: ['typescript'] });
+    expect(result.data?.repoUrl).toBeUndefined();
+    expect(result.data?.decisions).toContain('- TODO(autor): second decision');
   });
 
   it('parses a certification whose cleared optionals are ""', () => {

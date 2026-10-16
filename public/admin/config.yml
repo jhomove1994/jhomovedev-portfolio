@@ -222,3 +222,55 @@ collections:
         }
       - { name: badge, label: Badge image, widget: image, required: false, i18n: duplicate }
       - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }
+
+  # Case studies are private-client work: anonymised prose only, no code or internal names.
+  # `decisions` is a single translatable Markdown field (a bullet list) for the same Sveltia 0.245
+  # reason as experience `achievements`.
+  - name: projects
+    label: Projects
+    label_singular: Project
+    folder: src/content/projects
+    extension: md
+    format: frontmatter
+    create: true
+    i18n: true
+    identifier_field: title
+    fields:
+      - { name: title, label: Title, widget: string, i18n: true }
+      - { name: summary, label: Summary, widget: text, i18n: true }
+      - { name: context, label: Context, widget: text, i18n: true }
+      - { name: challenge, label: Challenge, widget: text, i18n: true }
+      - { name: role, label: My role, widget: text, i18n: true }
+      - {
+          name: decisions,
+          label: Key decisions (Markdown bullet list),
+          widget: markdown,
+          i18n: true,
+        }
+      - { name: result, label: Result, widget: text, i18n: true }
+      - name: stack
+        label: Stack
+        widget: relation
+        collection: stack
+        search_fields: [name]
+        value_field: '{{slug}}'
+        display_fields: [name]
+        multiple: true
+        i18n: duplicate
+      - {
+          name: featured,
+          label: Featured,
+          widget: boolean,
+          default: false,
+          required: false,
+          i18n: duplicate,
+        }
+      - { name: order, label: Order, widget: number, value_type: int, i18n: duplicate }
+      - { name: published, label: Published, widget: boolean, default: false, i18n: duplicate }
+      - {
+          name: repoUrl,
+          label: Public repository URL,
+          widget: string,
+          required: false,
+          i18n: duplicate,
+        }

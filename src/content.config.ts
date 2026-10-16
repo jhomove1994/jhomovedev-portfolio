@@ -7,6 +7,7 @@ import {
   leadershipSchema,
   mediaSchema,
   profileSchema,
+  projectSchema,
   stackSchema,
 } from './lib/content/schemas';
 
@@ -65,4 +66,22 @@ const certifications = defineCollection({
   schema: certificationSchema,
 });
 
-export const collections = { stack, profile, media, leadership, experience, certifications };
+// `projects/<locale>/<slug>.md` -> id `<locale>/<slug>`; drafts stay `published: false`.
+const projects = defineCollection({
+  loader: glob({
+    pattern: '*/*.md',
+    base: './src/content/projects',
+    generateId: ({ entry }) => entryIdFromPath(entry),
+  }),
+  schema: projectSchema({ stackRef: reference('stack') }),
+});
+
+export const collections = {
+  stack,
+  profile,
+  media,
+  leadership,
+  experience,
+  certifications,
+  projects,
+};

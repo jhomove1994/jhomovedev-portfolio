@@ -1,0 +1,13 @@
+{
+  "title": "Example Project",
+  "summary": "TODO(autor): one-line summary",
+  "context": "TODO(autor): context of the case",
+  "challenge": "TODO(autor): the challenge",
+  "role": "TODO(autor): my role",
+  "decisions": "- TODO(autor): first decision\n- TODO(autor): second decision",
+  "result": "TODO(autor): outcome without invented metrics",
+  "stack": ["typescript", "nestjs"],
+  "featured": false,
+  "order": 1,
+  "published": false
+}

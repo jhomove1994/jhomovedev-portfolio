@@ -278,6 +278,27 @@ describe('public/admin/config.yml', () => {
     }
   });
 
+  it('declares projects as an i18n Markdown collection with an explicit published toggle', () => {
+    const projects = (realConfig().collections as Record<string, unknown>[]).find(
+      (collection) => collection.name === 'projects',
+    ) as {
+      fields: { name: string; widget?: string; default?: unknown; i18n?: unknown }[];
+    };
+
+    expect(projects).toMatchObject({
+      folder: 'src/content/projects',
+      extension: 'md',
+      format: 'frontmatter',
+      i18n: true,
+    });
+    const field = (name: string) => projects.fields.find((candidate) => candidate.name === name);
+    // Draft by default: nothing is published without the author flipping the switch.
+    expect(field('published')).toMatchObject({ widget: 'boolean', default: false });
+    expect(field('featured')).toMatchObject({ widget: 'boolean', default: false });
+    // One Markdown string per locale instead of a list (Sveltia cannot grow translatable lists).
+    expect(field('decisions')).toMatchObject({ widget: 'markdown', i18n: true });
+  });
+
   it('declares certifications as an i18n JSON folder collection with enum selects', () => {
     const certifications = (realConfig().collections as Record<string, unknown>[]).find(
       (collection) => collection.name === 'certifications',
