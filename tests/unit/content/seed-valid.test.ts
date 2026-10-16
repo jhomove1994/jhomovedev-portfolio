@@ -1,8 +1,15 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'astro/zod';
 import { describe, expect, it } from 'vitest';
-import { parseEntryId } from '../../../src/lib/content/entry-id';
+import { entryIdFromPath, parseEntryId } from '../../../src/lib/content/entry-id';
 import { findDanglingRefs } from '../../../src/lib/content/integrity';
-import { experienceSchema, stackSchema } from '../../../src/lib/content/schemas';
+import {
+  experienceSchema,
+  mediaSchema,
+  profileSchema,
+  stackSchema,
+} from '../../../src/lib/content/schemas';
 import { SHARED_FIELDS, findSharedMismatches } from '../../../src/lib/content/shared-fields';
 import { loadCollection } from '../../helpers/load-content';
 
@@ -78,4 +85,84 @@ describe('seed: experience', () => {
     expect(report.mismatches).toEqual([]);
     expect(report.unpaired).toEqual([]);
   });
+});
+
+/** Singleton files (`es.json`) get the Content Layer id `es/index`. */
+const singletons = (collection: string) =>
+  loadCollection(collection).map((file) => ({ ...file, id: entryIdFromPath(file.path) }));
+
+const profile = singletons('profile');
+const media = singletons('media');
+
+describe('seed: profile', () => {
+  it('has exactly one file per locale', () => {
+    expect(profile.map((file) => file.id).sort()).toEqual(['en/index', 'es/index']);
+  });
+
+  it.each(profile.map((file) => [file.id, file] as const))('%s validates', (_id, file) => {
+    const result = profileSchema.safeParse(file.data);
+    expect(result.error?.issues ?? []).toEqual([]);
+  });
+
+  it.each(profile.map((file) => [file.id, file] as const))(
+    '%s never publishes WhatsApp or a phone number',
+    (_id, file) => {
+      expect(file.data.contact).not.toHaveProperty('whatsapp');
+      expect(JSON.stringify(file.data)).not.toMatch(/tel:|wa\.me|\+?\d[\d\s-]{8,}\d/);
+    },
+  );
+
+  it('keeps shared fields equal across locales', () => {
+    const report = findSharedMismatches(profile, SHARED_FIELDS.profile);
+    expect(report.mismatches).toEqual([]);
+    expect(report.unpaired).toEqual([]);
+  });
+
+  it('uses the CV email and LinkedIn, and the approved headline per locale', () => {
+    const byLocale = Object.fromEntries(
+      profile.map((file) => [parseEntryId(file.id).locale, file]),
+    );
+    expect(byLocale.es?.data.contact).toEqual({
+      email: 'aplicacionesjmoreno@gmail.com',
+      linkedin: 'https://linkedin.com/in/jhonatan-moreno-velasquez',
+    });
+    expect(byLocale.es?.data.headline).toBe('Senior Full Stack Developer · camino a Tech Lead');
+    expect(byLocale.en?.data.headline).toBe(
+      'Senior Full Stack Developer · on the path to Tech Lead',
+    );
+  });
+
+  it('lists the same number of languages in both locales (Sveltia cannot add items in en)', () => {
+    const counts = profile.map((file) => (file.data.languages as unknown[]).length);
+    expect(new Set(counts).size).toBe(1);
+    expect(counts[0]).toBeGreaterThan(0);
+  });
+
+  it('keeps the contact email inside content only', () => {
+    const root = join(process.cwd(), 'src');
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((dirent) => {
+        const full = join(dir, dirent.name);
+        return dirent.isDirectory() ? walk(full) : [full];
+      });
+    const offenders = walk(root)
+      .filter((file) => !file.includes(`${join('src', 'content')}/`))
+      .filter((file) => readFileSync(file, 'utf8').includes('aplicacionesjmoreno@gmail.com'));
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('seed: media', () => {
+  it('has exactly one file per locale', () => {
+    expect(media.map((file) => file.id).sort()).toEqual(['en/index', 'es/index']);
+  });
+
+  it.each(media.map((file) => [file.id, file] as const))(
+    '%s validates and carries no upload yet',
+    (_id, file) => {
+      const result = mediaSchema.safeParse(file.data);
+      expect(result.error?.issues ?? []).toEqual([]);
+      expect(file.data).toEqual({});
+    },
+  );
 });
