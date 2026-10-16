@@ -46,3 +46,68 @@ collections:
         }
       - { name: icon, label: Icon key, widget: string, required: false }
       - { name: order, label: Order, widget: number, value_type: int, required: false }
+
+  # Per-locale singletons: Sveltia replaces {{locale}} in the file path (es.json / en.json)
+  # and requires both the collection and each file to declare i18n.
+  - name: settings
+    label: Site settings
+    i18n: true
+    files:
+      - name: profile
+        label: Profile
+        file: src/content/profile/{{locale}}.json
+        i18n: true
+        fields:
+          - { name: name, label: Name, widget: string, i18n: duplicate }
+          - { name: brand, label: Brand, widget: string, i18n: duplicate }
+          - { name: headline, label: Headline, widget: string, i18n: true }
+          - { name: bio, label: Bio, widget: text, i18n: true }
+          - { name: location, label: Location, widget: string, i18n: true }
+          - { name: remote, label: Open to remote work, widget: boolean, i18n: duplicate }
+          - {
+              name: yearsExperience,
+              label: Years of experience,
+              widget: number,
+              value_type: int,
+              min: 1,
+              i18n: duplicate,
+            }
+          - name: availability
+            label: Availability (not shown on the site yet)
+            widget: select
+            options:
+              - open-to-offers
+              - freelance
+              - not-available
+            i18n: duplicate
+          # Sveltia 0.245: items of a translatable list can only be added in the default locale,
+          # and the other locale does not follow. Keep es.json and en.json item counts equal.
+          - name: languages
+            label: Languages
+            widget: list
+            i18n: true
+            fields:
+              - { name: name, label: Language, widget: string }
+              - { name: level, label: Level, widget: string }
+          - name: contact
+            label: Contact
+            widget: object
+            i18n: duplicate
+            fields:
+              - { name: email, label: Email, widget: string }
+              - { name: linkedin, label: LinkedIn URL, widget: string }
+              - { name: whatsapp, label: WhatsApp link, widget: string, required: false }
+          - name: seo
+            label: SEO
+            widget: object
+            i18n: true
+            fields:
+              - { name: title, label: Title, widget: string }
+              - { name: description, label: Description, widget: text }
+      - name: media
+        label: Media
+        file: src/content/media/{{locale}}.json
+        i18n: true
+        fields:
+          - { name: cv, label: CV (PDF), widget: file, required: false, i18n: true }
+          - { name: ogImage, label: Social share image, widget: image, required: false, i18n: true }

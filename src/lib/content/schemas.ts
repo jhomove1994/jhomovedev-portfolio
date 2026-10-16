@@ -28,5 +28,40 @@ export const stackSchema = z.object({
   order: z.number().int().optional(),
 });
 
+export const AVAILABILITY = ['open-to-offers', 'freelance', 'not-available'] as const;
+
+/** Optional text the CMS writes as `""` when cleared; normalised to `undefined`. */
+const optionalText = (schema: z.ZodString = z.string()) =>
+  z.preprocess(emptyToUndefined, schema.optional());
+
+/** Per-locale singleton (`profile/<locale>.json`). Shared fields are duplicated by the CMS. */
+export const profileSchema = z.object({
+  name: z.string(),
+  brand: z.string(),
+  headline: z.string(),
+  bio: z.string(),
+  location: z.string(),
+  remote: z.boolean(),
+  yearsExperience: z.number().int().positive(),
+  availability: z.enum(AVAILABILITY),
+  languages: z.array(z.object({ name: z.string(), level: z.string() })),
+  contact: z.object({
+    email: z.email(),
+    linkedin: z.url(),
+    whatsapp: optionalText(),
+  }),
+  seo: z.object({ title: z.string(), description: z.string() }),
+});
+
+/** Per-locale downloadable and social assets; both are optional until the author uploads them. */
+export const mediaSchema = z.object({
+  cv: uploadPath(),
+  ogImage: uploadPath(),
+});
+
 /** Collection name -> schema; the admin parity guard compares this against config.yml. */
-export const schemaRegistry = { stack: stackSchema };
+export const schemaRegistry = {
+  stack: stackSchema,
+  profile: profileSchema,
+  media: mediaSchema,
+};

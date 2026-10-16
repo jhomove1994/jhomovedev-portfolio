@@ -231,6 +231,20 @@ describe('public/admin/config.yml', () => {
     });
   });
 
+  it('declares profile and media as i18n files of the settings collection', () => {
+    const settings = (realConfig().collections as Record<string, unknown>[]).find(
+      (collection) => collection.name === 'settings',
+    ) as { i18n: unknown; files: { name: string; file: string; i18n: unknown }[] };
+
+    expect(settings.files.map(({ name, file }) => [name, file])).toEqual([
+      ['profile', 'src/content/profile/{{locale}}.json'],
+      ['media', 'src/content/media/{{locale}}.json'],
+    ]);
+    // Sveltia 0.245 rejects the config unless BOTH the collection and each {{locale}} file declare i18n.
+    expect(settings.i18n).toBe(true);
+    expect(settings.files.map((file) => file.i18n)).toEqual([true, true]);
+  });
+
   it('keeps the repo placeholder flagged until the owner is confirmed', () => {
     expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
   });

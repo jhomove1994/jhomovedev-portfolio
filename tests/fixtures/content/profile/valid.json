@@ -1,0 +1,20 @@
+{
+  "name": "Ada Example",
+  "brand": "ExampleBrand",
+  "headline": "Senior Full Stack Developer",
+  "bio": "Short bio used only by tests.",
+  "location": "Example City, Country",
+  "remote": true,
+  "yearsExperience": 6,
+  "availability": "open-to-offers",
+  "languages": [
+    { "name": "Spanish", "level": "Native" },
+    { "name": "English", "level": "Intermediate" }
+  ],
+  "contact": {
+    "email": "ada@example.com",
+    "linkedin": "https://www.linkedin.com/in/example",
+    "whatsapp": "https://wa.me/0000000"
+  },
+  "seo": { "title": "Ada Example", "description": "Portfolio used only by tests." }
+}
