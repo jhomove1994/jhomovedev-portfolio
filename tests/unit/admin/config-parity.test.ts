@@ -1,5 +1,9 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'astro/zod';
+import { parse } from 'yaml';
+import { schemaRegistry } from '../../../src/lib/content/schemas';
 import { compareSchemaToConfig, type AdminConfig, type SchemaRegistry } from '../../helpers/parity';
 
 type Field = Record<string, unknown>;
@@ -195,5 +199,61 @@ describe('compareSchemaToConfig', () => {
       ],
     };
     expect(check(config as ReturnType<typeof makeConfig>, registry)).toEqual([]);
+  });
+});
+
+const configText = (): string => readFileSync('public/admin/config.yml', 'utf8');
+const realConfig = (): Record<string, unknown> => parse(configText()) as Record<string, unknown>;
+
+describe('public/admin/config.yml', () => {
+  it('is in sync with the Zod schema registry', () => {
+    expect(compareSchemaToConfig(schemaRegistry, realConfig())).toEqual([]);
+  });
+
+  it('uses the github backend on main with the simple workflow', () => {
+    const config = realConfig();
+    expect(config.backend).toMatchObject({ name: 'github', branch: 'main' });
+    expect((config.backend as { repo: string }).repo).toMatch(/^[\w.-]+\/[\w.-]+$/);
+    expect(config.publish_mode ?? 'simple').toBe('simple');
+  });
+
+  it('stores media under public/uploads served from /uploads', () => {
+    const config = realConfig();
+    expect(config.media_folder).toBe('public/uploads');
+    expect(config.public_folder).toBe('/uploads');
+  });
+
+  it('declares es (default) and en locales in separate folders', () => {
+    expect(realConfig().i18n).toMatchObject({
+      structure: 'multiple_folders',
+      locales: ['es', 'en'],
+      default_locale: 'es',
+    });
+  });
+
+  it('keeps the repo placeholder flagged until the owner is confirmed', () => {
+    expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
+  });
+
+  it('contains no personal access token patterns', () => {
+    expect(configText()).not.toMatch(/github_pat_|ghp_/);
+  });
+
+  it('points at the same directories as the content loaders', () => {
+    const loaderBases = [
+      ...readFileSync('src/content.config.ts', 'utf8').matchAll(
+        /base:\s*'\.\/(src\/content\/[^']+)'/g,
+      ),
+    ].map((match) => match[1]);
+    const adminDirs = (realConfig().collections as Record<string, unknown>[]).flatMap(
+      (collection) =>
+        Array.isArray(collection.files)
+          ? (collection.files as { file: string }[]).map((file) => dirname(file.file))
+          : [String(collection.folder)],
+    );
+
+    expect(loaderBases.length).toBeGreaterThan(0);
+    expect(adminDirs.sort()).toEqual(loaderBases.sort());
+    for (const dir of adminDirs) expect(existsSync(dir)).toBe(true);
   });
 });
