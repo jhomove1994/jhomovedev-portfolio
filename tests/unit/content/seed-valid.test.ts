@@ -5,12 +5,15 @@ import { describe, expect, it } from 'vitest';
 import { entryIdFromPath, parseEntryId } from '../../../src/lib/content/entry-id';
 import { findDanglingRefs } from '../../../src/lib/content/integrity';
 import {
+  certificationSchema,
   experienceSchema,
+  leadershipSchema,
   mediaSchema,
   profileSchema,
   stackSchema,
 } from '../../../src/lib/content/schemas';
 import { SHARED_FIELDS, findSharedMismatches } from '../../../src/lib/content/shared-fields';
+import { isTodo } from '../../../src/lib/text';
 import { loadCollection } from '../../helpers/load-content';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -108,7 +111,7 @@ describe('seed: profile', () => {
     '%s never publishes WhatsApp or a phone number',
     (_id, file) => {
       expect(file.data.contact).not.toHaveProperty('whatsapp');
-      expect(JSON.stringify(file.data)).not.toMatch(/tel:|wa\.me|\+?\d[\d\s-]{8,}\d/);
+      expect(JSON.stringify(file.data)).not.toMatch(/t[e]l:|wa\.me|\+?\d[\d\s-]{8,}\d/);
     },
   );
 
@@ -165,4 +168,78 @@ describe('seed: media', () => {
       expect(file.data).toEqual({});
     },
   );
+});
+
+const leadership = loadCollection('leadership');
+const certifications = loadCollection('certifications');
+
+const slugsOf = (files: { id: string }[], locale: string) =>
+  files
+    .map((file) => parseEntryId(file.id))
+    .filter((parsed) => parsed.locale === locale)
+    .map((parsed) => parsed.slug)
+    .sort();
+
+describe('seed: leadership', () => {
+  it.each(leadership.map((file) => [file.id, file] as const))('%s validates', (_id, file) => {
+    const result = leadershipSchema.safeParse(file.data);
+    expect(result.error?.issues ?? []).toEqual([]);
+  });
+
+  it('has 5 milestones per locale, with the same slugs', () => {
+    expect(slugsOf(leadership, 'es')).toHaveLength(5);
+    expect(slugsOf(leadership, 'en')).toEqual(slugsOf(leadership, 'es'));
+  });
+
+  it('has exactly one TODO(autor) placeholder per locale and four evidence-backed milestones', () => {
+    for (const locale of ['es', 'en']) {
+      const own = leadership.filter((file) => parseEntryId(file.id).locale === locale);
+      expect(own.filter((file) => isTodo(file.data.title))).toHaveLength(1);
+      expect(own.filter((file) => !isTodo(file.data.title))).toHaveLength(4);
+    }
+  });
+
+  it('keeps shared fields equal across locales with no unpaired entry', () => {
+    const report = findSharedMismatches(leadership, SHARED_FIELDS.leadership);
+    expect(report.mismatches).toEqual([]);
+    expect(report.unpaired).toEqual([]);
+  });
+
+  it('mentions neither mainframe nor COBOL', () => {
+    expect(JSON.stringify(leadership.map((file) => file.data))).not.toMatch(/mainframe|cobol/i);
+  });
+});
+
+describe('seed: certifications', () => {
+  it.each(certifications.map((file) => [file.id, file] as const))('%s validates', (_id, file) => {
+    const result = certificationSchema.safeParse(file.data);
+    expect(result.error?.issues ?? []).toEqual([]);
+  });
+
+  it('has the same slugs in es and en and no unpaired entry', () => {
+    expect(slugsOf(certifications, 'en')).toEqual(slugsOf(certifications, 'es'));
+    const report = findSharedMismatches(certifications, SHARED_FIELDS.certifications);
+    expect(report.mismatches).toEqual([]);
+    expect(report.unpaired).toEqual([]);
+  });
+
+  it('has 2 AWS certifications with Credly URLs, 2 education entries and 2 training entries', () => {
+    const es = certifications.filter((file) => parseEntryId(file.id).locale === 'es');
+    const ofKind = (kind: string) => es.filter((file) => file.data.kind === kind);
+    const aws = ofKind('certification');
+    expect(aws.map((file) => file.data.code).sort()).toEqual(['AIF-C01', 'CLF-C02']);
+    for (const file of aws) {
+      expect(file.data.issuer).toBe('AWS');
+      expect(String(file.data.credentialUrl)).toMatch(/^https:\/\/www\.credly\.com\/badges\//);
+    }
+    expect(ofKind('education')).toHaveLength(2);
+    expect(ofKind('training')).toHaveLength(2);
+  });
+
+  it('marks only the UNIR master as in progress', () => {
+    const inProgress = certifications
+      .filter((file) => parseEntryId(file.id).locale === 'es' && file.data.status === 'in-progress')
+      .map((file) => parseEntryId(file.id).slug);
+    expect(inProgress).toEqual(['unir-ai-finance-master']);
+  });
 });
