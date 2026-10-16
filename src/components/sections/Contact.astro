@@ -1,0 +1,47 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+import { displayUrl } from '../../lib/content/display-url';
+import CopyEmailButton from '../ui/CopyEmailButton.astro';
+
+interface Props {
+  locale: Locale;
+  email: string;
+  linkedin: string;
+  /** Only rendered when the author fills it in; it is empty in the seed. */
+  whatsapp?: string | undefined;
+}
+
+const { locale, email, linkedin, whatsapp } = Astro.props;
+---
+
+<section
+  id="contact"
+  aria-labelledby="contact-title"
+  class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[12rem_1fr] lg:gap-x-12 lg:py-16"
+>
+  <h2 id="contact-title" class="mb-8 lg:mb-0">
+    {t(locale, 'nav.contact')}
+  </h2>
+  <ul class="space-y-4">
+    <li class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <span class="text-muted">{t(locale, 'labels.email')}</span>
+      <a href={`mailto:${email}`} class="underline">
+        {email}
+      </a>
+      <CopyEmailButton locale={locale} email={email} />
+    </li>
+    <li>
+      <a href={linkedin} rel="noopener noreferrer" class="underline">
+        {displayUrl(linkedin)}
+      </a>
+    </li>
+    {whatsapp && (
+      <li>
+        <a href={whatsapp} rel="noopener noreferrer" class="underline">
+          {displayUrl(whatsapp)}
+        </a>
+      </li>
+    )}
+  </ul>
+</section>

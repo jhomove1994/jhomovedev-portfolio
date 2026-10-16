@@ -6,6 +6,7 @@ import Footer from '../../components/layout/Footer.astro';
 import Hero from '../../components/sections/Hero.astro';
 import About from '../../components/sections/About.astro';
 import TechLeadPath, { type Milestone } from '../../components/sections/TechLeadPath.astro';
+import Contact from '../../components/sections/Contact.astro';
 import Experience, { type Role } from '../../components/sections/Experience.astro';
 import Certifications, {
   type Credential,
@@ -20,6 +21,7 @@ import {
   getProfile,
   getStack,
 } from '../../lib/content/queries';
+import { cvButton } from '../../lib/content/cv';
 import { groupByKind } from '../../lib/content/group';
 import { parseBulletList } from '../../lib/content/markdown-list';
 import { formatPeriod } from '../../lib/content/period';
@@ -35,6 +37,12 @@ const locale = Astro.params.lang as Locale;
 const localizedProfile = await getProfile(locale);
 const profile = localizedProfile.entry.data;
 // The share image falls back to the default locale when this locale has none.
+// Only a locale's own media file counts: a fallback copy would hide that its CV is Spanish.
+const ownMedia = async (mediaLocale: Locale) => {
+  const media = await getMedia(mediaLocale);
+  return media && !media.isFallback ? media.entry.data : undefined;
+};
+const mediaByLocale = { es: await ownMedia('es'), en: await ownMedia('en') };
 const ogImage =
   (await getMedia(locale))?.entry.data.ogImage ??
   (await getMedia(DEFAULT_LOCALE))?.entry.data.ogImage;
@@ -90,6 +98,7 @@ const navItems: NavItem[] = [
   ...(credentialGroups.length > 0
     ? [{ id: 'certifications', labelKey: 'nav.certifications' } as const]
     : []),
+  { id: 'contact', labelKey: 'nav.contact' },
 ];
 ---
 
@@ -107,11 +116,19 @@ const navItems: NavItem[] = [
       headline={profile.headline}
       location={profile.location}
       remote={profile.remote}
+      email={profile.contact.email}
+      cv={cvButton(mediaByLocale, locale)}
     />
     <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />
     <TechLeadPath locale={locale} milestones={milestones} />
     <Experience locale={locale} roles={roles} />
     <Certifications locale={locale} groups={credentialGroups} />
+    <Contact
+      locale={locale}
+      email={profile.contact.email}
+      linkedin={profile.contact.linkedin}
+      whatsapp={asText(profile.contact.whatsapp)}
+    />
   </main>
   <Footer slot="footer" name={profile.name} />
 </BaseLayout>

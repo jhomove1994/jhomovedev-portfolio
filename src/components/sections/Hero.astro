@@ -1,6 +1,8 @@
 ---
 import type { Locale } from '../../i18n/locales';
 import { t } from '../../i18n/ui';
+import type { CvButtonModel } from '../../lib/content/cv';
+import CvButton from '../ui/CvButton.astro';
 
 interface Props {
   locale: Locale;
@@ -8,10 +10,13 @@ interface Props {
   headline: string;
   location: string;
   remote: boolean;
+  email: string;
+  /** `null` until a CV is uploaded; the button is then omitted. */
+  cv: CvButtonModel | null;
 }
 
 // Availability is deliberately not a prop: it is not rendered until the author confirms the value.
-const { locale, name, headline, location, remote } = Astro.props;
+const { locale, name, headline, location, remote, email, cv } = Astro.props;
 ---
 
 <section aria-labelledby="hero-title" class="pt-4 pb-14 lg:pt-12 lg:pb-20">
@@ -24,5 +29,11 @@ const { locale, name, headline, location, remote } = Astro.props;
   <p class="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-muted">
     <span>{location}</span>
     {remote && <span>{t(locale, 'labels.remote')}</span>}
+  </p>
+  <p class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+    <CvButton button={cv} />
+    <a href={`mailto:${email}`} class="inline-flex min-h-11 items-center underline">
+      {t(locale, 'buttons.sendEmail')}
+    </a>
   </p>
 </section>

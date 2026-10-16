@@ -1,0 +1,53 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  email: string;
+}
+
+const { locale, email } = Astro.props;
+---
+
+<span data-copy-email-root class="inline-flex items-center gap-3">
+  <!-- Hidden until the script runs: without JavaScript the mailto link next to it is enough. -->
+  <button
+    type="button"
+    hidden
+    data-copy-email={email}
+    data-copied-label={t(locale, 'buttons.copied')}
+    aria-label={t(locale, 'aria.copyEmail')}
+    class="min-h-11 rounded-sm border border-border px-4 hover:border-accent focus-visible:border-accent"
+  >
+    {t(locale, 'buttons.copy')}
+  </button>
+  <span data-copy-status aria-live="polite" class="text-sm text-muted"></span>
+</span>
+
+<script>
+  /** The Clipboard API needs a secure context (https or localhost), which production always is. */
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Denied or unavailable: stay silent; the mailto link beside the button still works.
+      return false;
+    }
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-copy-email-root]')) {
+    const button = root.querySelector<HTMLButtonElement>('[data-copy-email]');
+    const status = root.querySelector<HTMLElement>('[data-copy-status]');
+    if (!button || !status) continue;
+    button.hidden = false;
+    let timer: number | undefined;
+    button.addEventListener('click', async () => {
+      if (!(await copyText(button.dataset.copyEmail ?? ''))) return;
+      status.textContent = button.dataset.copiedLabel ?? '';
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => (status.textContent = ''), 3000);
+    });
+  }
+</script>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveCv } from '../../../src/lib/content/cv';
+import { cvButton, resolveCv } from '../../../src/lib/content/cv';
 
 const ES = '/uploads/cv-es.pdf';
 const EN = '/uploads/cv-en.pdf';
@@ -46,5 +46,36 @@ describe('resolveCv', () => {
   it('treats an empty string as not uploaded', () => {
     expect(resolveCv({ es: { cv: '' } }, 'es')).toBeNull();
     expect(resolveCv({ es: { cv: ES }, en: { cv: '' } }, 'en')?.isFallback).toBe(true);
+  });
+});
+
+describe('cvButton', () => {
+  it('labels the Spanish CV for a Spanish visitor with no suffix', () => {
+    expect(cvButton({ es: { cv: ES } }, 'es')).toEqual({
+      href: ES,
+      label: 'Descargar CV',
+      lang: 'es',
+    });
+  });
+
+  it('adds the language suffix when an English visitor gets the Spanish CV', () => {
+    expect(cvButton({ es: { cv: ES } }, 'en')).toEqual({
+      href: ES,
+      label: 'Download CV (Spanish)',
+      lang: 'es',
+    });
+  });
+
+  it('has no suffix for an English CV served to an English visitor', () => {
+    expect(cvButton({ es: { cv: ES }, en: { cv: EN } }, 'en')).toEqual({
+      href: EN,
+      label: 'Download CV',
+      lang: 'en',
+    });
+  });
+
+  it('is null when no CV is uploaded, so the page renders no broken link', () => {
+    expect(cvButton({ es: {}, en: {} }, 'en')).toBeNull();
+    expect(cvButton({}, 'es')).toBeNull();
   });
 });

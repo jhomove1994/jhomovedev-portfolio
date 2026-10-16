@@ -1,0 +1,22 @@
+---
+import type { CvButtonModel } from '../../lib/content/cv';
+
+interface Props {
+  /** `null` while no CV is uploaded: nothing is rendered, so there is never a broken link. */
+  button: CvButtonModel | null;
+}
+
+const { button } = Astro.props;
+---
+
+{button && (
+  <a
+    data-cv-button
+    href={button.href}
+    lang={button.lang}
+    download
+    class="inline-flex min-h-11 items-center rounded-sm border border-accent px-4 text-accent hover:bg-accent-soft focus-visible:bg-accent-soft"
+  >
+    {button.label}
+  </a>
+)}

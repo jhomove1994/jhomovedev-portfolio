@@ -15,6 +15,7 @@ export interface UiDict {
   };
   buttons: {
     downloadCv: string;
+    sendEmail: string;
     copy: string;
     copied: string;
   };
@@ -54,6 +55,7 @@ export const ui = {
     },
     buttons: {
       downloadCv: 'Descargar CV',
+      sendEmail: 'Escríbeme',
       copy: 'Copiar',
       copied: 'Copiado',
     },
@@ -103,6 +105,7 @@ export const ui = {
     },
     buttons: {
       downloadCv: 'Download CV',
+      sendEmail: 'Email me',
       copy: 'Copy',
       copied: 'Copied',
     },

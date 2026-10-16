@@ -1,4 +1,5 @@
 import { DEFAULT_LOCALE, type Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
 
 export interface ResolvedCv {
   href: string;
@@ -24,4 +25,24 @@ export function resolveCv(media: MediaByLocale, locale: Locale): ResolvedCv | nu
     return { href: fallback, fileLocale: DEFAULT_LOCALE, isFallback: true };
   }
   return null;
+}
+
+export interface CvButtonModel {
+  href: string;
+  label: string;
+  /** Language of the file, for the `lang` attribute of the link. */
+  lang: Locale;
+}
+
+/**
+ * Everything the CV button needs, or `null` when there is nothing to download so the page
+ * renders no control at all. The label carries the language suffix when the file is not in the
+ * visitor's language.
+ */
+export function cvButton(media: MediaByLocale, locale: Locale): CvButtonModel | null {
+  const cv = resolveCv(media, locale);
+  if (!cv) return null;
+  const base = t(locale, 'buttons.downloadCv');
+  const label = cv.isFallback ? `${base} ${t(locale, 'labels.spanishSuffix')}` : base;
+  return { href: cv.href, label, lang: cv.fileLocale };
 }
