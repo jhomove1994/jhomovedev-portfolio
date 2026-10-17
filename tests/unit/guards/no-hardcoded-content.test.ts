@@ -1,31 +1,26 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadCollection } from '../../helpers/load-content';
-import { findViolations, type ForbiddenTerm } from '../../helpers/scan-templates';
+import {
+  collectSourceFiles,
+  findViolations,
+  selectScanned,
+  type ForbiddenTerm,
+} from '../../helpers/scan-templates';
 
 const ROOT = process.cwd();
-const SCANNED_DIRS = ['src/components', 'src/layouts', 'src/pages'];
+const SCANNED_DIRS = ['src/components', 'src/layouts', 'src/pages', 'src/lib/terminal'];
 const SCANNED_FILES = ['src/i18n/ui.ts'];
 // Spelled in two pieces so the repository-wide phone scan never matches this guard itself.
 const TEL_SCHEME = 'te' + 'l:';
 
-function listFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((dirent) => {
-    const full = join(dir, dirent.name);
-    return dirent.isDirectory() ? listFiles(full) : [full];
-  });
-}
-
 function templateFiles(): { path: string; source: string }[] {
-  const files = [
-    ...SCANNED_DIRS.flatMap((dir) => listFiles(join(ROOT, dir))),
-    ...SCANNED_FILES.map((file) => join(ROOT, file)),
-  ];
-  return files.map((file) => ({
-    path: relative(ROOT, file),
-    source: readFileSync(file, 'utf8'),
+  const extra = SCANNED_FILES.map((file) => ({
+    path: file,
+    source: readFileSync(join(ROOT, file), 'utf8'),
   }));
+  return [...collectSourceFiles(ROOT, SCANNED_DIRS), ...extra];
 }
 
 /** Facts that must come from `src/content/`, derived from the seeded files at test time. */
@@ -93,5 +88,34 @@ describe('templates carry no portfolio content', () => {
       { label: 'form', value: '<form' },
     ];
     expect(findViolations(files, forbidden)).toEqual([]);
+  });
+});
+
+describe('scan targets', () => {
+  const seeded = 'Seeded Employer Inc';
+  const terms: ForbiddenTerm[] = [{ label: 'employer', value: seeded }];
+
+  it('reads .tsx islands and the terminal engine, not only templates', () => {
+    expect(SCANNED_DIRS).toContain('src/lib/terminal');
+    const files = collectSourceFiles(ROOT, SCANNED_DIRS);
+    expect(files.some((file) => file.path.startsWith('src/lib/terminal/'))).toBe(true);
+    expect(files.every((file) => /\.(astro|tsx?|mjs|css)$/.test(file.path))).toBe(true);
+  });
+
+  it('flags a seeded literal in a .tsx island and in an engine file (in-memory fixtures)', () => {
+    const fixtures = [
+      { path: 'src/components/terminal/Fixture.tsx', source: `<p>${seeded}</p>` },
+      { path: 'src/lib/terminal/fixture.ts', source: `export const x = '${seeded}';` },
+    ];
+    expect(selectScanned(fixtures)).toEqual(fixtures);
+    expect(findViolations(selectScanned(fixtures), terms).map((v) => v.path)).toEqual([
+      'src/components/terminal/Fixture.tsx',
+      'src/lib/terminal/fixture.ts',
+    ]);
+  });
+
+  it('ignores files that are not source code', () => {
+    const fixtures = [{ path: 'src/components/x.png', source: seeded }];
+    expect(selectScanned(fixtures)).toEqual([]);
   });
 });
