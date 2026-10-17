@@ -217,11 +217,29 @@ describe('seed: leadership', () => {
     expect(slugsOf(leadership, 'en')).toEqual(slugsOf(leadership, 'es'));
   });
 
-  it('has exactly one TODO(autor) placeholder per locale and four evidence-backed milestones', () => {
+  it('has no TODO(autor) placeholder: all five milestones per locale are evidence-backed', () => {
     for (const locale of ['es', 'en']) {
       const own = leadership.filter((file) => parseEntryId(file.id).locale === locale);
-      expect(own.filter((file) => isTodo(file.data.title))).toHaveLength(1);
-      expect(own.filter((file) => !isTodo(file.data.title))).toHaveLength(4);
+      expect(own.filter((file) => isTodo(file.data.title) || isTodo(file.data.evidence))).toEqual(
+        [],
+      );
+      expect(own).toHaveLength(5);
+    }
+  });
+
+  it('sorts the Gisoft mentoring milestone right after the Gisoft project leadership one', () => {
+    for (const locale of ['es', 'en']) {
+      const slugs = leadership
+        .filter((file) => parseEntryId(file.id).locale === locale)
+        .sort((a, b) => Number(a.data.order) - Number(b.data.order))
+        .map((file) => parseEntryId(file.id).slug);
+      expect(slugs).toEqual([
+        'gisoft-project-leadership',
+        'gisoft-mentoring-and-system-design',
+        'wepayu4-fraud-detector-testing',
+        'av-villas-cross-team-delivery',
+        'unir-ai-finance-master',
+      ]);
     }
   });
 

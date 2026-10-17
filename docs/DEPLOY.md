@@ -55,7 +55,7 @@ Every save in `/admin` is a commit to `main`, which triggers a build. A save tha
 
 | Area       | What is missing                                                                                                                                                                                                            |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Leadership | One milestone: `todo-mentoring-and-architecture` (ES and EN). Replace with a real, evidenced milestone or delete it.                                                                                                       |
+| Leadership | Resolved (2026-10-17): `gisoft-mentoring-and-system-design` replaced the placeholder. Nothing missing.                                                                                                                     |
 | Projects   | Case-study narratives for 4 drafts, all `published: false`: `fraud-pilot`, `legacy-to-nest`, `this-portfolio`, `virtual-card` (ES and EN). Publish each only after writing it, anonymized, with no code or internal names. |
 | Config     | `backend.repo` in `public/admin/config.yml` (confirm owner/repo, see M1).                                                                                                                                                  |
 | Site URL   | `SITE_URL` in `src/lib/site.ts` (G3).                                                                                                                                                                                      |

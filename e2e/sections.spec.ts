@@ -76,9 +76,6 @@ for (const { locale, about, path } of LOCALES) {
 
     test('hides TODO(autor) placeholders in the production build', async ({ page }) => {
       await page.goto(`/${locale}/`);
-      expect(seededLeadership(locale, { includeTodo: true }).length).toBeGreaterThan(
-        seededLeadership(locale).length,
-      );
       expect(await page.locator('body').innerText()).not.toContain('TODO(autor)');
     });
 
