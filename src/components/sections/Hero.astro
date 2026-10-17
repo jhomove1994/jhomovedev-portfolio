@@ -61,7 +61,9 @@ const sceneStyle = [
         {remote && <span>{t(locale, 'labels.remote')}</span>}
         {availability && (
           <span class="inline-flex items-center gap-2" data-availability>
-            <span aria-hidden="true" class="size-1.5 rounded-full bg-accent" />
+            <span aria-hidden="true" class="text-[0.6em] text-accent">
+              ●
+            </span>
             {availability}
           </span>
         )}
