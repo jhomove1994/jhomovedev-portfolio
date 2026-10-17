@@ -145,6 +145,60 @@
   padding: 1.5rem 1.25rem 2rem;
 }
 
+/* 3D canvas: portalled into .hero-still, so it covers exactly the still's box (no layout shift)
+   and cross-fades in once the first frames are drawn. */
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-canvas::after {
+  /* Keeps the hero text readable over the scene: the left of the frame fades into the page bg. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, var(--color-bg) 0%, transparent 45%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-canvas[data-ready]::after {
+  opacity: 0.85;
+}
+
+.hero-canvas > div:first-child {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-canvas[data-ready] > div:first-child {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-canvas > div:first-child,
+  .hero-canvas::after {
+    transition: none;
+  }
+}
+
+.hero-loader {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-term-muted);
+}
+
+.hero-loader-prompt {
+  color: var(--color-term-amber);
+}
+
 .hero-island {
   position: relative;
 }
