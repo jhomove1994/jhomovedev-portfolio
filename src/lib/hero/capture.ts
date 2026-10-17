@@ -42,3 +42,13 @@ export function frameCoversGlass(frame: StillAnchor, glass: StillAnchor): boolea
     glass.y + glass.height <= frame.y + frame.height + EPSILON
   );
 }
+
+/** Reads CAPTURE_PORT: `fallback` when unset or empty, otherwise an integer 1..65535 or an error. */
+export function parseCapturePort(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw === '') return fallback;
+  const port = /^\d+$/.test(raw) ? Number(raw) : Number.NaN;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`CAPTURE_PORT must be an integer between 1 and 65535, got "${raw}"`);
+  }
+  return port;
+}

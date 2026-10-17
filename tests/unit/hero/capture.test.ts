@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { projectPoint } from '../../../src/lib/hero/camera';
-import { frameCoversGlass, stillAnchorFromQuad } from '../../../src/lib/hero/capture';
+import {
+  frameCoversGlass,
+  parseCapturePort,
+  stillAnchorFromQuad,
+} from '../../../src/lib/hero/capture';
 import { DESKTOP_ASPECT, restCameraFor } from '../../../src/lib/hero/layout';
 import { screenCorners } from '../../../src/lib/hero/monitor';
 import { projectRect, type Quad } from '../../../src/lib/hero/zoom';
@@ -79,5 +83,24 @@ describe('frameCoversGlass', () => {
     expect(frameCoversGlass({ x: 0.372, y: 0.25, width: 0.48, height: 0.54 }, glass)).toBe(false);
     expect(frameCoversGlass({ x: 0.372, y: 0.13, width: 0.2, height: 0.54 }, glass)).toBe(false);
     expect(frameCoversGlass({ x: 0.372, y: 0.13, width: 0.48, height: 0.2 }, glass)).toBe(false);
+  });
+});
+
+describe('parseCapturePort', () => {
+  it('defaults when the variable is unset or empty', () => {
+    expect(parseCapturePort(undefined, 4398)).toBe(4398);
+    expect(parseCapturePort('', 4398)).toBe(4398);
+  });
+
+  it('accepts integers from 1 to 65535', () => {
+    expect(parseCapturePort('1', 4398)).toBe(1);
+    expect(parseCapturePort('4400', 4398)).toBe(4400);
+    expect(parseCapturePort('65535', 4398)).toBe(65535);
+  });
+
+  it('rejects anything else with a message naming CAPTURE_PORT', () => {
+    for (const bad of ['0', '65536', '-1', '4.5', 'abc', '80x', ' ']) {
+      expect(() => parseCapturePort(bad, 4398)).toThrow(/CAPTURE_PORT/);
+    }
   });
 });
