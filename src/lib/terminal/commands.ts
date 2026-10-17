@@ -189,12 +189,13 @@ function contactLines({ data, labels }: CommandContext): Line[] {
   const web = (url: string | undefined): string | null =>
     url !== undefined && /^https?:/i.test(url) ? safeHref(url) : null;
   const { email, linkedin, whatsapp } = data.contact;
+  const whatsappLabel = labels.contactWhatsapp;
   return [
     ...field(labels.contactEmail, email, safeHref(`mailto:${email}`)),
     ...field(labels.contactProfile, stripProtocol(linkedin), web(linkedin)),
-    ...(whatsapp === undefined
+    ...(whatsapp === undefined || whatsappLabel === undefined
       ? []
-      : field(labels.contactWhatsapp, stripProtocol(whatsapp), web(whatsapp))),
+      : field(whatsappLabel, stripProtocol(whatsapp), web(whatsapp))),
   ];
 }
 

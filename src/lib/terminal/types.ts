@@ -146,7 +146,8 @@ export interface TerminalLabels {
   certInProgress: string;
   contactEmail: string;
   contactProfile: string;
-  contactWhatsapp: string;
+  /** Omitted from the props shipped to the browser while the contact has no WhatsApp link. */
+  contactWhatsapp?: string;
   cvLabel: string;
   cvSpanishSuffix: string;
   cvMissing: string;
