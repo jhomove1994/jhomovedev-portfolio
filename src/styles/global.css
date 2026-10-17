@@ -342,3 +342,34 @@
     margin-top: 0;
   }
 }
+
+/*
+ * Lenis (3D hero on desktop only: it adds `.lenis` to <html> and removes it when the scene goes).
+ * Native smooth scrolling is switched off while it runs, since the two would fight; the rules
+ * follow lenis/dist/lenis.css, kept here so the static page never loads the library's stylesheet.
+ */
+html.lenis,
+html.lenis body {
+  height: auto;
+  scroll-behavior: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+/* The terminal log scrolls on its own, wheel and touch included. */
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Scroll zoom: ScrollZoom wraps the hero in .hero-pin, as tall as the hero plus the zoom distance,
+   and the hero sticks under the header while the camera dollies into the monitor. */
+.hero-pin > .hero {
+  position: sticky;
+  top: var(--header-h);
+}

@@ -15,6 +15,7 @@ import {
   screenWorldCenter,
   type Placement,
 } from '../../lib/hero/layout';
+import type { ZoomStore } from '../../lib/hero/zoom';
 import { CameraRig } from './Parallax';
 
 /** Same-origin, Meshopt only: no Draco decoder, so nothing is fetched from a CDN. */
@@ -122,15 +123,17 @@ export interface DeskSceneProps {
   shadows: boolean;
   /** Pointer parallax: fine pointers with motion allowed only. */
   parallax: boolean;
+  /** Scroll zoom progress the camera rig follows. */
+  zoom: ZoomStore;
 }
 
-export function DeskScene({ onReady, shadows, parallax }: DeskSceneProps) {
+export function DeskScene({ onReady, shadows, parallax, zoom }: DeskSceneProps) {
   const lamp = lampBulbWorld();
   return (
     <>
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, 2.5, 5]} />
-      <CameraRig enabled={parallax} />
+      <CameraRig enabled={parallax} zoom={zoom} />
       <hemisphereLight args={[SKY, GROUND, 1.2]} />
       <directionalLight position={[-0.6, 1.4, 1.2]} color={MOON} intensity={1} />
       <pointLight position={lamp} color={LAMP_COLOR} intensity={2} decay={2} distance={3.6} />

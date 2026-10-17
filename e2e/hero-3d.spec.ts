@@ -87,7 +87,14 @@ test.describe('@3d scene', () => {
       page.evaluate(() => {
         const stage = document.querySelector('#hero .hero-stage')!.getBoundingClientRect();
         const next = document.querySelector('main section[id]:not(#hero)')!.getBoundingClientRect();
-        return { stageHeight: stage.height, nextTop: next.top + window.scrollY };
+        // The zoom holds the hero for extra scroll distance below it by design; the stage itself
+        // and everything above the fold must not move.
+        const wrap = document.querySelector('.hero-pin');
+        const hold = document.getElementById('hero')!;
+        const pinned = wrap
+          ? wrap.getBoundingClientRect().height - hold.getBoundingClientRect().height
+          : 0;
+        return { stageHeight: stage.height, nextTop: next.top + window.scrollY - pinned };
       });
     await open3d(page, '?3d=0');
     await expect(hero(page)).toHaveAttribute('data-hero-state', 'idle');
@@ -481,5 +488,182 @@ test.describe('@3d terminal', () => {
       if (delta > 30) differing += 1;
     }
     expect(differing / (left.width * left.height)).toBeGreaterThan(0.01);
+  });
+});
+
+/** The terminal box on the glass, in CSS pixels of the viewport. */
+const terminalBox = (page: Page) =>
+  page.evaluate(() => {
+    const r = document.querySelector('.monitor-terminal')!.getBoundingClientRect();
+    return { left: r.left, top: r.top, width: r.width, height: r.height };
+  });
+const htmlHas = (page: Page, name: string) =>
+  page.evaluate((cls) => document.documentElement.classList.contains(cls), name);
+const scrollY = (page: Page) => page.evaluate(() => Math.round(window.scrollY));
+const scrollInstantly = (page: Page, y: number) =>
+  page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+const sectionTop = (page: Page, id: string) =>
+  page.evaluate((target) => document.getElementById(target)!.getBoundingClientRect().top, id);
+/** Waits for the box to stop moving: Lenis and the camera both ease. */
+async function settled(page: Page) {
+  let previous = await terminalBox(page);
+  await expect
+    .poll(async () => {
+      await page.waitForTimeout(250);
+      const next = await terminalBox(page);
+      const still =
+        Math.abs(next.width - previous.width) < 0.5 && Math.abs(next.top - previous.top) < 0.5;
+      previous = next;
+      return still;
+    })
+    .toBe(true);
+  return previous;
+}
+/** Scroll distance of the zoom at 1440x900: 1.2 viewport heights. */
+const ZOOM_END = 1080;
+
+test.describe('@3d zoom', () => {
+  test('the static hero keeps native smooth scrolling and no Lenis', async ({ page }) => {
+    await open3d(page, '?3d=0');
+    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
+    expect(await htmlHas(page, 'lenis')).toBe(false);
+    expect(
+      await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior),
+    ).toBe('smooth');
+    await expect(page.locator('.hero-pin')).toHaveCount(0);
+  });
+
+  test('reduced motion stays static: no Lenis and no pin', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open3d(page);
+    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
+    expect(await htmlHas(page, 'lenis')).toBe(false);
+    await expect(page.locator('.hero-pin')).toHaveCount(0);
+  });
+
+  test('the 3D hero runs Lenis, pins the hero and turns native smooth scrolling off', async ({
+    page,
+  }) => {
+    await openMonitor(page);
+    await expect.poll(() => htmlHas(page, 'lenis')).toBe(true);
+    expect(
+      await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior),
+    ).toBe('auto');
+    await expect(page.locator('.hero-pin')).toHaveCount(1);
+  });
+
+  test('at the end of the range the terminal covers 60% of the viewport width and still works', async ({
+    page,
+  }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    await scrollInstantly(page, ZOOM_END);
+    const end = await settled(page);
+    expect(end.width).toBeGreaterThanOrEqual(0.6 * 1440);
+    await term.run('whoami');
+    await expect(term.log).toContainText(profile.whoami.slice(0, 20));
+    await term.input.click();
+    await expect(term.input).toBeFocused();
+  });
+
+  test('scrolling back restores the rest framing within 2 px', async ({ page }) => {
+    await openMonitor(page);
+    await introDone(page);
+    const rest = await settled(page);
+    await scrollInstantly(page, ZOOM_END);
+    await settled(page);
+    await scrollInstantly(page, 0);
+    const back = await settled(page);
+    for (const key of ['left', 'top', 'width', 'height'] as const) {
+      expect(Math.abs(back[key] - rest[key])).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test('past the range the next section follows the hero with no gap', async ({ page }) => {
+    await openMonitor(page);
+    await scrollInstantly(page, ZOOM_END + 400);
+    await page.waitForTimeout(500);
+    const { heroBottom, nextTop } = await page.evaluate(() => ({
+      heroBottom: document.getElementById('hero')!.getBoundingClientRect().bottom,
+      nextTop: document.querySelector('main section[id]:not(#hero)')!.getBoundingClientRect().top,
+    }));
+    expect(heroBottom).toBeGreaterThan(0);
+    expect(nextTop - heroBottom).toBeGreaterThanOrEqual(0);
+    expect(nextTop - heroBottom).toBeLessThanOrEqual(100);
+  });
+
+  test('a header anchor brings its section into view, clear of the sticky header', async ({
+    page,
+  }) => {
+    await openMonitor(page);
+    await page.locator('header nav a[href="#experience"]').click();
+    const header = await page.evaluate(
+      () => document.querySelector('header')!.getBoundingClientRect().bottom,
+    );
+    // The section keeps its own scroll-margin-top below the header: in view, never under it.
+    await expect
+      .poll(async () => await sectionTop(page, 'experience'))
+      .toBeGreaterThanOrEqual(header);
+    await expect.poll(async () => await sectionTop(page, 'experience')).toBeLessThan(header + 100);
+    await page.waitForTimeout(800);
+    expect(await sectionTop(page, 'experience')).toBeGreaterThanOrEqual(header);
+    await expect(page).toHaveURL(/#experience$/);
+    await expect(page.locator('#experience')).toBeFocused();
+  });
+
+  test('the skip link jumps to main and moves the focus there', async ({ page }) => {
+    await openMonitor(page);
+    await scrollInstantly(page, 300);
+    await page.locator('a[href="#main"]').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main')).toBeFocused();
+  });
+
+  test('the experience command scrolls to the section through the same scroller', async ({
+    page,
+  }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    await term.run('experience');
+    await expect
+      .poll(async () => Math.round(await sectionTop(page, 'experience')))
+      .toBeLessThan(200);
+    expect(await scrollY(page)).toBeGreaterThan(ZOOM_END);
+  });
+
+  test('a hash on load shows its section', async ({ page }) => {
+    await page.goto('/en/?3d=1#experience');
+    await expect.poll(async () => Math.abs(await sectionTop(page, 'experience'))).toBeLessThan(120);
+    expect(await scrollY(page)).toBeGreaterThan(0);
+  });
+
+  test('the wheel over the terminal log scrolls the log, not the page', async ({ page }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    for (let i = 0; i < 3; i += 1) await term.run('help');
+    const log = await hero(page).locator('.term-scroll').first().elementHandle();
+    const box = (await log!.boundingBox())!;
+    const before = await log!.evaluate((el) => el.scrollTop);
+    expect(before).toBeGreaterThan(0);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, -120);
+    await expect.poll(() => log!.evaluate((el) => el.scrollTop)).toBeLessThan(before);
+    expect(await scrollY(page)).toBe(0);
+  });
+
+  test('switching 3D off removes Lenis, the pin and the zoom', async ({ page }) => {
+    await openMonitor(page);
+    await expect.poll(() => htmlHas(page, 'lenis')).toBe(true);
+    await scrollInstantly(page, 400);
+    await hero(page).locator('button[data-hero-toggle]').click();
+    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
+    await expect.poll(() => htmlHas(page, 'lenis')).toBe(false);
+    await expect(page.locator('.hero-pin')).toHaveCount(0);
+    expect(
+      await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior),
+    ).toBe('smooth');
+    expect(
+      await page.evaluate(() => document.querySelector<HTMLElement>('.hero-copy')!.style.opacity),
+    ).toBe('');
   });
 });

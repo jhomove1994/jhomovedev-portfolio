@@ -29,6 +29,7 @@ import {
   type Tier,
   type TierEvent,
 } from '../../lib/hero/tiers';
+import { createZoomStore, type ZoomStore } from '../../lib/hero/zoom';
 import { BootLoader } from '../hero/BootLoader';
 import { DeskScene } from './DeskScene';
 import {
@@ -38,6 +39,7 @@ import {
   type MonitorTerminalContent,
 } from './MonitorTerminal';
 import { useParallaxEnabled } from './Parallax';
+import { startScrollZoom } from './scroll/ScrollZoom';
 
 declare global {
   interface Window {
@@ -99,6 +101,30 @@ function LowFpsWatch({ atFloor, onLowFps }: { atFloor: boolean; onLowFps: () => 
   return null;
 }
 
+/**
+ * Starts the scroll zoom once the scene is up and tears it down with it (mode switch, failure).
+ * The load is async, so a teardown that arrives first cancels the start.
+ */
+function useScrollZoom(hero: HTMLElement, zoom: ZoomStore, enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    startScrollZoom({ hero, zoom }).then(
+      (teardown) => {
+        if (cancelled) teardown();
+        else stop = teardown;
+      },
+      // Without the zoom the scene is still a good hero: native scrolling stays.
+      () => undefined,
+    );
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [hero, zoom, enabled]);
+}
+
 function useActive(observed: HTMLElement): boolean {
   const [inViewport, setInViewport] = useState(true);
   const [documentHidden, setDocumentHidden] = useState(false);
@@ -135,6 +161,8 @@ export function DeskExperience({
   const [ready, setReady] = useState(false);
   const active = useActive(observed);
   const parallax = useParallaxEnabled();
+  const [zoom] = useState(createZoomStore);
+  useScrollZoom(observed, zoom, ready && terminal !== null);
   // The layer is both a ref (drei's `portal`) and state (the overlay portals into it).
   const screenLayerRef = useRef<HTMLDivElement | null>(null);
   const [screenLayer, setScreenLayer] = useState<HTMLDivElement | null>(null);
@@ -202,6 +230,7 @@ export function DeskExperience({
             <DeskScene
               shadows={settings.contactShadows}
               parallax={parallax}
+              zoom={zoom}
               onReady={() => {
                 setReady(true);
                 onReady();
