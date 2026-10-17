@@ -40,7 +40,7 @@ Mode: strict (orchestrator configuration). Runner: `pnpm test` (vitest); e2e `pn
 - [x] T3 Experience scroll-drawn timeline (2) — route: delegated — commit `a2a35a1`
 - [x] T4 TechLeadPath traced path + pulsing current stage (3) — route: delegated — commit `e52a121`
 - [x] T5 Sticky heading + section progress bar on desktop (6) — route: delegated — commit `76bee6a`
-- [ ] T6 Verification: build, check, lint, test, Playwright captures at 1440/390
+- [x] T6 Verification: format:check, lint, check (0 errors), test (1052 passed, parent re-ran), build, Playwright 374 passed / 70 skipped; captures at 1440/390 reviewed. Review: risk medium, user declined this candidate (assess --base-ref 8d73cdb)
 
 ## Acceptance
 
@@ -50,4 +50,4 @@ Mode: strict (orchestrator configuration). Runner: `pnpm test` (vitest); e2e `pn
 
 ## Progress
 
-T1–T5 done. Next: T6 verification.
+T1–T6 done. Open: command strings live in `src/i18n/ui.ts` (not `src/content/`), invented by the writer; awaiting user decision. "Current stage" = last non-placeholder milestone.
