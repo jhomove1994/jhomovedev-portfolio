@@ -6,6 +6,7 @@
  */
 import type { Ndc } from './camera';
 import type { CameraPose } from './layout';
+import type { ZoomFrame } from './frame';
 import type { Vec3 } from './screen-anchor';
 
 export interface Point {
@@ -204,8 +205,10 @@ export function zoomEndPose(request: ZoomEndRequest): CameraPose {
 export interface ZoomStore {
   /** 0 at rest, 1 when the camera has arrived at the glass. */
   progress: number;
+  /** The growing canvas frame; zeros while the wide frame is not in place (see `cameraView`). */
+  frame: ZoomFrame;
 }
 
 export function createZoomStore(): ZoomStore {
-  return { progress: 0 };
+  return { progress: 0, frame: { fullWidth: 0, visibleWidth: 0 } };
 }

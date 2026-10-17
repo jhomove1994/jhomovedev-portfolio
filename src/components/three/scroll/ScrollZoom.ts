@@ -1,6 +1,7 @@
 // Scroll-driven zoom into the monitor: Lenis smooths the scroll, GSAP ScrollTrigger holds the hero
 // (sticky) for a stretch of it and reports progress into the zoom store the camera rig reads each frame.
 // gsap and lenis are loaded here by dynamic import, so they exist only on the 3D path.
+import { copyOpacity, frameGeometry, type FrameBounds } from '../../../lib/hero/frame';
 import { registerScroller } from '../../../lib/hero/scroll-bus';
 import { zoomProgress, type ZoomStore } from '../../../lib/hero/zoom';
 
@@ -9,12 +10,23 @@ export const ZOOM_MEDIA =
   '(min-width:768px) and (pointer:fine) and (prefers-reduced-motion:no-preference)';
 /** Scroll distance of the zoom, in viewport heights. */
 const ZOOM_SCROLL_VH = 1.2;
-/** The hero copy is gone by this much of the zoom (it fades over the first part). */
-const COPY_FADE_END = 0.4;
 
 export interface ScrollZoomOptions {
   hero: HTMLElement;
   zoom: ZoomStore;
+}
+
+/** Where the stage content and the scene column sit, in viewport px. */
+function measureFrame(hero: HTMLElement): FrameBounds | null {
+  const stage = hero.querySelector<HTMLElement>('.hero-stage');
+  const scene = hero.querySelector<HTMLElement>('.hero-scene');
+  if (!stage || !scene) return null;
+  const sceneBox = scene.getBoundingClientRect();
+  return {
+    stageLeft: stage.getBoundingClientRect().left + parseFloat(getComputedStyle(stage).paddingLeft),
+    sceneLeft: sceneBox.left,
+    sceneWidth: sceneBox.width,
+  };
 }
 
 function stickyHeaderHeight(): number {
@@ -97,17 +109,41 @@ export async function startScrollZoom({ hero, zoom }: ScrollZoomOptions): Promis
     };
     sizeWrap();
 
+    // The frame grows by CSS variables on the hero (see `.hero-zoom` in global.css): the canvas keeps
+    // its full width and only the clipped part changes, so nothing resizes while scrolling.
+    let bounds: FrameBounds | null = null;
+    const applyFrame = (progress: number) => {
+      if (!bounds) return;
+      const geometry = frameGeometry(bounds, progress);
+      hero.style.setProperty('--frame-grow', String(geometry.extend ? geometry.grow : 0));
+      zoom.frame = { fullWidth: geometry.fullWidth, visibleWidth: geometry.visibleWidth };
+    };
+    const measure = () => {
+      bounds = measureFrame(hero);
+      if (!bounds) return;
+      const { extend, fullWidth } = frameGeometry(bounds, 0);
+      hero.style.setProperty('--zoom-extend', `${extend}px`);
+      hero.style.setProperty('--zoom-full-w', `${fullWidth}px`);
+      hero.classList.add('hero-zoom');
+    };
+    measure();
+
     const trigger = ScrollTrigger.create({
       trigger: wrap,
       start: () => `top ${stickyHeaderHeight()}px`,
       end: () => `+=${zoomLength()}`,
       invalidateOnRefresh: true,
       onRefreshInit: sizeWrap,
+      onRefresh: (self) => {
+        measure();
+        applyFrame(zoomProgress(self.scroll(), { start: self.start, end: self.end }));
+      },
       onUpdate: (self) => {
         const progress = zoomProgress(self.scroll(), { start: self.start, end: self.end });
         zoom.progress = progress;
+        applyFrame(progress);
         if (!copy) return;
-        const visible = 1 - zoomProgress(progress, { start: 0, end: COPY_FADE_END });
+        const visible = copyOpacity(progress);
         copy.style.opacity = String(visible);
         copy.style.visibility = visible === 0 ? 'hidden' : '';
       },
@@ -125,6 +161,11 @@ export async function startScrollZoom({ hero, zoom }: ScrollZoomOptions): Promis
       gsap.ticker.lagSmoothing(500, 33);
       lenis.destroy();
       zoom.progress = 0;
+      zoom.frame = { fullWidth: 0, visibleWidth: 0 };
+      hero.classList.remove('hero-zoom');
+      for (const name of ['--frame-grow', '--zoom-extend', '--zoom-full-w']) {
+        hero.style.removeProperty(name);
+      }
       copy?.style.removeProperty('opacity');
       copy?.style.removeProperty('visibility');
     };

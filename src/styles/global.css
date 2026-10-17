@@ -421,6 +421,21 @@ html.lenis body {
   top: var(--header-h);
 }
 
+/* Scroll zoom, frame growth (ScrollZoom adds .hero-zoom and drives --frame-grow 0..1; --zoom-extend is
+   how far the frame may grow to the left, --zoom-full-w the canvas width). The scene column keeps its
+   size, only the still's box grows leftward over the copy column; the canvas stays as wide as the
+   final frame, anchored right and clipped by the box, so it never resizes while scrolling. */
+.hero-zoom .hero-still {
+  width: auto;
+  margin-left: calc(var(--zoom-extend, 0px) * var(--frame-grow, 0) * -1);
+}
+
+.hero-zoom .hero-canvas,
+.hero-zoom .hero-screen-layer {
+  inset: 0 0 0 auto;
+  width: var(--zoom-full-w, 100%);
+}
+
 /* Capture runs (`pnpm capture:hero`, set by the script after the scene is ready): only the desk is
    photographed, on a full 16:10 stage as wide as the viewport (the still is cropped later, by
    CSS), so the copy, the 2D frame and the terminal on the glass are taken out of the picture. */

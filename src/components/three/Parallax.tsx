@@ -5,6 +5,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import type { PerspectiveCamera } from 'three';
+import { cameraView } from '../../lib/hero/frame';
 import { DESKTOP_ASPECT, restCameraFor, stillCameraFor } from '../../lib/hero/layout';
 import { monitorZoomPose } from '../../lib/hero/monitor';
 import {
@@ -81,12 +82,15 @@ export function CameraRig({
       x: dampValue(offset.current.x, goal.x, FOLLOW_RATE, delta),
       y: dampValue(offset.current.y, goal.y, FOLLOW_RATE, delta),
     };
-    const aspect = size.width / size.height;
+    // While the frame grows the canvas is wider than what shows: frame the visible part only.
+    const view = cameraView(zoom.frame, size.width, size.height);
+    const aspect = view.aspect;
+    const visibleWidth = aspect * size.height;
     const viewport = window.innerWidth;
     if (rest.current.aspect !== aspect || rest.current.viewport !== viewport) {
       const pose = still ? stillCameraFor(aspect) : restCameraFor(aspect);
       // The 60% is of the viewport, the canvas may be narrower (the stage is capped in width).
-      const fraction = Math.min(0.95, (MIN_TERMINAL_WIDTH * viewport) / size.width);
+      const fraction = Math.min(0.95, (MIN_TERMINAL_WIDTH * viewport) / visibleWidth);
       rest.current = { aspect, viewport, pose, end: monitorZoomPose(aspect, pose.fov, fraction) };
     }
     const { pose, end } = rest.current;
@@ -94,6 +98,14 @@ export function CameraRig({
       zoom.progress > 0 ? interpolatePose(pose, end, easeInOutCubic(zoom.progress)) : pose;
     const [x, y, z] = framed.position;
     const cam = camera as PerspectiveCamera;
+    if (view.wide) {
+      cam.aspect = aspect;
+      cam.setViewOffset(visibleWidth, size.height, view.offsetX, 0, size.width, size.height);
+    } else if (cam.view?.enabled) {
+      cam.clearViewOffset();
+      cam.aspect = aspect;
+      cam.updateProjectionMatrix();
+    }
     cam.position.set(x + offset.current.x, y + offset.current.y, z);
     cam.lookAt(...framed.target);
   });
