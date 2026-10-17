@@ -241,7 +241,8 @@ test.describe('desk scene hero from 768px, 3D', () => {
       });
       await expect(page.locator('.monitor-terminal[data-placed]')).toHaveCount(1);
       await expect(page.locator('.hero-frame')).toHaveCount(0);
-      const canvas = await box(page, '#hero canvas');
+      // The canvas element is as wide as the final zoom frame; what shows at rest is the still's box.
+      const canvas = await box(page, '#hero .hero-still');
       for (const selector of COPY) {
         expect(intersects(await box(page, selector), canvas), selector).toBe(false);
       }
