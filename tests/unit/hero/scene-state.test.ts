@@ -113,3 +113,35 @@ describe('probeEnabled', () => {
     expect(probeEnabled('?capture=0')).toBe(false);
   });
 });
+
+describe('low-fps revert (S12)', () => {
+  it('moves any live state to slow, and slow is final until a reset', () => {
+    for (const from of ['idle', 'loading', 'ready'] as SceneState[]) {
+      expect(reduceScene(from, 'slow')).toBe('slow');
+    }
+    expect(reduceScene('slow', 'request')).toBe('slow');
+    expect(reduceScene('slow', 'loaded')).toBe('slow');
+    expect(reduceScene('slow', 'failed')).toBe('slow');
+    expect(reduceScene('slow', 'reset')).toBe('idle');
+  });
+
+  it('keeps an earlier failure as the reason', () => {
+    expect(reduceScene('error', 'slow')).toBe('error');
+  });
+
+  it('reverts to static with low-fps, not persisted as an error', () => {
+    expect(resolveHeroView(decision('3d', 'default'), 'slow')).toEqual({
+      mode: 'static',
+      reason: 'low-fps',
+      state: 'idle',
+    });
+  });
+
+  it('leaves a static decision on its own reason', () => {
+    expect(resolveHeroView(decision('static', 'mobile'), 'slow')).toEqual({
+      mode: 'static',
+      reason: 'mobile',
+      state: 'idle',
+    });
+  });
+});

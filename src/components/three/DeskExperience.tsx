@@ -4,11 +4,19 @@
 // dynamic import in HeroIsland.
 import { PerformanceMonitor, useProgress } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { REST_CAMERA } from '../../lib/hero/layout';
 import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
-import { TIER_SETTINGS, reduceTier, type Tier, type TierEvent } from '../../lib/hero/tiers';
+import {
+  FLOOR_TIER,
+  INITIAL_LOW_FPS,
+  TIER_SETTINGS,
+  reduceTier,
+  stepLowFps,
+  type Tier,
+  type TierEvent,
+} from '../../lib/hero/tiers';
 import { BootLoader } from '../hero/BootLoader';
 import { DeskScene } from './DeskScene';
 import { useParallaxEnabled } from './Parallax';
@@ -29,6 +37,8 @@ export interface DeskExperienceProps {
   onReady: () => void;
   /** Import, GLB or WebGL failure: the island reverts to static. */
   onError: () => void;
+  /** The floor tier is still too slow (S12): the island reverts to static, once. */
+  onLowFps: () => void;
 }
 
 /** Catches errors thrown while loading the GLB or rendering the scene. */
@@ -52,6 +62,17 @@ class SceneBoundary extends Component<
 function RenderProbe() {
   useFrame(() => {
     window.__heroRenderCount = (window.__heroRenderCount ?? 0) + 1;
+  });
+  return null;
+}
+
+/** Feeds frame times to the pure sustained-low-fps rule; fires `onLowFps` at most once. */
+function LowFpsWatch({ atFloor, onLowFps }: { atFloor: boolean; onLowFps: () => void }) {
+  const state = useRef(INITIAL_LOW_FPS);
+  useFrame((_, delta) => {
+    const step = stepLowFps(state.current, { atFloor, deltaMs: delta * 1000 });
+    state.current = step.state;
+    if (step.fire) onLowFps();
   });
   return null;
 }
@@ -81,6 +102,7 @@ export function DeskExperience({
   bootLabel,
   onReady,
   onError,
+  onLowFps,
 }: DeskExperienceProps) {
   const [tier, setTier] = useState<Tier>('high');
   const [ready, setReady] = useState(false);
@@ -119,6 +141,7 @@ export function DeskExperience({
             onIncline={() => step('incline')}
             onFallback={() => step('fallback')}
           />
+          <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
           {probe ? <RenderProbe /> : null}
           <DeskScene
             shadows={settings.contactShadows}

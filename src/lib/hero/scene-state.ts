@@ -4,13 +4,15 @@
  */
 import type { HeroMode, ModeDecision, ModeReason } from '../capabilities';
 
-export type SceneState = 'idle' | 'loading' | 'ready' | 'error';
-export type SceneEvent = 'request' | 'loaded' | 'failed' | 'reset';
+export type SceneState = 'idle' | 'loading' | 'ready' | 'error' | 'slow';
+export type SceneEvent = 'request' | 'loaded' | 'failed' | 'slow' | 'reset';
 
 export function reduceScene(state: SceneState, event: SceneEvent): SceneState {
   if (event === 'reset') return 'idle';
-  if (state === 'error') return 'error';
+  // `error` and `slow` are final until a reset; an earlier failure stays the reason.
+  if (state === 'error' || state === 'slow') return state;
   if (event === 'failed') return 'error';
+  if (event === 'slow') return 'slow';
   if (event === 'request') return state === 'idle' ? 'loading' : state;
   return 'ready'; // 'loaded'
 }
@@ -23,13 +25,16 @@ export interface HeroView {
 
 /**
  * `#hero[data-hero-mode]` is `3d` only once the canvas is live: while it loads the static hero
- * (still + 2D terminal) stays, and a failure reverts to it with reason `load-failed`.
+ * (still + 2D terminal) stays, a failure reverts to it with reason `load-failed` and sustained
+ * low fps with `low-fps`.
  */
 export function resolveHeroView(decision: ModeDecision, scene: SceneState): HeroView {
   if (decision.mode !== '3d') {
     return { mode: 'static', reason: decision.reason, state: 'idle' };
   }
   if (scene === 'error') return { mode: 'static', reason: 'load-failed', state: 'error' };
+  // Sustained low fps: nothing failed, so the hero reports idle. Not persisted, a reload retries.
+  if (scene === 'slow') return { mode: 'static', reason: 'low-fps', state: 'idle' };
   if (scene === 'ready') return { mode: '3d', reason: decision.reason, state: 'ready' };
   return { mode: 'static', reason: decision.reason, state: scene };
 }

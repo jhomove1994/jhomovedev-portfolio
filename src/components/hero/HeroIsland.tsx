@@ -83,7 +83,13 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
 
   const hero = typeof document === 'undefined' ? null : document.getElementById('hero');
   const container = hero?.querySelector<HTMLElement>('.hero-still') ?? null;
-  const showScene = wants3d && Experience !== null && sceneState !== 'error' && hero && container;
+  const showScene =
+    wants3d &&
+    Experience !== null &&
+    sceneState !== 'error' &&
+    sceneState !== 'slow' &&
+    hero &&
+    container;
 
   return (
     <div className="hero-island">
@@ -97,6 +103,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
           bootLabel={chrome.bootLoading}
           onReady={() => dispatch('loaded')}
           onError={() => dispatch('failed')}
+          onLowFps={() => dispatch('slow')}
         />
       ) : null}
       {mode?.decision.toggle.available ? (

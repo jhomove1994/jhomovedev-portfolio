@@ -7,6 +7,7 @@ test.use({ launchOptions: { args: ['--enable-unsafe-swiftshader'] } });
 test.describe.configure({ retries: 1 });
 
 const READY_TIMEOUT = 25_000;
+const LOW_FPS_TIMEOUT = 60_000;
 const BACKGROUND = [0x0a, 0x0e, 0x0d] as const;
 const MIN_DIFFERING_PIXELS = 0.03;
 
@@ -172,6 +173,32 @@ test.describe('@3d scene', () => {
     await expect(page.locator('h1')).toBeVisible();
     await untilReady(page);
     await expect(loader).toHaveCount(0);
+  });
+
+  test('falls back to static with low-fps when the floor tier stays too slow, once and unsaved', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    // Deterministic slowness: every animation frame is held back ~90 ms (about 10 fps).
+    await page.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (callback) =>
+        window.setTimeout(() => raf(callback), 90) as unknown as number;
+    });
+    await open3d(page);
+    await expect(hero(page)).toHaveAttribute('data-hero-reason', 'low-fps', {
+      timeout: LOW_FPS_TIMEOUT,
+    });
+    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
+    await expect(hero(page)).toHaveAttribute('data-hero-state', 'idle');
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.locator('h1')).toBeVisible();
+    await expect(hero(page).getByRole('textbox')).toBeVisible();
+    // The revert is not a user choice: nothing is stored for the next visit.
+    const stored = await page.evaluate(() => window.localStorage.getItem('jhomove:hero-mode'));
+    expect(stored).toBe('1'); // only the explicit ?3d=1 query was persisted, never an "off"
+    expect(errors).toEqual([]);
   });
 
   test('the toggle switches 3D off, removing the canvas', async ({ page }) => {
