@@ -37,6 +37,36 @@
   }
 }
 
+.term-pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.term-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem 0.75rem 0.25rem 0.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.term-row {
+  display: flex;
+  gap: 1ch;
+  align-items: flex-start;
+}
+
+.term-gutter {
+  flex: none;
+  width: 3ch;
+  color: var(--color-term-muted);
+  text-align: right;
+  user-select: none;
+}
+
 .term-line {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -61,6 +91,15 @@
   color: var(--color-term-rust);
 }
 
+.term-marker {
+  color: var(--color-term-muted);
+  white-space: pre;
+}
+
+.term-chevron {
+  color: var(--color-accent);
+}
+
 .term-link {
   text-decoration: underline;
   text-underline-offset: 0.2em;
@@ -82,6 +121,114 @@
 
 .term-run:hover {
   text-decoration-style: solid;
+}
+
+/* Prompt: the real input floats over a mirror that draws the text and the block cursor. */
+.term-prompt {
+  align-items: center;
+}
+
+@media (max-width: 1023px) {
+  .term-prompt {
+    /* 16px keeps iOS from zooming into the focused field. */
+    font-size: 16px;
+  }
+}
+
+.term-field {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+.term-mirror {
+  display: block;
+  min-height: 1.5em;
+  overflow: hidden;
+  color: var(--color-term-amber);
+  white-space: pre;
+}
+
+.term-input {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  caret-color: transparent;
+  color: transparent;
+  font: inherit;
+}
+
+.term-input:focus,
+.term-input:focus-visible {
+  outline: none;
+}
+
+.term-live[data-typing='true'] .term-gutter,
+.term-live[data-typing='true'] .term-marker,
+.term-live[data-typing='true'] .term-mirror {
+  visibility: hidden;
+}
+
+.term-cursor {
+  display: inline-block;
+  width: 1ch;
+  height: 1.2em;
+  margin-bottom: -0.2em;
+  background: var(--color-accent);
+  opacity: 0.45;
+}
+
+.term-cursor[data-focused='true'] {
+  opacity: 1;
+  animation: term-blink 1s steps(1) infinite;
+}
+
+@keyframes term-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .term-cursor[data-focused='true'] {
+    animation: none;
+  }
+}
+
+/* nvim statusline */
+.term-status {
+  display: flex;
+  gap: 1.5ch;
+  align-items: center;
+  min-width: 0;
+  background: var(--color-term-bar);
+  border-top: 1px solid var(--color-term-line);
+  color: var(--color-term-muted);
+  white-space: nowrap;
+}
+
+.term-mode {
+  padding: 0 1ch;
+  background: var(--color-term-amber);
+  color: var(--color-term-bg);
+  font-weight: 700;
+}
+
+.term-file {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-term-fg);
+  text-overflow: ellipsis;
+}
+
+.term-meta {
+  padding-right: 1ch;
 }
 
 /* tmux status bar: the window list doubles as the clickable suggestions. */
