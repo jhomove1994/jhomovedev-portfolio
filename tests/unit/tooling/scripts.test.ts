@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> };
@@ -21,6 +21,12 @@ describe('package scripts', () => {
   it('keeps build as a plain astro build without type checking', () => {
     expect(pkg.scripts.build).toBe('astro build');
     expect(pkg.scripts.build).not.toContain('astro check');
+  });
+
+  it('wires models:build to the gltf pipeline script that exists on disk', () => {
+    const command = pkg.scripts['models:build'];
+    expect(command).toBe('node scripts/models/build-hero.ts');
+    expect(existsSync('scripts/models/build-hero.ts')).toBe(true);
   });
 
   it('ignores local secret files in .gitignore', () => {
