@@ -10,6 +10,7 @@ import {
   type MouseEvent,
   type SyntheticEvent,
 } from 'react';
+import { scrollToSection } from '../../lib/hero/scroll-bus';
 import { decideKey } from '../../lib/terminal/keys';
 import { runEffects, type EffectPorts } from '../../lib/terminal/effects';
 import type { TerminalSession } from '../../lib/terminal/session';
@@ -42,10 +43,6 @@ function useMounted(): boolean {
   );
 }
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 const browserPorts: EffectPorts = {
   navigate: (href) => window.location.assign(href),
   download(href) {
@@ -56,11 +53,7 @@ const browserPorts: EffectPorts = {
     link.click();
     link.remove();
   },
-  scroll(section) {
-    document
-      .getElementById(section)
-      ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-  },
+  scroll: (section) => scrollToSection(section),
 };
 
 export function Terminal({ session, data, labels }: TerminalProps) {
