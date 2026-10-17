@@ -144,3 +144,40 @@ export function restCameraFor(aspect: number): CameraPose {
     elevation: REST_ELEVATION,
   });
 }
+
+/**
+ * Props that must be fully in the still: the monitor with its keyboard and mouse. The lamp is not
+ * part of the fit (it would shrink the glass); it stands at the left edge, partly behind the copy.
+ */
+const STILL_SUBJECT_IDS: readonly HeroModelId[] = [
+  'computerScreen',
+  'computerKeyboard',
+  'computerMouse',
+];
+const STILL_FOV = 28;
+const STILL_MARGIN = 0.03;
+/** Nearly level, so the glass (tilted back about 8 degrees) is seen almost head-on. */
+const STILL_ELEVATION = 0.12;
+/** The still's copy strip is a little narrower than the live one: the monitor is the point. */
+const STILL_RESERVE_LEFT = 0.3;
+
+/**
+ * Camera for the committed static still: much closer than the rest pose, aimed at the monitor so
+ * its glass is large enough to hold a readable 2D terminal, with the keyboard, mouse and the
+ * edge of the lamp still around it. The capture script renders the still from this pose.
+ */
+export function stillCameraFor(aspect: number): CameraPose {
+  const boxes = PROP_PLACEMENTS.filter((p) => STILL_SUBJECT_IDS.includes(p.id)).map(worldBounds);
+  const subject: Bounds = {
+    min: [0, 1, 2].map((i) => Math.min(...boxes.map((b) => b.min[i]!))) as unknown as Vec3,
+    max: [0, 1, 2].map((i) => Math.max(...boxes.map((b) => b.max[i]!))) as unknown as Vec3,
+  };
+  return frameSubject({
+    subject,
+    aspect,
+    fov: STILL_FOV,
+    reserveLeft: aspect >= COPY_OVERLAY_MIN_ASPECT ? STILL_RESERVE_LEFT : 0,
+    margin: STILL_MARGIN,
+    elevation: STILL_ELEVATION,
+  });
+}

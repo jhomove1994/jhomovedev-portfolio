@@ -304,6 +304,7 @@ export function DeskExperience({
               shadows={settings.contactShadows}
               parallax={parallax}
               zoom={zoom}
+              still={capture}
               onReady={() => {
                 setReady(true);
                 onReady();

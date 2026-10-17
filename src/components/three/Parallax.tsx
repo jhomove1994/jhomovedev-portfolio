@@ -5,7 +5,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import type { PerspectiveCamera } from 'three';
-import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
+import { DESKTOP_ASPECT, restCameraFor, stillCameraFor } from '../../lib/hero/layout';
 import { monitorZoomPose } from '../../lib/hero/monitor';
 import {
   dampValue,
@@ -32,7 +32,19 @@ export function useParallaxEnabled(allowed: boolean): boolean {
   return allowed && hovering;
 }
 
-export function CameraRig({ enabled, zoom }: { enabled: boolean; zoom: ZoomStore }) {
+/**
+ * `still` parks the camera at the capture pose (`stillCameraFor`) with no parallax and no zoom:
+ * only `?capture=1` runs use it, to photograph the committed static hero still.
+ */
+export function CameraRig({
+  enabled,
+  zoom,
+  still = false,
+}: {
+  enabled: boolean;
+  zoom: ZoomStore;
+  still?: boolean;
+}) {
   const pointer = useRef<PointerPosition>({ x: 0, y: 0 });
   const offset = useRef<PointerPosition>({ x: 0, y: 0 });
   // The framing solve is cheap but not free: redo it only when the canvas aspect changes.
@@ -70,7 +82,7 @@ export function CameraRig({ enabled, zoom }: { enabled: boolean; zoom: ZoomStore
     const aspect = size.width / size.height;
     const viewport = window.innerWidth;
     if (rest.current.aspect !== aspect || rest.current.viewport !== viewport) {
-      const pose = restCameraFor(aspect);
+      const pose = still ? stillCameraFor(aspect) : restCameraFor(aspect);
       // The 60% is of the viewport, the canvas may be narrower (the stage is capped in width).
       const fraction = Math.min(0.95, (MIN_TERMINAL_WIDTH * viewport) / size.width);
       rest.current = { aspect, viewport, pose, end: monitorZoomPose(aspect, pose.fov, fraction) };

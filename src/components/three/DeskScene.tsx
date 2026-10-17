@@ -125,15 +125,17 @@ export interface DeskSceneProps {
   parallax: boolean;
   /** Scroll zoom progress the camera rig follows. */
   zoom: ZoomStore;
+  /** Capture runs: the camera sits at the still pose instead of the rest pose. */
+  still?: boolean;
 }
 
-export function DeskScene({ onReady, shadows, parallax, zoom }: DeskSceneProps) {
+export function DeskScene({ onReady, shadows, parallax, zoom, still = false }: DeskSceneProps) {
   const lamp = lampBulbWorld();
   return (
     <>
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, 2.5, 5]} />
-      <CameraRig enabled={parallax} zoom={zoom} />
+      <CameraRig enabled={parallax && !still} zoom={zoom} still={still} />
       <hemisphereLight args={[SKY, GROUND, 1.2]} />
       <directionalLight position={[-0.6, 1.4, 1.2]} color={MOON} intensity={1} />
       <pointLight position={lamp} color={LAMP_COLOR} intensity={2} decay={2} distance={3.6} />
