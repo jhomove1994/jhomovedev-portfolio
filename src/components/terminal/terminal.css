@@ -1,0 +1,149 @@
+/*
+ * Terminal window: warm walnut and amber (tokens `--color-term-*`). The mint accent appears
+ * only on the block cursor, the active tmux window and the prompt chevron.
+ * Sizing follows the container so the same markup fits the 2D frame and the 3D monitor.
+ */
+.term {
+  container: term / inline-size;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 18rem;
+  overflow: hidden;
+  background: var(--color-term-bg);
+  color: var(--color-term-fg);
+  border: 1px solid var(--color-term-line);
+  border-radius: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.term:focus-visible,
+.term:focus-within {
+  border-color: var(--color-term-amber);
+}
+
+.term:focus {
+  outline: none;
+}
+
+@container term (min-width: 560px) {
+  .term {
+    font-size: 13px;
+  }
+}
+
+.term-line {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+[data-tone='fg'] {
+  color: var(--color-term-fg);
+}
+
+[data-tone='muted'] {
+  color: var(--color-term-muted);
+}
+
+/* The accent tone is never printed as text: it is confined to cursor, window and chevron. */
+[data-tone='amber'],
+[data-tone='accent'] {
+  color: var(--color-term-amber);
+}
+
+[data-tone='error'] {
+  color: var(--color-term-rust);
+}
+
+.term-link {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.term-link:hover {
+  color: var(--color-term-amber);
+}
+
+.term-run {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.term-run:hover {
+  text-decoration-style: solid;
+}
+
+/* tmux status bar: the window list doubles as the clickable suggestions. */
+.term-tmux {
+  display: flex;
+  flex: none;
+  gap: 1.5ch;
+  align-items: baseline;
+  min-width: 0;
+  padding: 0.25rem 0.75rem;
+  background: var(--color-term-bar);
+  border-top: 1px solid var(--color-term-line);
+}
+
+.term-tmux-session {
+  flex: none;
+  color: var(--color-term-amber);
+}
+
+.term-tmux-windows {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 1.25ch;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.term-tmux-windows li {
+  max-width: none;
+}
+
+.term-window {
+  min-height: 1.75rem;
+  padding: 0 0.25ch;
+  background: none;
+  border: 0;
+  color: var(--color-term-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+span.term-window {
+  cursor: default;
+}
+
+.term-window:hover {
+  color: var(--color-term-fg);
+}
+
+.term-window[aria-current] {
+  color: var(--color-accent);
+}
+
+@media (pointer: coarse) {
+  .term-window {
+    min-height: 2.75rem;
+  }
+
+  .term-run {
+    padding-block: 0.4em;
+  }
+}
