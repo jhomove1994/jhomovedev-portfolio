@@ -24,14 +24,12 @@ const MIN_TERMINAL_WIDTH = 0.6 * 1.03;
 /** Follow rate in 1/s: roughly a third of a second to settle. */
 const FOLLOW_RATE = 5;
 
-/** Parallax needs a hovering pointer and a visitor who accepts motion. */
-export function useParallaxEnabled(): boolean {
-  const [enabled] = useState(
-    () =>
-      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+/** Parallax needs a hovering pointer and a motion policy that allows it (not reduced motion). */
+export function useParallaxEnabled(allowed: boolean): boolean {
+  const [hovering] = useState(
+    () => window.matchMedia('(hover: hover) and (pointer: fine)').matches,
   );
-  return enabled;
+  return allowed && hovering;
 }
 
 export function CameraRig({ enabled, zoom }: { enabled: boolean; zoom: ZoomStore }) {

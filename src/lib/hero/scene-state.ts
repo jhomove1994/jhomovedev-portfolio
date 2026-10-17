@@ -2,7 +2,7 @@
  * Lifecycle of the lazily loaded 3D scene and what the hero reports for it. Pure: the island
  * feeds events (chunk requested / loaded / failed) and renders the resolved view onto `#hero`.
  */
-import type { HeroMode, ModeDecision, ModeReason } from '../capabilities';
+import type { HeroMode, HeroMotion, ModeDecision, ModeReason } from '../capabilities';
 
 export type SceneState = 'idle' | 'loading' | 'ready' | 'error' | 'slow';
 export type SceneEvent = 'request' | 'loaded' | 'failed' | 'slow' | 'reset';
@@ -20,6 +20,8 @@ export function reduceScene(state: SceneState, event: SceneEvent): SceneState {
 export interface HeroView {
   mode: HeroMode;
   reason: ModeReason;
+  /** `reduced` under prefers-reduced-motion: the scene is shown, motionless. */
+  motion: HeroMotion;
   state: SceneState;
 }
 
@@ -29,24 +31,51 @@ export interface HeroView {
  * low fps with `low-fps`.
  */
 export function resolveHeroView(decision: ModeDecision, scene: SceneState): HeroView {
+  const { motion } = decision;
   if (decision.mode !== '3d') {
-    return { mode: 'static', reason: decision.reason, state: 'idle' };
+    return { mode: 'static', reason: decision.reason, motion, state: 'idle' };
   }
-  if (scene === 'error') return { mode: 'static', reason: 'load-failed', state: 'error' };
+  if (scene === 'error') return { mode: 'static', reason: 'load-failed', motion, state: 'error' };
   // Sustained low fps: nothing failed, so the hero reports idle. Not persisted, a reload retries.
-  if (scene === 'slow') return { mode: 'static', reason: 'low-fps', state: 'idle' };
-  if (scene === 'ready') return { mode: '3d', reason: decision.reason, state: 'ready' };
-  return { mode: 'static', reason: decision.reason, state: scene };
+  if (scene === 'slow') return { mode: 'static', reason: 'low-fps', motion, state: 'idle' };
+  if (scene === 'ready') return { mode: '3d', reason: decision.reason, motion, state: 'ready' };
+  return { mode: 'static', reason: decision.reason, motion, state: scene };
+}
+
+export interface MotionPolicy {
+  /** Camera drifts toward the pointer. */
+  parallax: boolean;
+  /** Lenis smooth scroll, the ScrollTrigger pin and the zoom into the monitor. */
+  scrollZoom: boolean;
+  /** The intro `whoami` is typed instead of printed at once. */
+  typeIntro: boolean;
+  /** The canvas renders every frame (otherwise on demand, camera parked at the rest pose). */
+  continuousFrames: boolean;
+}
+
+/** What each motion level allows in the 3D hero (decision: reduced motion shows a still scene). */
+export function motionPolicy(motion: HeroMotion): MotionPolicy {
+  const full = motion === 'full';
+  return { parallax: full, scrollZoom: full, typeIntro: full, continuousFrames: full };
 }
 
 export interface FrameloopInputs {
   inViewport: boolean;
   documentHidden: boolean;
+  motion: HeroMotion;
 }
 
-/** R3F `frameloop`: render only while the hero is on screen and the tab is visible. */
-export function frameloopFor({ inViewport, documentHidden }: FrameloopInputs): 'always' | 'never' {
-  return inViewport && !documentHidden ? 'always' : 'never';
+/**
+ * R3F `frameloop`: render only while the hero is on screen and the tab is visible; under reduced
+ * motion frames are drawn on demand (resize, load) because nothing animates.
+ */
+export function frameloopFor({
+  inViewport,
+  documentHidden,
+  motion,
+}: FrameloopInputs): 'always' | 'demand' | 'never' {
+  if (!inViewport || documentHidden) return 'never';
+  return motionPolicy(motion).continuousFrames ? 'always' : 'demand';
 }
 
 /**

@@ -75,6 +75,7 @@ describe('createModeController: initial decision', () => {
     expect(state.decision).toEqual({
       mode: '3d',
       reason: 'default',
+      motion: 'full',
       toggle: { available: true, target: 'static' },
     });
   });
@@ -84,6 +85,7 @@ describe('createModeController: initial decision', () => {
     expect(state.decision).toEqual({
       mode: 'static',
       reason: 'software-renderer',
+      motion: 'full',
       toggle: { available: true, target: '3d' },
     });
   });
@@ -127,10 +129,15 @@ describe('createModeController: overrides', () => {
     expect(h.storage.data).toEqual({});
   });
 
-  it('lets reduced motion beat an explicit on override', () => {
+  it('keeps an explicit on override under reduced motion, with reduced motion reported', () => {
     const { state } = snapshotOf(harness({ search: '?3d=1', media: [REDUCED] }));
-    expect(state.decision).toMatchObject({ mode: 'static', reason: 'reduced-motion' });
-    expect(state.decision.toggle.available).toBe(false);
+    expect(state.decision).toMatchObject({ mode: '3d', reason: 'override-on', motion: 'reduced' });
+    expect(state.decision.toggle.available).toBe(true);
+  });
+
+  it('keeps ?3d=0 working under reduced motion', () => {
+    const { state } = snapshotOf(harness({ search: '?3d=0', media: [REDUCED] }));
+    expect(state.decision).toMatchObject({ mode: 'static', reason: 'override-off' });
   });
 
   it('survives storage that throws', () => {
@@ -176,23 +183,24 @@ describe('createModeController: toggle and live updates', () => {
     expect(controller.getSnapshot()).not.toBe(before);
   });
 
-  it('re-decides when reduced motion turns on, and back when it turns off', () => {
+  it('re-decides the motion when reduced motion turns on, and back when it turns off', () => {
     const h = harness();
     const controller = createModeController(h.deps);
-    const modes: string[] = [];
-    controller.subscribe(() => modes.push(controller.getSnapshot().decision.reason));
+    const motions: string[] = [];
+    controller.subscribe(() => motions.push(controller.getSnapshot().decision.motion));
 
     h.media.add(REDUCED);
     h.fireReducedMotion();
     expect(controller.getSnapshot().decision).toMatchObject({
-      mode: 'static',
-      reason: 'reduced-motion',
+      mode: '3d',
+      reason: 'default',
+      motion: 'reduced',
     });
 
     h.media.delete(REDUCED);
     h.fireReducedMotion();
-    expect(controller.getSnapshot().decision.mode).toBe('3d');
-    expect(modes).toEqual(['reduced-motion', 'default']);
+    expect(controller.getSnapshot().decision).toMatchObject({ mode: '3d', motion: 'full' });
+    expect(motions).toEqual(['reduced', 'full']);
   });
 
   it('does not notify when a media change leaves the decision unchanged', () => {

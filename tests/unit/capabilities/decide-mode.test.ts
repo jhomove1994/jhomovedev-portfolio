@@ -16,7 +16,7 @@ describe('decideMode: spec render-capabilities scenarios', () => {
   it.each<[string, Partial<ModeInput>, string, string]>([
     ['capable desktop', {}, '3d', 'default'],
     ['no WebGL2', { webgl2: false }, 'static', 'no-webgl2'],
-    ['reduced motion', { reducedMotion: true }, 'static', 'reduced-motion'],
+    ['reduced motion still shows the 3D scene', { reducedMotion: true }, '3d', 'default'],
     ['mobile default', { isMobile: true }, 'static', 'mobile'],
     ['desktop low-end by cores 2', { cores: 2 }, 'static', 'low-end'],
     ['desktop low-end by memory 2', { memory: 2 }, 'static', 'low-end'],
@@ -53,10 +53,22 @@ describe('decideMode: spec render-capabilities scenarios', () => {
       'no-webgl2',
     ],
     [
-      'override on cannot bypass reduced motion',
+      'reduced motion keeps an explicit override on',
       { reducedMotion: true, override: 'on' },
+      '3d',
+      'override-on',
+    ],
+    [
+      'reduced motion on mobile keeps the mobile default',
+      { reducedMotion: true, isMobile: true },
       'static',
-      'reduced-motion',
+      'mobile',
+    ],
+    [
+      'reduced motion on software rendering keeps the P1 default',
+      { reducedMotion: true, softwareRenderer: true },
+      'static',
+      'software-renderer',
     ],
   ])('%s', (_name, patch, mode, reason) => {
     const d = decide(patch);
@@ -69,8 +81,11 @@ describe('decideMode: precedence', () => {
     expect(decide({ webgl2: false, reducedMotion: true }).reason).toBe('no-webgl2');
   });
 
-  it('reduced-motion beats override off', () => {
-    expect(decide({ reducedMotion: true, override: 'off' }).reason).toBe('reduced-motion');
+  it('override off wins under reduced motion', () => {
+    expect(decide({ reducedMotion: true, override: 'off' })).toMatchObject({
+      mode: 'static',
+      reason: 'override-off',
+    });
   });
 
   it('override off beats mobile', () => {
@@ -104,9 +119,28 @@ describe('decideMode: toggle', () => {
     expect(decide({ webgl2: false }).toggle.available).toBe(false);
   });
 
-  it('is unavailable under reduced motion, even with override on', () => {
-    expect(decide({ reducedMotion: true }).toggle.available).toBe(false);
-    expect(decide({ reducedMotion: true, override: 'on' }).toggle.available).toBe(false);
+  it('stays available under reduced motion so the visitor can turn 3D off', () => {
+    expect(decide({ reducedMotion: true }).toggle).toEqual({ available: true, target: 'static' });
+    expect(decide({ reducedMotion: true, override: 'off' }).toggle).toEqual({
+      available: true,
+      target: '3d',
+    });
+  });
+});
+
+describe('decideMode: motion', () => {
+  it.each<[string, Partial<ModeInput>, string]>([
+    ['default is full motion', {}, 'full'],
+    ['reduced preference is reduced motion', { reducedMotion: true }, 'reduced'],
+    ['reduced stays reduced with override on', { reducedMotion: true, override: 'on' }, 'reduced'],
+    [
+      'reduced is reported even for the static hero',
+      { reducedMotion: true, webgl2: false },
+      'reduced',
+    ],
+    ['no preference with override off is full', { override: 'off' }, 'full'],
+  ])('%s', (_name, patch, motion) => {
+    expect(decide(patch).motion).toBe(motion);
   });
 });
 

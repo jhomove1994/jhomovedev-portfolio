@@ -3,6 +3,7 @@ import type { ModeDecision } from '../../../src/lib/capabilities';
 import {
   captureEnabled,
   frameloopFor,
+  motionPolicy,
   probeEnabled,
   reduceScene,
   resolveHeroView,
@@ -12,9 +13,11 @@ import {
 const decision = (
   mode: 'static' | '3d',
   reason: ModeDecision['reason'] = 'default',
+  motion: ModeDecision['motion'] = 'full',
 ): ModeDecision => ({
   mode,
   reason,
+  motion,
   toggle: { available: true, target: mode === '3d' ? 'static' : '3d' },
 });
 
@@ -54,6 +57,7 @@ describe('resolveHeroView', () => {
     expect(resolveHeroView(decision('static', 'mobile'), 'idle')).toEqual({
       mode: 'static',
       reason: 'mobile',
+      motion: 'full',
       state: 'idle',
     });
   });
@@ -62,6 +66,7 @@ describe('resolveHeroView', () => {
     expect(resolveHeroView(decision('3d'), 'loading')).toEqual({
       mode: 'static',
       reason: 'default',
+      motion: 'full',
       state: 'loading',
     });
   });
@@ -70,6 +75,7 @@ describe('resolveHeroView', () => {
     expect(resolveHeroView(decision('3d', 'override-on'), 'ready')).toEqual({
       mode: '3d',
       reason: 'override-on',
+      motion: 'full',
       state: 'ready',
     });
   });
@@ -78,6 +84,7 @@ describe('resolveHeroView', () => {
     expect(resolveHeroView(decision('3d', 'override-on'), 'error')).toEqual({
       mode: 'static',
       reason: 'load-failed',
+      motion: 'full',
       state: 'error',
     });
   });
@@ -86,17 +93,55 @@ describe('resolveHeroView', () => {
     expect(resolveHeroView(decision('static', 'override-off'), 'ready')).toEqual({
       mode: 'static',
       reason: 'override-off',
+      motion: 'full',
       state: 'idle',
+    });
+  });
+
+  it('reports reduced motion on a 3d view, keeping the decision reason', () => {
+    expect(resolveHeroView(decision('3d', 'default', 'reduced'), 'ready')).toEqual({
+      mode: '3d',
+      reason: 'default',
+      motion: 'reduced',
+      state: 'ready',
     });
   });
 });
 
 describe('frameloopFor', () => {
-  it('renders only while the hero is in view and the tab is visible', () => {
-    expect(frameloopFor({ inViewport: true, documentHidden: false })).toBe('always');
-    expect(frameloopFor({ inViewport: false, documentHidden: false })).toBe('never');
-    expect(frameloopFor({ inViewport: true, documentHidden: true })).toBe('never');
-    expect(frameloopFor({ inViewport: false, documentHidden: true })).toBe('never');
+  it('renders every frame only while the hero is in view and the tab is visible', () => {
+    const full = { motion: 'full' } as const;
+    expect(frameloopFor({ ...full, inViewport: true, documentHidden: false })).toBe('always');
+    expect(frameloopFor({ ...full, inViewport: false, documentHidden: false })).toBe('never');
+    expect(frameloopFor({ ...full, inViewport: true, documentHidden: true })).toBe('never');
+    expect(frameloopFor({ ...full, inViewport: false, documentHidden: true })).toBe('never');
+  });
+
+  it('renders on demand under reduced motion (a still scene), never off screen', () => {
+    const reduced = { motion: 'reduced' } as const;
+    expect(frameloopFor({ ...reduced, inViewport: true, documentHidden: false })).toBe('demand');
+    expect(frameloopFor({ ...reduced, inViewport: false, documentHidden: false })).toBe('never');
+    expect(frameloopFor({ ...reduced, inViewport: true, documentHidden: true })).toBe('never');
+  });
+});
+
+describe('motionPolicy', () => {
+  it('allows every motion feature at full motion', () => {
+    expect(motionPolicy('full')).toEqual({
+      parallax: true,
+      scrollZoom: true,
+      typeIntro: true,
+      continuousFrames: true,
+    });
+  });
+
+  it('switches every motion feature off under reduced motion', () => {
+    expect(motionPolicy('reduced')).toEqual({
+      parallax: false,
+      scrollZoom: false,
+      typeIntro: false,
+      continuousFrames: false,
+    });
   });
 });
 
@@ -147,6 +192,7 @@ describe('low-fps revert (S12)', () => {
     expect(resolveHeroView(decision('3d', 'default'), 'slow')).toEqual({
       mode: 'static',
       reason: 'low-fps',
+      motion: 'full',
       state: 'idle',
     });
   });
@@ -155,6 +201,7 @@ describe('low-fps revert (S12)', () => {
     expect(resolveHeroView(decision('static', 'mobile'), 'slow')).toEqual({
       mode: 'static',
       reason: 'mobile',
+      motion: 'full',
       state: 'idle',
     });
   });
