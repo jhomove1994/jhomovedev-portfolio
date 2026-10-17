@@ -68,12 +68,16 @@ for (const locale of ['es', 'en'] as const) {
       await expect(hero.locator(`a[href="mailto:${contact.email}"]`)).toBeVisible();
     });
 
-    test('hides the CV button while no CV is uploaded', async ({ page }) => {
+    test('offers the CV of this locale as a download', async ({ page, request }) => {
       await page.goto(`/${locale}/`);
-      await expect(page.locator('[data-cv-button]')).toHaveCount(0);
-      await expect(page.getByRole('link', { name: new RegExp(copy.cv) })).toHaveCount(0);
-      await expect(page.locator('a[download]')).toHaveCount(0);
-      await expect(page.locator('a[href$=".pdf"]')).toHaveCount(0);
+      const button = page.locator('[data-cv-button]').first();
+      await expect(button).toHaveText(new RegExp(copy.cv));
+      await expect(button).toHaveAttribute('download', '');
+      const href = await button.getAttribute('href');
+      expect(href).toBe(`/uploads/cv-jhonatan-moreno-${locale}.pdf`);
+      const response = await request.get(href!);
+      expect(response.ok()).toBe(true);
+      expect(response.headers()['content-type']).toContain('pdf');
     });
 
     test('renders no form, phone link or WhatsApp', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'astro/zod';
 import { describe, expect, it } from 'vitest';
@@ -184,11 +184,14 @@ describe('seed: media', () => {
   });
 
   it.each(media.map((file) => [file.id, file] as const))(
-    '%s validates and carries no upload yet',
+    '%s validates and every upload it points to exists',
     (_id, file) => {
       const result = mediaSchema.safeParse(file.data);
       expect(result.error?.issues ?? []).toEqual([]);
-      expect(file.data).toEqual({});
+      for (const path of Object.values(result.data ?? {})) {
+        if (typeof path !== 'string') continue;
+        expect(existsSync(join('public', path)), `${path} is missing from public/`).toBe(true);
+      }
     },
   );
 });
