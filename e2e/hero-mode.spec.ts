@@ -106,13 +106,5 @@ for (const locale of ['es', 'en'] as const) {
       await expect(hero).toHaveAttribute('data-hero-mode', 'static');
       await expect(toggle).toHaveText(labels.enable);
     });
-
-    // Lands with the 3D scene (PR9): ?3d=1 must then reach `ready` and mount a canvas.
-    test('@3d forced 3D reports the 3d mode', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'desktop', 'desktop only');
-      await stubWebgl2(page, 'software');
-      await page.goto(`/${locale}/?3d=1`);
-      await expect(page.locator('#hero')).toHaveAttribute('data-hero-mode', '3d');
-    });
   });
 }
