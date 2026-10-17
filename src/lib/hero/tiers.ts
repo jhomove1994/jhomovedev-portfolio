@@ -25,6 +25,12 @@ export const TIER_SETTINGS: Record<Tier, TierSettings> = {
   low: { dpr: [1, 1], bloom: false, contactShadows: false },
 };
 
+/**
+ * Subtle bloom (design AD9). The threshold sits above anything lit and tone-mapped, so only the
+ * `toneMapped: false` emissives (lamp shade, screen glow) bleed; the intensity keeps it a halo.
+ */
+export const BLOOM_SETTINGS = { threshold: 0.9, intensity: 0.35 } as const;
+
 export interface TierResult {
   tier: Tier;
   atFloor: boolean;

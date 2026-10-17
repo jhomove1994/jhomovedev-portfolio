@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BLOOM_SETTINGS,
   FLOOR_TIER,
   MAX_TIER,
   TIER_SETTINGS,
@@ -49,5 +50,18 @@ describe('TIER_SETTINGS', () => {
     expect(TIER_SETTINGS.high).toMatchObject({ contactShadows: true, bloom: true });
     expect(TIER_SETTINGS.mid).toMatchObject({ contactShadows: true, bloom: true });
     expect(TIER_SETTINGS.low).toMatchObject({ contactShadows: false, bloom: false });
+  });
+});
+
+describe('BLOOM_SETTINGS', () => {
+  it('only the emissives (lamp shade, screen glow) pass the luminance threshold', () => {
+    // Lit, tone-mapped surfaces stay below 0.9; the toneMapped:false emissives exceed it.
+    expect(BLOOM_SETTINGS.threshold).toBeGreaterThanOrEqual(0.85);
+    expect(BLOOM_SETTINGS.threshold).toBeLessThan(1);
+  });
+
+  it('is a faint halo, not a glow: intensity stays at or below 0.5', () => {
+    expect(BLOOM_SETTINGS.intensity).toBeGreaterThan(0);
+    expect(BLOOM_SETTINGS.intensity).toBeLessThanOrEqual(0.5);
   });
 });

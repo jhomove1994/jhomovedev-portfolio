@@ -4,6 +4,8 @@
 // dynamic import in HeroIsland.
 import { PerformanceMonitor, useProgress } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { Bloom, EffectComposer, ToneMapping } from '@react-three/postprocessing';
+import { ToneMappingMode } from 'postprocessing';
 import {
   Component,
   useCallback,
@@ -18,6 +20,7 @@ import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
 import { TERMINAL_ON_SCREEN } from '../../lib/hero/monitor';
 import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import {
+  BLOOM_SETTINGS,
   FLOOR_TIER,
   INITIAL_LOW_FPS,
   TIER_SETTINGS,
@@ -174,6 +177,16 @@ export function DeskExperience({
               onIncline={() => step('incline')}
               onFallback={() => step('fallback')}
             />
+            {settings.bloom ? (
+              <EffectComposer multisampling={0}>
+                <Bloom
+                  mipmapBlur
+                  luminanceThreshold={BLOOM_SETTINGS.threshold}
+                  intensity={BLOOM_SETTINGS.intensity}
+                />
+                <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+              </EffectComposer>
+            ) : null}
             <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
             {probe ? <RenderProbe /> : null}
             {ready && terminal && TERMINAL_ON_SCREEN === 'html' ? (
