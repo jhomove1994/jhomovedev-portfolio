@@ -31,8 +31,10 @@
   outline: none;
 }
 
+/* A container cannot restyle itself, so the smaller desktop size goes on its children. */
 @container term (min-width: 560px) {
-  .term {
+  .term-pane,
+  .term-tmux {
     font-size: 13px;
   }
 }
