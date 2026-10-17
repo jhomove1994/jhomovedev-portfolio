@@ -40,35 +40,40 @@ const { locale, roles } = Astro.props;
       titleKey="nav.experience"
       commandKey="sectionCommands.experience"
     />
-    <ol class="space-y-12">
-      {roles.map(({ role, company, location, period, achievements, stack, isFallback }) => (
-        <li data-reveal-item>
-          <DevFallbackBadge locale={locale} isFallback={isFallback} />
-          <p data-period class="text-sm text-muted">
-            {period}
-          </p>
-          <h3 class="text-lg">{role}</h3>
-          <p class="text-muted">
-            {company} · {location}
-          </p>
-          {achievements.length > 0 && (
-            <ul data-achievements class="mt-4 list-disc space-y-2 pl-5 marker:text-muted">
-              {achievements.map((achievement) => (
-                <li>{achievement}</li>
-              ))}
-            </ul>
-          )}
-          {stack.length > 0 && (
-            <ul class="mt-4 flex flex-wrap gap-2" aria-label={t(locale, 'aria.stack')}>
-              {stack.map((name) => (
-                <li>
-                  <Chip>{name}</Chip>
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ol>
+    <div data-rail class="relative">
+      <span data-rail-track aria-hidden="true" class="rail-track"></span>
+      <span data-rail-fill aria-hidden="true" class="rail-fill"></span>
+      <ol class="space-y-12 pl-8">
+        {roles.map(({ role, company, location, period, achievements, stack, isFallback }) => (
+          <li data-reveal-item class="relative">
+            <span data-rail-node aria-hidden="true" class="rail-node"></span>
+            <DevFallbackBadge locale={locale} isFallback={isFallback} />
+            <p data-period class="text-sm text-muted">
+              {period}
+            </p>
+            <h3 class="text-lg">{role}</h3>
+            <p class="text-muted">
+              {company} · {location}
+            </p>
+            {achievements.length > 0 && (
+              <ul data-achievements class="mt-4 list-disc space-y-2 pl-5 marker:text-muted">
+                {achievements.map((achievement) => (
+                  <li>{achievement}</li>
+                ))}
+              </ul>
+            )}
+            {stack.length > 0 && (
+              <ul class="mt-4 flex flex-wrap gap-2" aria-label={t(locale, 'aria.stack')}>
+                {stack.map((name) => (
+                  <li>
+                    <Chip>{name}</Chip>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
   </section>
 )}

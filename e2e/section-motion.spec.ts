@@ -66,3 +66,51 @@ for (const locale of ['es', 'en'] as const) {
     });
   });
 }
+
+for (const locale of ['es', 'en'] as const) {
+  test.describe(`experience rail /${locale}/`, () => {
+    const nodes = '#experience [data-rail-node]';
+    const lit = '#experience [data-rail-node].is-lit';
+
+    test('reduced motion renders the rail full with every node lit', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(`/${locale}/`);
+      await page.locator('#experience').scrollIntoViewIfNeeded();
+      const fill = await page.locator('#experience [data-rail-fill]').evaluate((el) => {
+        const { height } = el.getBoundingClientRect();
+        return { height, track: el.parentElement!.getBoundingClientRect().height };
+      });
+      expect(fill.height).toBeGreaterThan(0);
+      expect(fill.height).toBeCloseTo(fill.track - 16, 0);
+      const colors = await page
+        .locator(nodes)
+        .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
+      expect(colors.length).toBeGreaterThan(1);
+      expect(new Set(colors)).toEqual(new Set(['rgb(61, 220, 151)']));
+    });
+
+    test('with motion the fill follows the scroll and lights the nodes it passes', async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/`);
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion/);
+      const total = await page.locator(nodes).count();
+      expect(total).toBeGreaterThan(1);
+      const rail = page.locator('#experience [data-rail]');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await rail.scrollIntoViewIfNeeded();
+      const before = await page.locator(lit).count();
+      expect(before).toBeLessThan(total);
+      // Bring the end of the rail to the reading line: the fill is complete, every node lit.
+      await rail.evaluate((el) => {
+        const { bottom } = el.getBoundingClientRect();
+        window.scrollBy(0, bottom - window.innerHeight * 0.5);
+      });
+      await expect(page.locator(lit)).toHaveCount(total);
+      await expect
+        .poll(() => rail.evaluate((el) => Number(el.style.getPropertyValue('--fill'))))
+        .toBeCloseTo(1, 1);
+    });
+  });
+}
