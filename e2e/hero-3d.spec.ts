@@ -327,14 +327,12 @@ test.describe('@3d terminal', () => {
     expect(Math.abs(box.bottom - (bottom + 1))).toBeLessThanOrEqual(3);
   });
 
-  test('keeps the 2D frame and no monitor terminal below 1024 px', async ({ page }) => {
-    await page.setViewportSize({ width: 900, height: 900 });
+  test('puts the terminal on the monitor on a tablet too (from 768 px)', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 1024 });
     await open3d(page);
-    // Stacked layout: the island sits under the still and hydrates once it scrolls into view.
-    await hero(page).locator('.hero-monitor').scrollIntoViewIfNeeded();
     await untilReady(page);
-    await expect(hero(page).locator('.hero-frame')).toBeVisible();
-    await expect(hero(page).locator('.monitor-terminal')).toHaveCount(0);
+    await expect(hero(page).locator('.monitor-terminal[data-placed]')).toHaveCount(1);
+    await expect(hero(page).locator('.hero-frame')).toHaveCount(0);
     await expect(hero(page).getByRole('textbox')).toHaveCount(1);
   });
 

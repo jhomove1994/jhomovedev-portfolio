@@ -37,7 +37,7 @@ export interface EnvDeps {
 }
 
 export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-// Matches the 1024px breakpoint used by the hero layout (below it the stage stacks).
+// Under 1024px (tablets and phones) the hero defaults to static: the mobile heuristic.
 const NARROW_VIEWPORT_QUERY = '(max-width: 1023px)';
 const COARSE_POINTER_QUERY = '(pointer: coarse)';
 /** Under 768px the hero is terminal-first: no desk scene, so no 3D (see `decideMode`). */

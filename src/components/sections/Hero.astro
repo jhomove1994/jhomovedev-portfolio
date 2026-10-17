@@ -3,7 +3,7 @@ import type { Locale } from '../../i18n/locales';
 import { t, terminalLabels } from '../../i18n/ui';
 import type { CvButtonModel } from '../../lib/content/cv';
 import stillAnchor from '../../lib/hero/still-anchor.json';
-import { narrowStillLayout } from '../../lib/hero/still-layout';
+import { SCENE_STILL_CROP, narrowStillLayout } from '../../lib/hero/still-layout';
 import { shippableLabels } from '../../lib/terminal/labels';
 import type { TerminalData } from '../../lib/terminal/types';
 import { HeroIsland } from '../hero/HeroIsland';
@@ -32,28 +32,24 @@ const chrome = {
   disable3d: t(locale, 'hero.toggleDisable3d'),
   bootLoading: t(locale, 'hero.bootLoading'),
 };
-// The glass rect of the committed still. Wide screens place the terminal on it as fractions of the
-// stage; stacked screens crop the still around it (`--n-*`, in `cqw` of the stage width).
-const narrow = narrowStillLayout(stillAnchor);
+// The glass rect of the committed still: from 768px the scene crops the still around it and the
+// terminal frame sits on it (`--n-*`, in `cqw` of the scene width). Phones show no still.
+const crop = narrowStillLayout(stillAnchor, SCENE_STILL_CROP);
 const cqw = (fraction: number) => `${(fraction * 100).toFixed(3)}cqw`;
-const stageStyle = [
-  `--mon-x:${stillAnchor.x * 100}%`,
-  `--mon-y:${stillAnchor.y * 100}%`,
-  `--mon-w:${stillAnchor.width * 100}%`,
-  `--mon-h:${stillAnchor.height * 100}%`,
-  `--n-media-w:${cqw(narrow.mediaWidth)}`,
-  `--n-media-x:${cqw(narrow.mediaLeft)}`,
-  `--n-media-y:${cqw(narrow.mediaTop)}`,
-  `--n-box-h:${cqw(narrow.boxHeight)}`,
-  `--n-glass-x:${cqw(narrow.glassLeft)}`,
-  `--n-glass-y:${cqw(narrow.glassTop)}`,
-  `--n-glass-w:${cqw(narrow.glassWidth)}`,
-  `--n-glass-h:${cqw(narrow.glassHeight)}`,
+const sceneStyle = [
+  `--n-media-w:${cqw(crop.mediaWidth)}`,
+  `--n-media-x:${cqw(crop.mediaLeft)}`,
+  `--n-media-y:${cqw(crop.mediaTop)}`,
+  `--n-box-h:${cqw(crop.boxHeight)}`,
+  `--n-glass-x:${cqw(crop.glassLeft)}`,
+  `--n-glass-y:${cqw(crop.glassTop)}`,
+  `--n-glass-w:${cqw(crop.glassWidth)}`,
+  `--n-glass-h:${cqw(crop.glassHeight)}`,
 ].join(';');
 ---
 
 <section id="hero" aria-labelledby="hero-title" data-hero-mode="static" class="hero">
-  <div class="hero-stage" style={stageStyle}>
+  <div class="hero-stage">
     <div class="hero-copy">
       <h1 id="hero-title" class="text-balance">
         {name}
@@ -70,9 +66,11 @@ const stageStyle = [
         </a>
       </p>
     </div>
-    <HeroStill locale={locale} />
-    <div class="hero-monitor">
-      <HeroIsland client:visible data={terminal} labels={labels} chrome={chrome} />
+    <div class="hero-scene" style={sceneStyle}>
+      <HeroStill locale={locale} />
+      <div class="hero-monitor">
+        <HeroIsland client:visible data={terminal} labels={labels} chrome={chrome} />
+      </div>
     </div>
   </div>
 </section>

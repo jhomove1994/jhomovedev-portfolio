@@ -105,7 +105,7 @@ pnpm build && pnpm capture:hero
 
 The script serves `dist/` with `astro preview` (or uses `CAPTURE_ORIGIN`), opens
 `/es/?3d=1&capture=1` in a fresh context, waits for `data-hero-state="ready"` plus two frames,
-hides the copy, the terminal and the readability fade with the `[data-capture]` rule, and
+takes the copy and the terminal out and lays the scene on a full 16:10 stage with the `[data-capture]` rule, and
 screenshots the 1600x1000 stage as JPEG (about 75 KB; the image budget is 150 KB). Then run
 `pnpm build` again so Astro emits the AVIF/WebP variants. Never part of `pnpm build`.
 
@@ -115,12 +115,15 @@ screenshots the 1600x1000 stage as JPEG (about 75 KB; the image budget is 150 KB
   `capture=1`), fails when `stillAnchorProblems` rejects it (too small, under the hero copy,
   past the right or bottom limit) and writes it to `src/lib/hero/still-anchor.json`: the 2D
   terminal frame sits exactly on that rect. A rerun leaves git clean.
-- Wide screens (from 1024px) place the frame on the glass; the left of the still fades into the
-  page so the copy stays readable over the lamp. Tablets (768px to 1023px) crop the still around the glass
-  (`narrowStillLayout`, `src/lib/hero/still-layout.ts`, as `--n-*` variables in `cqw`), so the
-  terminal is in the first viewport below the name; the frame grows down over the monitor stand
-  to a usable height (`--hero-frame-min`). In 3D the stacked layout is the plain one (canvas box,
-  frame below). `e2e/hero-still.spec.ts` checks all of this.
+- From 768px the copy has its own band (tablet) or column (from 960px) on the page background,
+  so it never covers the scene. The scene crops the still around the glass (`narrowStillLayout`
+  with `SCENE_STILL_CROP`, `src/lib/hero/still-layout.ts`, as `--n-*` variables in `cqw` of
+  `.hero-scene`): the glass takes 70% of the scene, right of centre, with the lamp side on its
+  left, and the 2D terminal frame sits on it at 13 px text. In 3D the canvas covers the same box,
+  the camera centres the whole setup (`restCameraFor`, no copy reserve) and the terminal moves
+  onto the rendered monitor. `e2e/hero-still.spec.ts` and `e2e/hero-layout.spec.ts` check it at
+  768, 1000, 1280 and 1440px, the latter with a WCAG contrast check (at least 4.5:1) of each
+  piece of hero copy against the pixels rendered behind it, static, reduced motion and 3D.
 - Phones (under 768px) show no still at all: the hero is terminal-first, a compact copy block
   and then the full-width terminal, all in the first viewport at 390x844 with the log, the
   statusline and the one-row tmux bar visible. `e2e/hero-layout.spec.ts` checks it, also under

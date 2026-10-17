@@ -99,9 +99,9 @@
 }
 
 /*
- * Hero stage. Narrow screens stack copy, still and terminal; from 1024px the copy and the
- * terminal (a 2D monitor frame) sit on the still, whose 16:10 box scales with the viewport.
- * The terminal rect comes from `still-anchor.json` through the --mon-* variables.
+ * Hero stage. Phones are terminal-first (copy, then the 2D terminal); from 768px the copy sits
+ * beside or above the desk scene, with the terminal on the monitor glass (see the media blocks
+ * below; the glass rect comes from `still-anchor.json` through the --n-* variables).
  */
 .hero {
   background: linear-gradient(to bottom, var(--color-bg), #17110c);
@@ -153,20 +153,6 @@
   pointer-events: none;
 }
 
-.hero-canvas::after {
-  /* Keeps the hero text readable over the scene: the left of the frame fades into the page bg. */
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, var(--color-bg) 0%, transparent 45%);
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.hero-canvas[data-ready]::after {
-  opacity: 0.85;
-}
-
 .hero-canvas > div:first-child {
   position: absolute;
   inset: 0;
@@ -209,8 +195,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-canvas > div:first-child,
-  .hero-canvas::after {
+  .hero-canvas > div:first-child {
     transition: none;
   }
 }
@@ -267,93 +252,94 @@
   border-color: var(--color-muted);
 }
 
-@media (min-width: 1024px) {
+/*
+ * From 768px: the desk scene. The copy owns its own band (tablet) or column (from 960px) on the
+ * plain page background, so it never sits over the scene or the lamp and its contrast does not
+ * depend on the render. The scene is the committed still cropped around the monitor glass
+ * (--n-* from Hero.astro, in cqw of .hero-scene) with the 2D terminal laid on the glass; in 3D
+ * the canvas covers the same box and the terminal moves onto the rendered monitor.
+ */
+@media (min-width: 768px) {
   .hero-stage {
-    position: relative;
-    display: block;
-    /* Fills the viewport under the header, never narrower than the 16:10 minimum below. */
-    width: min(100%, max(60rem, calc((100svh - var(--header-h)) * 1.6)));
-    aspect-ratio: 16 / 10;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    max-width: 90rem;
     margin-inline: auto;
-  }
-
-  .hero-still {
-    position: absolute;
-    inset: 0;
-    aspect-ratio: auto;
+    padding: 2rem clamp(1.25rem, 3vw, 3rem) 2.25rem;
   }
 
   .hero-copy {
-    position: absolute;
-    top: 11%;
-    left: 3%;
-    z-index: 1;
-    width: 30%;
     padding: 0;
   }
 
   .hero-copy h1 {
-    font-size: clamp(1.75rem, 3.6cqw, 3.25rem);
+    font-size: clamp(2rem, 3.4vw, 3.25rem);
   }
 
   .hero-headline {
-    font-size: clamp(1rem, 1.5cqw, 1.4rem);
+    font-size: clamp(1.0625rem, 1.5vw, 1.375rem);
+  }
+
+  .hero-scene {
+    container: hero-scene / inline-size;
+    position: relative;
+  }
+
+  .hero-still {
+    aspect-ratio: auto;
+    height: var(--n-box-h);
+    border-radius: 0.375rem;
+  }
+
+  .hero-still picture {
+    display: block;
+  }
+
+  .hero-still-media {
+    width: var(--n-media-w);
+    height: auto;
+    max-width: none;
+    margin-left: var(--n-media-x);
+    margin-top: var(--n-media-y);
   }
 
   .hero-monitor {
     position: absolute;
-    top: var(--mon-y);
-    left: var(--mon-x);
+    inset: 0;
     z-index: 1;
-    width: var(--mon-w);
-    height: var(--mon-h);
     padding: 0;
+    pointer-events: none;
   }
 
   .hero-island {
-    height: 100%;
+    position: absolute;
+    inset: 0;
   }
 
   .hero-frame {
-    height: 100%;
+    position: absolute;
+    left: var(--n-glass-x);
+    top: var(--n-glass-y);
+    width: var(--n-glass-w);
+    height: var(--n-glass-h);
+    pointer-events: auto;
   }
 
   .hero-controls {
     position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 1.5rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    margin: 0;
+    pointer-events: auto;
   }
+}
 
-  /* In 3D the monitor is the terminal: the 2D frame is gone, so only the toggle remains and it
-     moves to the stage corner instead of the old frame position. */
-  .hero[data-hero-mode='3d'] .hero-monitor {
-    inset: auto 1rem 1rem auto;
-    width: auto;
-    height: auto;
-  }
-
-  .hero[data-hero-mode='3d'] .hero-island {
-    height: auto;
-  }
-
-  .hero[data-hero-mode='3d'] .hero-controls {
-    position: static;
-    margin-top: 0;
-  }
-
-  /* The lamp sits under the copy in the still: fade the left of the frame into the page. */
-  .hero:not([data-hero-mode='3d']) .hero-still::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--color-bg) 94%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 82%, transparent) 22%,
-      transparent 44%
-    );
-    pointer-events: none;
+@media (min-width: 960px) {
+  .hero-stage {
+    grid-template-columns: clamp(14rem, 24vw, 24rem) minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 2.5vw, 3.5rem);
+    align-items: center;
   }
 }
 
@@ -405,73 +391,6 @@
 }
 
 /*
- * Stacked static hero: the still is cropped around the monitor glass (--n-* from Hero.astro, all in
- * cqw of the stage) and the 2D terminal sits on that glass, so it is in the first viewport right
- * below the name. The glass is wider than tall, so on a phone it is shorter than a usable terminal
- * (44 px touch rows and the status bars): the frame starts on the glass and grows down over the
- * stand to --hero-frame-min, and the crop grows with it. In 3D the stack is the plain one above:
- * the canvas fills a 4:3 box and the terminal frame stays below it.
- */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .hero:not([data-hero-mode='3d']) .hero-stage {
-    --hero-frame-min: 17rem;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 40rem;
-    margin-inline: auto;
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-still {
-    grid-area: 2 / 1;
-    aspect-ratio: auto;
-    /* Frame bottom plus room for the 3D toggle underneath. */
-    height: max(var(--n-box-h), calc(var(--n-glass-y) + var(--hero-frame-min) + 3.5rem));
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-still picture {
-    display: block;
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-still-media {
-    width: var(--n-media-w);
-    height: auto;
-    max-width: none;
-    margin-left: var(--n-media-x);
-    margin-top: var(--n-media-y);
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-monitor {
-    grid-area: 2 / 1;
-    position: relative;
-    z-index: 1;
-    padding: 0;
-    pointer-events: none;
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-island {
-    position: absolute;
-    inset: 0;
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-frame {
-    position: absolute;
-    left: var(--n-glass-x);
-    top: var(--n-glass-y);
-    width: var(--n-glass-w);
-    height: max(var(--n-glass-h), var(--hero-frame-min));
-    pointer-events: auto;
-  }
-
-  .hero:not([data-hero-mode='3d']) .hero-controls {
-    position: absolute;
-    right: 0.75rem;
-    bottom: 0.5rem;
-    margin: 0;
-    pointer-events: auto;
-  }
-}
-
-/*
  * Lenis (3D hero on desktop only: it adds `.lenis` to <html> and removes it when the scene goes).
  * Native smooth scrolling is switched off while it runs, since the two would fight; the rules
  * follow lenis/dist/lenis.css, kept here so the static page never loads the library's stylesheet.
@@ -503,15 +422,26 @@ html.lenis body {
 }
 
 /* Capture runs (`pnpm capture:hero`, set by the script after the scene is ready): only the desk is
-   photographed, so the copy, the 2D frame, the terminal on the glass and the readability fade
-   are hidden. The page paints its own over the committed still. */
-[data-capture] .hero-copy,
+   photographed, on a full 16:10 stage as wide as the viewport (the still is cropped later, by
+   CSS), so the copy, the 2D frame and the terminal on the glass are taken out of the picture. */
+[data-capture] .hero-stage {
+  display: block;
+  max-width: none;
+  padding: 0;
+}
+
+[data-capture] .hero-copy {
+  display: none;
+}
+
+[data-capture] .hero-still {
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+}
+
 [data-capture] .hero-monitor,
 [data-capture] .hero-screen-layer,
 [data-capture] .hero-loader {
   visibility: hidden;
-}
-
-[data-capture] .hero-canvas::after {
-  display: none;
 }

@@ -49,7 +49,7 @@ describe('stillCameraFor', () => {
     const rest = restCameraFor(DESKTOP_ASPECT);
     const still = glassFractions(pose, DESKTOP_ASPECT);
     const far = glassFractions(rest, DESKTOP_ASPECT);
-    expect(still.right - still.left).toBeGreaterThan(2 * (far.right - far.left));
+    expect(still.right - still.left).toBeGreaterThan(1.5 * (far.right - far.left));
   });
 
   it('keeps the glass right of the hero copy and inside the frame', () => {

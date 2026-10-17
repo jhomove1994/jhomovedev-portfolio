@@ -15,19 +15,21 @@ const rect = (page: Page, selector: string) =>
   }, selector);
 
 test.describe('static hero still', () => {
-  test('wide: the terminal is on the glass and the desk stays visible around it', async ({
+  test('wide: the still is cropped around the glass, the lamp side kept on the left', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'wide layout');
     await page.goto('/es/');
     const stage = await rect(page, '.hero-still');
+    const media = await rect(page, '.hero-still-media');
     const frame = await rect(page, '.hero-frame');
-    // A monitor-sized frame, not the whole still: the desk, lamp and keyboard show around it.
-    expect(frame.width / stage.width).toBeGreaterThan(0.38);
-    expect(frame.width / stage.width).toBeLessThan(0.55);
-    expect(frame.height / stage.height).toBeLessThan(0.55);
-    expect(frame.left - stage.left).toBeGreaterThan(0.3 * stage.width);
-    expect(frame.top + frame.height).toBeLessThan(stage.top + 0.85 * stage.height);
+    // Scaled up and cropped: the image is wider than the scene it fills.
+    expect(media.width).toBeGreaterThan(1.3 * stage.width);
+    // The glass takes most of the scene, right of centre, with the lamp side on its left.
+    expect(frame.width / stage.width).toBeGreaterThan(0.65);
+    expect(frame.left - stage.left).toBeGreaterThan(0.18 * stage.width);
+    expect(frame.left + frame.width).toBeLessThanOrEqual(stage.left + stage.width + 0.5);
+    expect(frame.top + frame.height).toBeLessThan(stage.top + 0.9 * stage.height);
     // The terminal text is readable: a line is at least 12 px tall.
     const lineHeight = await page.evaluate(() =>
       parseFloat(getComputedStyle(document.querySelector('.hero-frame .term-row')!).lineHeight),

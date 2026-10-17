@@ -45,8 +45,8 @@ function getController(): HeroModeController {
   return controller;
 }
 
-/** From this width the terminal can live on the 3D monitor; below it the 2D frame stays. */
-const DESKTOP_QUERY = '(min-width: 1024px)';
+/** From this width the desk scene shows, and in 3D the terminal lives on its monitor. */
+const DESKTOP_QUERY = '(min-width: 768px)';
 const subscribeDesktop = (listener: () => void) => {
   const query = window.matchMedia(DESKTOP_QUERY);
   query.addEventListener('change', listener);

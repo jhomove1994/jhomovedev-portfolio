@@ -63,7 +63,7 @@ export interface DeskExperienceProps {
   onError: () => void;
   /** The floor tier is still too slow (S12): the island reverts to static, once. */
   onLowFps: () => void;
-  /** The terminal to put on the monitor, or `null` below 1024px where the 2D frame stays. */
+  /** The terminal to put on the monitor, or `null` below 768px where the 2D frame stays. */
   terminal: MonitorTerminalContent | null;
   /** Written when the monitor terminal takes over from a focused 2D input. */
   focusHandoffRef: RefObject<boolean>;

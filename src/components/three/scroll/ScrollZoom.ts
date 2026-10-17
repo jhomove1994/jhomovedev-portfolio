@@ -6,7 +6,7 @@ import { zoomProgress, type ZoomStore } from '../../../lib/hero/zoom';
 
 /** Desktop with a fine pointer and motion allowed; everything else keeps native scrolling. */
 export const ZOOM_MEDIA =
-  '(min-width:1024px) and (pointer:fine) and (prefers-reduced-motion:no-preference)';
+  '(min-width:768px) and (pointer:fine) and (prefers-reduced-motion:no-preference)';
 /** Scroll distance of the zoom, in viewport heights. */
 const ZOOM_SCROLL_VH = 1.2;
 /** The hero copy is gone by this much of the zoom (it fades over the first part). */

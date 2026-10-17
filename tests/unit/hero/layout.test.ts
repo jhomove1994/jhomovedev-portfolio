@@ -9,7 +9,6 @@ import {
   FLOOR_PLACEMENTS,
   PROP_PLACEMENTS,
   DESKTOP_ASPECT,
-  HERO_TEXT_RESERVE,
   restCameraFor,
   lampBulbWorld,
   screenWorldCenter,
@@ -167,16 +166,13 @@ describe('restCameraFor', () => {
     },
   );
 
-  it('keeps the left of the desktop stage free for the hero text', () => {
-    const e = extentsOfSetup(DESKTOP_ASPECT);
-    const leftEdge = (e.minX + 1) / 2; // 0 = left edge of the stage
-    expect(leftEdge).toBeGreaterThanOrEqual(HERO_TEXT_RESERVE - 0.01);
-  });
-
-  it('centres the setup when the copy is stacked above the stage instead', () => {
-    const e = extentsOfSetup(4 / 3);
-    expect((e.minX + e.maxX) / 2).toBeCloseTo(0, 1);
-  });
+  it.each([DESKTOP_ASPECT, 1.56, 4 / 3])(
+    'centres the setup at aspect %s: the copy sits beside the scene, never over it',
+    (aspect) => {
+      const e = extentsOfSetup(aspect);
+      expect((e.minX + e.maxX) / 2).toBeCloseTo(0, 1);
+    },
+  );
 
   it('makes the monitor large enough for terminal text to read at 1440 (>= 20% of the stage, about 270 px)', () => {
     const pose = restCameraFor(DESKTOP_ASPECT);

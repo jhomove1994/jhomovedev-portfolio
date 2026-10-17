@@ -110,11 +110,11 @@ export interface CameraPose {
   fov: number;
 }
 
-/** The 16:10 stage used from 1024px; narrower screens stack the copy above a 4:3 stage. */
+/** The 16:10 frame of the committed still (and the capture viewport). */
 export const DESKTOP_ASPECT = 1.6;
-/** From this aspect the hero copy overlays the left of the stage; below it the copy is above. */
+/** From this aspect the still keeps a strip on its left free (the lamp side, see the capture). */
 const COPY_OVERLAY_MIN_ASPECT = 1.5;
-/** Share of the stage width the overlaid copy owns (it spans 3% to 33% of the stage). */
+/** Share of the still width kept clear of the monitor on its left. */
 export const HERO_TEXT_RESERVE = 0.36;
 const REST_FOV = 32;
 const REST_MARGIN = 0.03;
@@ -130,16 +130,16 @@ export function sceneSubject(): Bounds {
 }
 
 /**
- * Rest pose for a stage of the given aspect: the whole setup in view, a little above it. On the
- * desktop stage the setup sits right of the hero copy; on the stacked mobile stage it is centred.
- * The scroll zoom (later change) interpolates away from this.
+ * Rest pose for a scene of the given aspect: the whole setup in view, a little above it, centred
+ * (the hero copy has its own column or band, it never overlays the scene). The scroll zoom
+ * interpolates away from this.
  */
 export function restCameraFor(aspect: number): CameraPose {
   return frameSubject({
     subject: sceneSubject(),
     aspect,
     fov: REST_FOV,
-    reserveLeft: aspect >= COPY_OVERLAY_MIN_ASPECT ? HERO_TEXT_RESERVE : 0,
+    reserveLeft: 0,
     margin: REST_MARGIN,
     elevation: REST_ELEVATION,
   });

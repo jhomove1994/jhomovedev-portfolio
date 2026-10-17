@@ -123,12 +123,13 @@ describe('projectRect', () => {
     expect(br.y).toBeGreaterThan(tr.y);
   });
 
-  it('is about a fifth of the stage wide, on the right of the hero text', () => {
+  it('is about a quarter of the scene wide, around the middle (the setup is centred)', () => {
     const [tl, tr] = projectRect(screenCorners(), project, STAGE);
     const share = (tr.x - tl.x) / STAGE.width;
-    expect(share).toBeGreaterThan(0.19);
-    expect(share).toBeLessThan(0.3);
-    expect(tl.x / STAGE.width).toBeGreaterThan(0.36);
+    expect(share).toBeGreaterThan(0.22);
+    expect(share).toBeLessThan(0.34);
+    expect(tl.x / STAGE.width).toBeGreaterThan(0.2);
+    expect(tr.x / STAGE.width).toBeLessThan(0.75);
   });
 
   it('keeps the glass aspect roughly: wider than tall', () => {
