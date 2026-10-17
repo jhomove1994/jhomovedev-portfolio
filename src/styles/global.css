@@ -373,3 +373,17 @@ html.lenis body {
   position: sticky;
   top: var(--header-h);
 }
+
+/* Capture runs (`pnpm capture:hero`, set by the script after the scene is ready): only the desk is
+   photographed, so the copy, the 2D frame, the terminal on the glass and the readability fade
+   are hidden. The page paints its own over the committed still. */
+[data-capture] .hero-copy,
+[data-capture] .hero-monitor,
+[data-capture] .hero-screen-layer,
+[data-capture] .hero-loader {
+  visibility: hidden;
+}
+
+[data-capture] .hero-canvas::after {
+  display: none;
+}

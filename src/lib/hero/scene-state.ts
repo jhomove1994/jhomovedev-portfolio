@@ -57,3 +57,8 @@ export function probeEnabled(search: string): boolean {
   const params = new URLSearchParams(search);
   return params.get('capture') === '1' || (params.get('3d') === '1' && params.get('probe') === '1');
 }
+
+/** The capture script's hooks (`window.__heroCapture`, the `[data-capture]` styling): `?capture=1`. */
+export function captureEnabled(search: string): boolean {
+  return new URLSearchParams(search).get('capture') === '1';
+}

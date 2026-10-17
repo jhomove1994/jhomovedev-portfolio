@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ModeDecision } from '../../../src/lib/capabilities';
 import {
+  captureEnabled,
   frameloopFor,
   probeEnabled,
   reduceScene,
@@ -111,6 +112,19 @@ describe('probeEnabled', () => {
     expect(probeEnabled('?probe=1')).toBe(false);
     expect(probeEnabled('?3d=0&probe=1')).toBe(false);
     expect(probeEnabled('?capture=0')).toBe(false);
+  });
+});
+
+describe('captureEnabled', () => {
+  it('exposes the capture hooks only for ?capture=1', () => {
+    expect(captureEnabled('?3d=1&capture=1')).toBe(true);
+    expect(captureEnabled('?capture=1')).toBe(true);
+  });
+
+  it('stays off for ordinary visits and for the e2e-only probe', () => {
+    expect(captureEnabled('')).toBe(false);
+    expect(captureEnabled('?3d=1&probe=1')).toBe(false);
+    expect(captureEnabled('?capture=0')).toBe(false);
   });
 });
 

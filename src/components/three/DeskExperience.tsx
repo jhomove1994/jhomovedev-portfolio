@@ -3,7 +3,7 @@
 // get slow, and reverted to static by the island on any failure. Only reachable through the
 // dynamic import in HeroIsland.
 import { PerformanceMonitor, useProgress } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import {
@@ -16,9 +16,11 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { Vector3 } from 'three';
+import { stillAnchorFromQuad, type StillAnchor } from '../../lib/hero/capture';
 import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
-import { TERMINAL_ON_SCREEN } from '../../lib/hero/monitor';
-import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
+import { TERMINAL_ON_SCREEN, screenCorners } from '../../lib/hero/monitor';
+import { captureEnabled, frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import {
   BLOOM_SETTINGS,
   FLOOR_TIER,
@@ -29,7 +31,7 @@ import {
   type Tier,
   type TierEvent,
 } from '../../lib/hero/tiers';
-import { createZoomStore, type ZoomStore } from '../../lib/hero/zoom';
+import { createZoomStore, projectRect, type ZoomStore } from '../../lib/hero/zoom';
 import { BootLoader } from '../hero/BootLoader';
 import { DeskScene } from './DeskScene';
 import {
@@ -45,6 +47,8 @@ declare global {
   interface Window {
     /** Frames rendered since mount; only defined for e2e and capture runs (see `probeEnabled`). */
     __heroRenderCount?: number;
+    /** Only defined for `?capture=1`: where the monitor glass sits in the stage right now. */
+    __heroCapture?: { screenRect: () => StillAnchor };
   }
 }
 
@@ -87,6 +91,34 @@ function RenderProbe() {
   useFrame(() => {
     window.__heroRenderCount = (window.__heroRenderCount ?? 0) + 1;
   });
+  return null;
+}
+
+/** Publishes the glass rect for the capture script, which writes it to `still-anchor.json`. */
+function CaptureProbe() {
+  const get = useThree((state) => state.get);
+  useEffect(() => {
+    const corners = screenCorners();
+    const scratch = new Vector3();
+    window.__heroCapture = {
+      screenRect: () => {
+        const { camera, size } = get();
+        camera.updateMatrixWorld();
+        const quad = projectRect(
+          corners,
+          ([x, y, z]) => {
+            scratch.set(x, y, z).project(camera);
+            return { x: scratch.x, y: scratch.y };
+          },
+          size,
+        );
+        return stillAnchorFromQuad(quad, size);
+      },
+    };
+    return () => {
+      delete window.__heroCapture;
+    };
+  }, [get]);
   return null;
 }
 
@@ -173,6 +205,7 @@ export function DeskExperience({
   const overlayBoxRef = useRef<HTMLDivElement | null>(null);
   const { progress } = useProgress();
   const [probe] = useState(() => probeEnabled(window.location.search));
+  const [capture] = useState(() => captureEnabled(window.location.search));
   const step = (event: TierEvent) => setTier((current) => reduceTier(current, event).tier);
   const settings = TIER_SETTINGS[tier];
 
@@ -217,6 +250,7 @@ export function DeskExperience({
             ) : null}
             <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
             {probe ? <RenderProbe /> : null}
+            {capture ? <CaptureProbe /> : null}
             {ready && terminal && TERMINAL_ON_SCREEN === 'html' ? (
               <HtmlMonitorTerminal
                 content={terminal}

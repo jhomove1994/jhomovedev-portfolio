@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "models:build": "node scripts/models/build-hero.ts",
+    "capture:hero": "node scripts/capture-hero.ts",
     "verify": "pnpm format:check && pnpm lint && pnpm check && pnpm test && pnpm build",
     "astro": "astro",
     "generate-types": "wrangler types",
