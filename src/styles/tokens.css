@@ -30,3 +30,21 @@
   /* Subtle bloom: a faint halo, never a neon glow. */
   --shadow-bloom: 0 0 24px rgb(61 220 151 / 0.1);
 }
+
+/* Referenced only from the terminal stylesheet, so keep them even when no utility uses them. */
+@theme static {
+  /*
+   * Terminal window (hero): warm walnut and amber so it reads as an object on the night page.
+   * The mint accent is reserved for the block cursor, the active tmux window and the prompt marker.
+   */
+  --color-term-bg: #14100d;
+  --color-term-bar: #241b14;
+  --color-term-line: #3a2c20;
+  --color-term-fg: #eadfcb;
+  --color-term-muted: #9c8a73;
+  --color-term-amber: #e3a857;
+  --color-term-rust: #d9785a;
+
+  /* Height of the sticky site header, used to size the hero stage and anchor offsets. */
+  --header-h: 4rem;
+}

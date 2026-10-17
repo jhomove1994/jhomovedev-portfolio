@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { contrastRatio } from '../../helpers/contrast';
 
 const tokens = readFileSync('src/styles/tokens.css', 'utf8');
 const globalCss = readFileSync('src/styles/global.css', 'utf8');
@@ -35,6 +36,58 @@ describe('design tokens (REQUERIMIENTOS section 6)', () => {
   it('caps reading lines at 68ch', () => {
     expect(token('measure')).toBe('68ch');
     expect(globalCss).toContain('var(--measure)');
+  });
+});
+
+describe('terminal tokens (design AD16)', () => {
+  const expected: Record<string, string> = {
+    'term-bg': '#14100D',
+    'term-bar': '#241B14',
+    'term-line': '#3A2C20',
+    'term-fg': '#EADFCB',
+    'term-muted': '#9C8A73',
+    'term-amber': '#E3A857',
+    'term-rust': '#D9785A',
+  };
+
+  it.each(Object.entries(expected))('pins --color-%s to %s', (name, hex) => {
+    expect(token(`color-${name}`)?.toUpperCase()).toBe(hex);
+  });
+
+  it('keeps the accent out of the warm terminal palette', () => {
+    const accent = token('color-accent')?.toLowerCase();
+    for (const name of Object.keys(expected)) {
+      expect(token(`color-${name}`)?.toLowerCase()).not.toBe(accent);
+    }
+  });
+
+  it('defines the sticky header height used by the hero stage', () => {
+    expect(token('header-h')).toBe('4rem');
+  });
+
+  const color = (name: string) => token(`color-${name}`)!;
+  it.each([
+    ['term-fg', 'term-bg', 4.5],
+    ['term-muted', 'term-bg', 5],
+    ['term-amber', 'term-bg', 4.5],
+    ['term-rust', 'term-bg', 4.5],
+    ['term-fg', 'term-bar', 4.5],
+    ['term-accent-check', 'term-bg', 4.5],
+  ])('%s on %s meets WCAG AA (>= %s:1)', (fg, bg, minimum) => {
+    const foreground = fg === 'term-accent-check' ? color('accent') : color(fg);
+    expect(contrastRatio(foreground, color(bg))).toBeGreaterThanOrEqual(minimum);
+  });
+});
+
+describe('contrast helper', () => {
+  it('returns 21 for black on white and 1 for identical colours', () => {
+    expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
+    expect(contrastRatio('#3ddc97', '#3ddc97')).toBeCloseTo(1, 5);
+  });
+
+  it('is symmetric and rejects malformed colours', () => {
+    expect(contrastRatio('#14100d', '#eadfcb')).toBeCloseTo(contrastRatio('#eadfcb', '#14100d'), 8);
+    expect(() => contrastRatio('red', '#fff')).toThrow(/#rrggbb/);
   });
 });
 
