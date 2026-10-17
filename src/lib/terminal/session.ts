@@ -1,4 +1,4 @@
-// External store for one terminal: transcript, draft and history.
+// External store for one terminal: transcript, draft, history and the intro animation.
 // No React, no DOM: views bind through `subscribe`/`getSnapshot` (useSyncExternalStore) and the
 // same session survives swapping the 2D frame for the 3D monitor view.
 import { complete as completeDraft } from './complete';
@@ -6,8 +6,19 @@ import { runCommand } from './commands';
 import { createHistory, historyNext, historyPrev, recordEntry } from './history';
 import type { Effect, Line, TerminalData, TerminalLabels, TerminalState } from './types';
 
-/** The finished intro printed at startup is this command, exactly as a visitor could type it. */
+/** Delay between typed characters of the intro command. */
+export const INTRO_CHAR_DELAY_MS = 70;
+/** Pause after the last typed character, before the output appears. */
+export const INTRO_SETTLE_MS = 300;
+
+/** The intro prints this command, exactly as a visitor could type it. */
 const INTRO_COMMAND = 'whoami';
+
+/** Injected timer functions so the intro is deterministic under test. */
+export interface Scheduler {
+  setTimeout(callback: () => void, ms: number): unknown;
+  clearTimeout(handle: unknown): void;
+}
 
 export interface TerminalSession {
   getSnapshot(): TerminalState;
@@ -22,13 +33,30 @@ export interface TerminalSession {
   clear(): void;
   /** Ctrl+C: prints the abandoned draft with `^C` and empties the prompt. */
   abandon(): void;
+  /** Plays the intro once per session; `animate: false` only marks it as played. */
+  playIntro(options: { animate: boolean }): void;
+  /** A keypress during the intro: jump to the finished state. */
+  skipIntro(): void;
 }
 
-export function createTerminalSession(data: TerminalData, labels: TerminalLabels): TerminalSession {
+type IntroPhase = 'pending' | 'playing' | 'done';
+
+const defaultScheduler: Scheduler = {
+  setTimeout: (callback, ms) => globalThis.setTimeout(callback, ms),
+  clearTimeout: (handle) => globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>),
+};
+
+export function createTerminalSession(
+  data: TerminalData,
+  labels: TerminalLabels,
+  scheduler: Scheduler = defaultScheduler,
+): TerminalSession {
   const context = { data, labels };
   const introLines = runCommand(INTRO_COMMAND, context).lines;
   const introEntry = { id: 0, input: INTRO_COMMAND, lines: introLines };
   let nextId = 1;
+  let introPhase: IntroPhase = 'pending';
+  let timer: unknown = null;
 
   let state: TerminalState = {
     transcript: [introEntry],
@@ -51,6 +79,32 @@ export function createTerminalSession(data: TerminalData, labels: TerminalLabels
     return [...state.transcript, entry];
   }
 
+  function stopTimer(): void {
+    if (timer !== null) scheduler.clearTimeout(timer);
+    timer = null;
+  }
+
+  function finishIntro(): void {
+    if (introPhase === 'done') return;
+    const wasPlaying = introPhase === 'playing';
+    introPhase = 'done';
+    stopTimer();
+    if (wasPlaying) {
+      set({ ...state, transcript: [introEntry], typing: null, activeWindow: INTRO_COMMAND });
+    }
+  }
+
+  function typeNext(index: number): void {
+    if (index < INTRO_COMMAND.length) {
+      timer = scheduler.setTimeout(() => {
+        set({ ...state, typing: { text: INTRO_COMMAND, index: index + 1 } });
+        typeNext(index + 1);
+      }, INTRO_CHAR_DELAY_MS);
+      return;
+    }
+    timer = scheduler.setTimeout(finishIntro, INTRO_SETTLE_MS);
+  }
+
   return {
     getSnapshot: () => state,
 
@@ -62,6 +116,7 @@ export function createTerminalSession(data: TerminalData, labels: TerminalLabels
     },
 
     submit(input) {
+      finishIntro();
       const command = input.trim();
       if (command === '') return [];
 
@@ -78,24 +133,28 @@ export function createTerminalSession(data: TerminalData, labels: TerminalLabels
     },
 
     setDraft(value) {
+      finishIntro();
       if (value === state.draft && state.history.cursor === null) return;
       // Typing ends history browsing; the next Up saves the new draft.
       set({ ...state, draft: value, history: { ...state.history, cursor: null, draft: '' } });
     },
 
     historyPrev() {
+      finishIntro();
       const step = historyPrev(state.history, state.draft);
       if (step.input === null) return;
       set({ ...state, draft: step.input, history: step.history });
     },
 
     historyNext() {
+      finishIntro();
       const step = historyNext(state.history);
       if (step.input === null) return;
       set({ ...state, draft: step.input, history: step.history });
     },
 
     complete() {
+      finishIntro();
       const outcome = completeDraft(state.draft, {
         projectIds: data.projects.map((project) => project.id),
         locale: data.locale,
@@ -115,10 +174,12 @@ export function createTerminalSession(data: TerminalData, labels: TerminalLabels
     },
 
     clear() {
+      finishIntro();
       set({ ...state, transcript: [] });
     },
 
     abandon() {
+      finishIntro();
       set({
         ...state,
         transcript: append(`${state.draft}^C`, []),
@@ -126,5 +187,23 @@ export function createTerminalSession(data: TerminalData, labels: TerminalLabels
         history: { ...state.history, cursor: null, draft: '' },
       });
     },
+
+    playIntro({ animate }) {
+      if (introPhase !== 'pending') return;
+      if (!animate || state.history.entries.length > 0 || state.draft !== '') {
+        introPhase = 'done';
+        return;
+      }
+      introPhase = 'playing';
+      set({
+        ...state,
+        transcript: [],
+        typing: { text: INTRO_COMMAND, index: 0 },
+        activeWindow: null,
+      });
+      typeNext(0);
+    },
+
+    skipIntro: finishIntro,
   };
 }

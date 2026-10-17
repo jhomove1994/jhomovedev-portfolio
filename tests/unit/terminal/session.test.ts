@@ -1,10 +1,51 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createTerminalSession } from '../../../src/lib/terminal/session';
+import {
+  createTerminalSession,
+  INTRO_CHAR_DELAY_MS,
+  INTRO_SETTLE_MS,
+  type Scheduler,
+} from '../../../src/lib/terminal/session';
 import type { Line } from '../../../src/lib/terminal/types';
 import { labelsFor, makeData } from './fixtures';
 
+/** Manual clock: timers only fire when the test advances time. */
+function fakeScheduler() {
+  let now = 0;
+  let nextHandle = 0;
+  const tasks = new Map<number, { at: number; fn: () => void }>();
+  const scheduler: Scheduler = {
+    setTimeout(fn, ms) {
+      nextHandle += 1;
+      tasks.set(nextHandle, { at: now + ms, fn });
+      return nextHandle;
+    },
+    clearTimeout(handle) {
+      tasks.delete(handle as number);
+    },
+  };
+  return {
+    scheduler,
+    pending: () => tasks.size,
+    advance(ms: number) {
+      const end = now + ms;
+      for (;;) {
+        const due = [...tasks.entries()]
+          .filter(([, task]) => task.at <= end)
+          .sort((a, b) => a[1].at - b[1].at)[0];
+        if (!due) break;
+        tasks.delete(due[0]);
+        now = due[1].at;
+        due[1].fn();
+      }
+      now = end;
+    },
+  };
+}
+
 function setup(locale: 'en' | 'es' = 'en') {
-  return { session: createTerminalSession(makeData(locale), labelsFor(locale)) };
+  const clock = fakeScheduler();
+  const session = createTerminalSession(makeData(locale), labelsFor(locale), clock.scheduler);
+  return { session, clock };
 }
 
 const WHOAMI_LINES: Line[] = [[{ text: 'Fixture whoami text' }]];
@@ -167,6 +208,74 @@ describe('abandon', () => {
     expect(state.transcript.at(-1)).toMatchObject({ input: 'hel^C', lines: [] });
     expect(state.draft).toBe('');
     expect(state.history.entries).toEqual([]);
+  });
+});
+
+describe('intro', () => {
+  it('animate:false keeps the final state and counts as played', () => {
+    const { session, clock } = setup();
+    const before = session.getSnapshot();
+    session.playIntro({ animate: false });
+    session.playIntro({ animate: true });
+    expect(session.getSnapshot()).toBe(before);
+    expect(clock.pending()).toBe(0);
+  });
+
+  it('animate:true types the command char by char, then settles on the final state', () => {
+    const { session, clock } = setup();
+    session.playIntro({ animate: true });
+    expect(session.getSnapshot().transcript).toEqual([]);
+    expect(session.getSnapshot().typing).toEqual({ text: 'whoami', index: 0 });
+
+    clock.advance(INTRO_CHAR_DELAY_MS * 3);
+    expect(session.getSnapshot().typing).toEqual({ text: 'whoami', index: 3 });
+
+    clock.advance(INTRO_CHAR_DELAY_MS * 3 + INTRO_SETTLE_MS);
+    const state = session.getSnapshot();
+    expect(state.typing).toBeNull();
+    expect(state.transcript).toEqual([{ id: 0, input: 'whoami', lines: WHOAMI_LINES }]);
+    expect(state.activeWindow).toBe('whoami');
+    expect(clock.pending()).toBe(0);
+  });
+
+  it('a keypress (skipIntro) completes it immediately and cancels the timers', () => {
+    const { session, clock } = setup();
+    session.playIntro({ animate: true });
+    clock.advance(INTRO_CHAR_DELAY_MS * 2);
+    session.skipIntro();
+    const state = session.getSnapshot();
+    expect(state.typing).toBeNull();
+    expect(state.transcript).toEqual([{ id: 0, input: 'whoami', lines: WHOAMI_LINES }]);
+    expect(clock.pending()).toBe(0);
+  });
+
+  it('typing a command during the intro finishes it first, then runs the command', () => {
+    const { session, clock } = setup();
+    session.playIntro({ animate: true });
+    session.submit('stack');
+    const state = session.getSnapshot();
+    expect(state.typing).toBeNull();
+    expect(state.transcript.map((entry) => entry.input)).toEqual(['whoami', 'stack']);
+    expect(clock.pending()).toBe(0);
+  });
+
+  it('plays once per session', () => {
+    const { session, clock } = setup();
+    session.playIntro({ animate: true });
+    clock.advance(INTRO_CHAR_DELAY_MS * 6 + INTRO_SETTLE_MS);
+    const done = session.getSnapshot();
+    session.playIntro({ animate: true });
+    expect(session.getSnapshot()).toBe(done);
+    expect(clock.pending()).toBe(0);
+  });
+
+  it('does not animate after the user already typed something', () => {
+    const { session, clock } = setup();
+    session.submit('help');
+    const before = session.getSnapshot();
+    session.playIntro({ animate: true });
+    expect(session.getSnapshot()).toBe(before);
+    expect(clock.pending()).toBe(0);
   });
 });
 
