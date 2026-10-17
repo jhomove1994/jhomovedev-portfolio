@@ -7,7 +7,8 @@ import { decodePng } from './png';
 // Real WebGL2 is needed: no stubs here. `--enable-unsafe-swiftshader` only allows a software
 // fallback on machines without a GPU; it never forces software rendering.
 test.use({ launchOptions: { args: ['--enable-unsafe-swiftshader'] } });
-test.describe.configure({ retries: 1 });
+// One real WebGL scene at a time: four of them in parallel starve each other and the ready budget.
+test.describe.configure({ retries: 1, mode: 'default' });
 
 const READY_TIMEOUT = 25_000;
 const LOW_FPS_TIMEOUT = 60_000;
@@ -238,7 +239,9 @@ async function openMonitor(page: Page, query = '?3d=1') {
 
 /** The hero text and the first lines print the finished intro, so settle before measuring. */
 const introDone = (page: Page) =>
-  expect(hero(page).locator('.term-live')).toHaveAttribute('data-typing', 'false');
+  expect(hero(page).locator('.term-live')).toHaveAttribute('data-typing', 'false', {
+    timeout: 10_000,
+  });
 
 test.describe('@3d terminal', () => {
   test('the monitor is the terminal: the 2D frame is gone and there is one session surface', async ({
