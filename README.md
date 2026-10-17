@@ -19,6 +19,8 @@ pnpm verify     # format, lint, typecheck, unit tests, build
 | `pnpm test`                     | Unit tests (Vitest)                            |
 | `E2E_PORT=4399 pnpm test:e2e`   | Browser tests and screenshots (Playwright)     |
 | `pnpm wrangler deploy --dry-run` | Validate the Worker without deploying          |
+| `pnpm models:build`             | Rebuild the 3D desk model from `assets/models/raw` |
+| `pnpm build && pnpm capture:hero` | Regenerate the committed hero still            |
 
 ## Docs
 

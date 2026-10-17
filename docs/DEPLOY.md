@@ -19,7 +19,7 @@ The site is code-complete for the content base. Going live needs six manual step
 | M3   | Author | Connect Workers Builds (see below). Confirm the workers.dev subdomain and update `SITE_URL` if it differs (G3).                               | Production deploys, correct canonical and hreflang URLs |
 | M4   | Author | In `/admin`, upload CV ES, CV EN and the OG image (Media entry, both locales) and save.                                                       | Working CV button, share previews                       |
 | M5   | Author | Review ES/EN copy and replace every `TODO(autor)` (inventory below). Confirm each `published` flag.                                           | Honest public content                                   |
-| M6   | Author | Decide G1, G2 and G3 (next section).                                                                                                          | Final copy and URLs                                     |
+| M6   | Author | Decide G1 to G5 (next section).                                                                                                               | Final copy and URLs                                     |
 
 ### M2: fine-grained PAT
 
@@ -39,11 +39,13 @@ Every save in `/admin` is a commit to `main`, which triggers a build. A save tha
 
 ## Pending decisions to confirm
 
-| ID  | Decision                   | Current default                                                                                                                 | Where                              |
-| --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| G1  | `TODO(autor)` placeholders | Hidden in production, drawn with a dashed outline in dev. One helper owns this.                                                 | `src/lib/content/todo.ts`          |
-| G2  | Profile `availability`     | Seeded as `open-to-offers`, a placeholder that is **not rendered**. Confirm the real value.                                     | `src/content/profile/{es,en}.json` |
-| G3  | Site URL                   | `https://jhomovedev.jhomovedev.workers.dev` is assumed. Confirm your workers.dev subdomain. `astro.config.mjs` `site` reads it. | `src/lib/site.ts`                  |
+| ID  | Decision                   | Current default                                                                                                                                                      | Where                              |
+| --- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| G1  | `TODO(autor)` placeholders | Hidden in production, drawn with a dashed outline in dev. One helper owns this.                                                                                      | `src/lib/content/todo.ts`          |
+| G2  | Profile `availability`     | Seeded as `open-to-offers`, a placeholder that is **not rendered**. Confirm the real value.                                                                          | `src/content/profile/{es,en}.json` |
+| G3  | Site URL                   | `https://jhomovedev.jhomovedev.workers.dev` is assumed. Confirm your workers.dev subdomain. `astro.config.mjs` `site` reads it.                                      | `src/lib/site.ts`                  |
+| G4  | 3D on software rendering   | Machines without a GPU (software renderer) get the static hero plus a visible "Enable 3D" toggle; their explicit choice forces 3D. Drop the signal to default to 3D. | `src/lib/capabilities.ts`          |
+| G5  | GSAP license               | GSAP is under its "Standard no-charge license", not MIT (noted in the credits). Confirm it is acceptable for this site.                                              | `public/models/CREDITS.md`         |
 
 ## `TODO(autor)` inventory
 
@@ -75,6 +77,6 @@ pnpm wrangler deploy --dry-run   # expect only the ASSETS binding
 - [ ] M3 Workers Builds connected, `SITE_URL` matches the real subdomain
 - [ ] M4 CV ES, CV EN and OG image uploaded
 - [ ] M5 every `TODO(autor)` resolved, `published` flags confirmed
-- [ ] M6 G1, G2, G3 decided
+- [ ] M6 G1 to G5 decided
 - [ ] A CV uploaded in `/admin` is served by production within ~2 minutes and the CV button points to it
 - [ ] A deliberately invalid save fails the build and the previous deployment stays live
