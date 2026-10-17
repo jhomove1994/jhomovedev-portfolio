@@ -533,6 +533,14 @@ test.describe('@3d zoom', () => {
     await expect(page.locator('.hero-pin')).toHaveCount(0);
   });
 
+  test('reduced motion stays static: no Lenis and no pin', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open3d(page);
+    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
+    expect(await htmlHas(page, 'lenis')).toBe(false);
+    await expect(page.locator('.hero-pin')).toHaveCount(0);
+  });
+
   test('the 3D hero runs Lenis, pins the hero and turns native smooth scrolling off', async ({
     page,
   }) => {
@@ -657,96 +665,5 @@ test.describe('@3d zoom', () => {
     expect(
       await page.evaluate(() => document.querySelector<HTMLElement>('.hero-copy')!.style.opacity),
     ).toBe('');
-  });
-});
-
-test.describe('@3d reduced motion', () => {
-  test.beforeEach(({ page }) => page.emulateMedia({ reducedMotion: 'reduce' }));
-
-  test('shows the 3D scene, motionless: mode 3d with reduced motion reported', async ({ page }) => {
-    await openMonitor(page);
-    await expect(hero(page)).toHaveAttribute('data-hero-mode', '3d');
-    await expect(hero(page)).toHaveAttribute('data-hero-motion', 'reduced');
-    await expect(hero(page).locator('canvas')).toHaveCount(1);
-  });
-
-  test('no Lenis, no pin and native anchors', async ({ page }) => {
-    await openMonitor(page);
-    expect(await htmlHas(page, 'lenis')).toBe(false);
-    await expect(page.locator('.hero-pin')).toHaveCount(0);
-    await scrollInstantly(page, 600);
-    expect(await scrollY(page)).toBe(600);
-    await page.locator('header a[href^="#"]').first().click();
-    await expect.poll(() => scrollY(page)).toBeGreaterThan(600);
-  });
-
-  test('prints the intro whoami at once instead of typing it', async ({ page }) => {
-    await page.addInitScript(() => {
-      const w = window as unknown as { __typed?: boolean };
-      new MutationObserver(() => {
-        if (document.querySelector('.term-live[data-typing="true"]')) w.__typed = true;
-      }).observe(document, { subtree: true, childList: true, attributes: true });
-    });
-    const term = await openMonitor(page);
-    await expect(term.log).toContainText(profile.whoami);
-    await introDone(page);
-    expect(await page.evaluate(() => (window as unknown as { __typed?: boolean }).__typed)).toBe(
-      undefined,
-    );
-  });
-
-  test('the camera does not follow the pointer', async ({ page }) => {
-    await openMonitor(page);
-    await introDone(page);
-    const shot = async (x: number, y: number) => {
-      await page.mouse.move(x, y);
-      await page.waitForTimeout(800);
-      return decodePng(await hero(page).locator('canvas').screenshot());
-    };
-    const left = await shot(5, 450);
-    const right = await shot(1435, 450);
-    let differing = 0;
-    for (let i = 0; i < left.rgba.length; i += 4) {
-      const delta =
-        Math.abs(left.rgba[i]! - right.rgba[i]!) +
-        Math.abs(left.rgba[i + 1]! - right.rgba[i + 1]!) +
-        Math.abs(left.rgba[i + 2]! - right.rgba[i + 2]!);
-      if (delta > 30) differing += 1;
-    }
-    expect(differing / (left.width * left.height)).toBeLessThan(0.001);
-  });
-
-  test('renders on demand: the frame count is flat once the scene has settled', async ({
-    page,
-  }) => {
-    await open3d(page, '?3d=1&probe=1');
-    await untilReady(page);
-    const frames = () => page.evaluate(() => window.__heroRenderCount ?? 0);
-    await expect.poll(frames).toBeGreaterThan(0);
-    await page.waitForTimeout(800);
-    const settledAt = await frames();
-    await page.waitForTimeout(800);
-    expect(await frames()).toBe(settledAt);
-  });
-
-  test('the terminal on the monitor stays interactive', async ({ page }) => {
-    const term = await openMonitor(page);
-    await introDone(page);
-    await term.run('whoami');
-    await expect(term.log).toContainText(profile.whoami.slice(0, 20));
-    await term.input.click();
-    await expect(term.input).toBeFocused();
-  });
-
-  test('keeps the toggle, and it turns 3D off; ?3d=0 still forces static', async ({ page }) => {
-    await openMonitor(page);
-    await hero(page).locator('button[data-hero-toggle]').click();
-    await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
-    await expect(hero(page)).toHaveAttribute('data-hero-reason', 'override-off');
-    await expect(hero(page)).toHaveAttribute('data-hero-motion', 'reduced');
-    await expect(page.locator('canvas')).toHaveCount(0);
-    await open3d(page, '?3d=0');
-    await expect(hero(page)).toHaveAttribute('data-hero-reason', 'override-off');
-    await expect(hero(page).locator('button[data-hero-toggle]')).toBeVisible();
   });
 });

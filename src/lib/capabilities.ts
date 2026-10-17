@@ -11,6 +11,7 @@ export type HeroMotion = 'full' | 'reduced';
 
 export type ModeReason =
   | 'no-webgl2'
+  | 'reduced-motion'
   | 'override-off'
   | 'override-on'
   | 'mobile'
@@ -61,6 +62,7 @@ type Verdict = Pick<ModeDecision, 'mode' | 'reason'>;
 
 function pickVerdict(input: ModeInput): Verdict {
   if (!input.webgl2) return { mode: 'static', reason: 'no-webgl2' };
+  if (input.reducedMotion) return { mode: 'static', reason: 'reduced-motion' };
   if (input.override === 'off') return { mode: 'static', reason: 'override-off' };
   if (input.override === 'on') return { mode: '3d', reason: 'override-on' };
   if (input.isMobile) return { mode: 'static', reason: 'mobile' };
@@ -70,9 +72,9 @@ function pickVerdict(input: ModeInput): Verdict {
 }
 
 /**
- * Precedence: no WebGL2 > override off > override on > mobile > low-end > software renderer > 3D.
- * An `on` override only bypasses the heuristics, never a hard limit. Reduced motion does not pick
- * the mode: it only sets `motion`, so the visitor still gets the (motionless) 3D scene.
+ * Precedence: no WebGL2 > reduced motion > override off > override on > mobile > low-end >
+ * software renderer > 3D. An `on` override only bypasses the heuristics, never a hard limit: a
+ * motionless 3D scene reads as a photo, so reduced motion gets the static hero and no toggle.
  */
 export function decideMode(input: ModeInput): ModeDecision {
   const verdict = pickVerdict(input);
@@ -80,7 +82,7 @@ export function decideMode(input: ModeInput): ModeDecision {
     ...verdict,
     motion: input.reducedMotion ? 'reduced' : 'full',
     toggle: {
-      available: input.webgl2,
+      available: input.webgl2 && !input.reducedMotion,
       target: verdict.mode === '3d' ? 'static' : '3d',
     },
   };

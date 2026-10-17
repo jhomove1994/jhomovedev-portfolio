@@ -25,7 +25,7 @@ Consulta las docs actualizadas de Astro, R3F, drei y GSAP vía Context7 antes de
 - Los canvas son islas `client:visible`/`client:idle`. El texto del hero se pinta antes que el 3D.
 - `dpr={[1,1.5]}`, `PerformanceMonitor`, pausa fuera del viewport, instancing.
 - GLB comprimidos < 3 MB en total, con créditos en `public/models/CREDITS.md`.
-- Fallback obligatorio (`src/lib/capabilities.ts`): sin WebGL2 o gama baja → imagen estática + terminal 2D; con reduced-motion → escena 3D sin movimiento (sin parallax, zoom ni smooth scroll).
+- Fallback obligatorio (`src/lib/capabilities.ts`): sin WebGL2, reduced-motion o gama baja → imagen estática + terminal 2D.
 - El grafo se deriva del contenido (`src/lib/graph.ts`), nunca de datos hardcodeados.
 
 ## Asistente (`/api/chat`)

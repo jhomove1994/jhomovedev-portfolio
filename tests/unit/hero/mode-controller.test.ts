@@ -129,15 +129,10 @@ describe('createModeController: overrides', () => {
     expect(h.storage.data).toEqual({});
   });
 
-  it('keeps an explicit on override under reduced motion, with reduced motion reported', () => {
+  it('lets reduced motion beat an explicit on override', () => {
     const { state } = snapshotOf(harness({ search: '?3d=1', media: [REDUCED] }));
-    expect(state.decision).toMatchObject({ mode: '3d', reason: 'override-on', motion: 'reduced' });
-    expect(state.decision.toggle.available).toBe(true);
-  });
-
-  it('keeps ?3d=0 working under reduced motion', () => {
-    const { state } = snapshotOf(harness({ search: '?3d=0', media: [REDUCED] }));
-    expect(state.decision).toMatchObject({ mode: 'static', reason: 'override-off' });
+    expect(state.decision).toMatchObject({ mode: 'static', reason: 'reduced-motion' });
+    expect(state.decision.toggle.available).toBe(false);
   });
 
   it('survives storage that throws', () => {
@@ -183,24 +178,23 @@ describe('createModeController: toggle and live updates', () => {
     expect(controller.getSnapshot()).not.toBe(before);
   });
 
-  it('re-decides the motion when reduced motion turns on, and back when it turns off', () => {
+  it('re-decides when reduced motion turns on, and back when it turns off', () => {
     const h = harness();
     const controller = createModeController(h.deps);
-    const motions: string[] = [];
-    controller.subscribe(() => motions.push(controller.getSnapshot().decision.motion));
+    const modes: string[] = [];
+    controller.subscribe(() => modes.push(controller.getSnapshot().decision.reason));
 
     h.media.add(REDUCED);
     h.fireReducedMotion();
     expect(controller.getSnapshot().decision).toMatchObject({
-      mode: '3d',
-      reason: 'default',
-      motion: 'reduced',
+      mode: 'static',
+      reason: 'reduced-motion',
     });
 
     h.media.delete(REDUCED);
     h.fireReducedMotion();
-    expect(controller.getSnapshot().decision).toMatchObject({ mode: '3d', motion: 'full' });
-    expect(motions).toEqual(['reduced', 'full']);
+    expect(controller.getSnapshot().decision.mode).toBe('3d');
+    expect(modes).toEqual(['reduced-motion', 'default']);
   });
 
   it('does not notify when a media change leaves the decision unchanged', () => {
