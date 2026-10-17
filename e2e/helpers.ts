@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import type { Page } from '@playwright/test';
 
 export type PageLocale = 'es' | 'en';
 
@@ -89,4 +90,24 @@ export function seededCertifications(locale: PageLocale): SeededCertification[] 
 export function seededStackName(id: string): string {
   const file = join(process.cwd(), 'src/content/stack', `${id}.json`);
   return (JSON.parse(readFileSync(file, 'utf8')) as { name: string }).name;
+}
+
+export type Gpu = 'hardware' | 'software' | 'none';
+
+/** Deterministic WebGL2: headless Chromium varies, so the context probe is stubbed per scenario. */
+export async function stubWebgl2(page: Page, gpu: Gpu): Promise<void> {
+  await page.addInitScript((kind: Gpu) => {
+    const real = HTMLCanvasElement.prototype.getContext;
+    const fake = { getExtension: () => null };
+    // @ts-expect-error -- test double: only the probe's `getContext('webgl2')` call is served.
+    HTMLCanvasElement.prototype.getContext = function (id: string, attrs?: unknown) {
+      if (id !== 'webgl2') return real.call(this, id as '2d', attrs as never);
+      const strict =
+        (attrs as { failIfMajorPerformanceCaveat?: boolean } | undefined)
+          ?.failIfMajorPerformanceCaveat === true;
+      if (kind === 'none') return null;
+      if (kind === 'software' && strict) return null;
+      return fake;
+    };
+  }, gpu);
 }

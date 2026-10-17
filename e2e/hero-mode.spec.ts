@@ -1,25 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { seededProfile, type PageLocale } from './helpers';
-
-type Gpu = 'hardware' | 'software' | 'none';
-
-/** Deterministic WebGL2: headless Chromium varies, so the context probe is stubbed per scenario. */
-async function stubWebgl2(page: Page, gpu: Gpu): Promise<void> {
-  await page.addInitScript((kind: Gpu) => {
-    const real = HTMLCanvasElement.prototype.getContext;
-    const fake = { getExtension: () => null };
-    // @ts-expect-error -- test double: only the probe's `getContext('webgl2')` call is served.
-    HTMLCanvasElement.prototype.getContext = function (id: string, attrs?: unknown) {
-      if (id !== 'webgl2') return real.call(this, id as '2d', attrs as never);
-      const strict =
-        (attrs as { failIfMajorPerformanceCaveat?: boolean } | undefined)
-          ?.failIfMajorPerformanceCaveat === true;
-      if (kind === 'none') return null;
-      if (kind === 'software' && strict) return null;
-      return fake;
-    };
-  }, gpu);
-}
+import { expect, test } from '@playwright/test';
+import { seededProfile, stubWebgl2, type PageLocale } from './helpers';
 
 const LABELS: Record<PageLocale, { enable: string; disable: string }> = {
   es: { enable: 'Activar 3D', disable: 'Desactivar 3D' },
