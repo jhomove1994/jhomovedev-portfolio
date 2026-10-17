@@ -6,6 +6,7 @@
  * The boxes below are the raw model bounds measured by `scripts/models/build-hero.ts`'s
  * source files; the layout test keeps placements, footprint and collisions honest.
  */
+import type { HeroMotion } from '../capabilities';
 import { frameSubject } from './camera';
 import screenAnchor from './screen-anchor.json';
 import type { HeroModelId, Vec3 } from './screen-anchor';
@@ -181,4 +182,20 @@ export function stillCameraFor(aspect: number): CameraPose {
     margin: STILL_MARGIN,
     elevation: STILL_ELEVATION,
   });
+}
+
+/**
+ * The camera pose for a hero view. Capture runs always photograph the still pose. Under reduced
+ * motion there is no scroll zoom to bring the monitor closer, so on the wide stage (copy overlaid
+ * on the left) the live scene uses the still pose too: the glass is large enough to read the
+ * terminal. The stacked stage keeps the rest pose, where the whole setup is centred.
+ */
+export function cameraPoseFor(input: {
+  motion: HeroMotion;
+  aspect: number;
+  capture?: boolean;
+}): CameraPose {
+  const wide = input.aspect >= COPY_OVERLAY_MIN_ASPECT;
+  const still = input.capture === true || (input.motion === 'reduced' && wide);
+  return still ? stillCameraFor(input.aspect) : restCameraFor(input.aspect);
 }

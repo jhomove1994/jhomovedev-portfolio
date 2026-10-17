@@ -54,7 +54,10 @@ a hardware WebGL2 context.
 - **Hooks**: `#hero[data-hero-mode]`, `[data-hero-reason]` and `[data-hero-state]`.
 - **Reduced motion**: `await page.emulateMedia({ reducedMotion: 'reduce' })` does not pick the
   mode: a capable desktop still gets the 3D scene, motionless, and `#hero[data-hero-motion]` is
-  `reduced` (`full` otherwise, in both modes). There is no parallax, no Lenis, no `.hero-pin`
+  `reduced` (`full` otherwise, in both modes). On the wide stage the camera uses the still pose
+  (`cameraPoseFor`, same framing as the captured still: glass about 46% of the stage), so the
+  monitor terminal text reads at about 20 px effective at 1440 (rest pose: about 8 px), with the
+  left scrim kept for the copy; the stacked stage keeps the rest pose. There is no parallax, no Lenis, no `.hero-pin`
   and no ScrollTrigger zoom, the intro `whoami` is printed instead of typed, the canvas renders
   on demand (the `?probe=1` frame count stays flat) and the toggle stays available. The static
   hero remains for no WebGL2, mobile or low-end/software defaults, `?3d=0`, load failures and
