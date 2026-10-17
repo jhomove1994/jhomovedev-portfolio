@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { terminalLabels } from '../src/i18n/ui';
+import { COMMAND_NAMES } from '../src/lib/terminal/types';
+import { seededProfile } from './helpers';
 import { decodePng } from './png';
 
 // Real WebGL2 is needed: no stubs here. `--enable-unsafe-swiftshader` only allows a software
@@ -210,5 +213,118 @@ test.describe('@3d scene', () => {
     await expect(hero(page)).toHaveAttribute('data-hero-mode', 'static');
     await expect(hero(page)).toHaveAttribute('data-hero-reason', 'override-off');
     await expect(page.locator('canvas')).toHaveCount(0);
+  });
+});
+
+const labels = terminalLabels('es');
+const profile = seededProfile('es');
+
+/** Opens the 3D hero and waits until the scene is up; returns the terminal on the monitor. */
+async function openMonitor(page: Page, query = '?3d=1') {
+  await open3d(page, query);
+  await untilReady(page);
+  const input = hero(page).getByRole('textbox', { name: labels.inputLabel });
+  await expect(input).toBeVisible();
+  return {
+    input,
+    log: hero(page).getByRole('log'),
+    windows: hero(page).getByRole('navigation', { name: labels.windowsLabel }),
+    async run(command: string) {
+      await input.fill(command);
+      await input.press('Enter');
+    },
+  };
+}
+
+/** The hero text and the first lines print the finished intro, so settle before measuring. */
+const introDone = (page: Page) =>
+  expect(hero(page).locator('.term-live')).toHaveAttribute('data-typing', 'false');
+
+test.describe('@3d terminal', () => {
+  test('the monitor is the terminal: the 2D frame is gone and there is one session surface', async ({
+    page,
+  }) => {
+    const term = await openMonitor(page);
+    await expect(hero(page).locator('.hero-frame')).toHaveCount(0);
+    await expect(hero(page).getByRole('log')).toHaveCount(1);
+    await expect(hero(page).getByRole('textbox')).toHaveCount(1);
+    await expect(hero(page).locator('.hero-screen-layer .monitor-terminal')).toBeVisible();
+    // The layer is not inside the aria-hidden canvas wrapper, so the terminal stays accessible.
+    await expect(page.locator('.hero-canvas [role="log"]')).toHaveCount(0);
+    await expect(term.log).toBeVisible();
+  });
+
+  test('typing whoami and Enter prints the profile text', async ({ page }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    const printed = term.log.getByText(profile.whoami);
+    await expect(printed).toHaveCount(1); // the intro's own whoami
+    await term.run('whoami');
+    await expect(printed).toHaveCount(2);
+    await expect(term.input).toHaveValue('');
+  });
+
+  test('help lists the same commands, in the page language, as the static terminal', async ({
+    page,
+  }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    await term.run('help');
+    await expect(term.log).toContainText(labels.helpIntro);
+    for (const name of COMMAND_NAMES) {
+      await expect(term.log).toContainText(`${name}  ${labels.commands[name]}`);
+    }
+  });
+
+  test('the box lands on the rendered glass: same bounds as the lit screen within 3 px', async ({
+    page,
+  }) => {
+    await openMonitor(page);
+    await introDone(page);
+    // Ground truth is the pixels: hide the terminal, find the lit glass in the canvas, compare.
+    const canvas = hero(page).locator('canvas');
+    const box = await page.evaluate(() => {
+      const c = document.querySelector('#hero canvas')!.getBoundingClientRect();
+      const r = document.querySelector('.monitor-terminal')!.getBoundingClientRect();
+      return {
+        left: r.left - c.left,
+        top: r.top - c.top,
+        right: r.right - c.left,
+        bottom: r.bottom - c.top,
+      };
+    });
+    await page.addStyleTag({ content: '.monitor-terminal{visibility:hidden !important}' });
+    const { width, height, rgba } = decodePng(await canvas.screenshot());
+    const lit = (x: number, y: number) => {
+      const i = (y * width + x) * 4;
+      return rgba[i + 1]! > 80 && rgba[i + 1]! > rgba[i]! + 40;
+    };
+    // Walk out from the middle of the box until the lit glass ends on each side.
+    const cx = Math.round((box.left + box.right) / 2);
+    const cy = Math.round((box.top + box.bottom) / 2);
+    expect(lit(cx, cy)).toBe(true); // the glass is there
+    let left = cx;
+    let right = cx;
+    let top = cy;
+    let bottom = cy;
+    while (left > 0 && lit(left - 1, cy)) left -= 1;
+    while (right < width - 1 && lit(right + 1, cy)) right += 1;
+    while (top > 0 && lit(cx, top - 1)) top -= 1;
+    while (bottom < height - 1 && lit(cx, bottom + 1)) bottom += 1;
+    expect(Math.abs(box.left - left)).toBeLessThanOrEqual(3);
+    expect(Math.abs(box.right - (right + 1))).toBeLessThanOrEqual(3);
+    expect(Math.abs(box.top - top)).toBeLessThanOrEqual(3);
+    expect(Math.abs(box.bottom - (bottom + 1))).toBeLessThanOrEqual(3);
+  });
+
+  test('keeps the 2D frame and no monitor terminal below 1024 px', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 900 });
+    await open3d(page);
+    // Stacked layout: the island sits under the still and hydrates once it scrolls into view.
+    await hero(page).locator('.hero-monitor').scrollIntoViewIfNeeded();
+    await untilReady(page);
+    await expect(hero(page).locator('.hero-frame')).toBeVisible();
+    await expect(hero(page).locator('.monitor-terminal')).toHaveCount(0);
+    await expect(hero(page).getByRole('textbox')).toHaveCount(1);
   });
 });

@@ -178,6 +178,36 @@
   opacity: 1;
 }
 
+/* The terminal on the monitor is mounted here by drei, beside the canvas wrapper rather than inside
+   it (the wrapper is aria-hidden). z-index 0 keeps drei's very high stacking order contained. */
+.hero-screen-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Overlay mode: the box is laid onto the glass by a per-frame matrix3d. Until the first placement it
+   is transparent, not hidden: a visibility:hidden input could not take the focus handed over. */
+.hero-screen-layer > .monitor-terminal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: auto;
+}
+
+.hero-screen-layer > .monitor-terminal:not([data-placed]) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.monitor-terminal .term {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-canvas > div:first-child,
   .hero-canvas::after {
@@ -293,5 +323,22 @@
     top: 100%;
     right: 0;
     margin-top: 1.5rem;
+  }
+
+  /* In 3D the monitor is the terminal: the 2D frame is gone, so only the toggle remains and it
+     moves to the stage corner instead of the old frame position. */
+  .hero[data-hero-mode='3d'] .hero-monitor {
+    inset: auto 1rem 1rem auto;
+    width: auto;
+    height: auto;
+  }
+
+  .hero[data-hero-mode='3d'] .hero-island {
+    height: auto;
+  }
+
+  .hero[data-hero-mode='3d'] .hero-controls {
+    position: static;
+    margin-top: 0;
   }
 }

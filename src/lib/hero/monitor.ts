@@ -13,7 +13,7 @@ import type { Vec3 } from './screen-anchor';
  * the CSS3D text is too blurry or too slow. Flip this one constant to switch.
  */
 export type TerminalOnScreen = 'html' | 'overlay';
-export const TERMINAL_ON_SCREEN: TerminalOnScreen = 'html';
+export const TERMINAL_ON_SCREEN: TerminalOnScreen = 'overlay';
 
 /**
  * Width of the terminal's CSS box. Small on purpose: the glass is ~270 px wide on a 1440 stage,

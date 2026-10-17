@@ -37,6 +37,16 @@ function getController(): HeroModeController {
   return controller;
 }
 
+/** From this width the terminal can live on the 3D monitor; below it the 2D frame stays. */
+const DESKTOP_QUERY = '(min-width: 1024px)';
+const subscribeDesktop = (listener: () => void) => {
+  const query = window.matchMedia(DESKTOP_QUERY);
+  query.addEventListener('change', listener);
+  return () => query.removeEventListener('change', listener);
+};
+const getDesktop = () => window.matchMedia(DESKTOP_QUERY).matches;
+const getServerDesktop = () => false;
+
 const subscribe = (listener: () => void) => getController().subscribe(listener);
 const getSnapshot = (): HeroModeState | null => getController().getSnapshot();
 const getServerSnapshot = (): HeroModeState | null => null;
@@ -46,6 +56,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
   const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [scene, dispatch] = useReducer(reduceScene, 'idle');
   const [Experience, setExperience] = useState<DeskExperienceComponent | null>(null);
+  const desktop = useSyncExternalStore(subscribeDesktop, getDesktop, getServerDesktop);
 
   const wants3d = mode?.decision.mode === '3d';
   // Nothing has settled yet for a 3D decision: that is the loading state, derived not stored.
@@ -91,11 +102,16 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
     hero &&
     container;
 
+  // In 3D on a desktop the monitor is the terminal: the 2D frame must not cover the canvas.
+  const terminalOnMonitor = viewMode === '3d' && desktop;
+
   return (
     <div className="hero-island">
-      <div className="hero-frame">
-        <Terminal session={session} data={data} labels={labels} />
-      </div>
+      {terminalOnMonitor ? null : (
+        <div className="hero-frame">
+          <Terminal session={session} data={data} labels={labels} />
+        </div>
+      )}
       {showScene ? (
         <Experience
           container={container}
@@ -104,6 +120,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
           onReady={() => dispatch('loaded')}
           onError={() => dispatch('failed')}
           onLowFps={() => dispatch('slow')}
+          terminal={desktop ? { session, data, labels } : null}
         />
       ) : null}
       {mode?.decision.toggle.available ? (

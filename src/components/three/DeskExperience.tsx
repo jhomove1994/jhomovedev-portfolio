@@ -4,9 +4,10 @@
 // dynamic import in HeroIsland.
 import { PerformanceMonitor, useProgress } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
+import { TERMINAL_ON_SCREEN } from '../../lib/hero/monitor';
 import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import {
   FLOOR_TIER,
@@ -19,6 +20,12 @@ import {
 } from '../../lib/hero/tiers';
 import { BootLoader } from '../hero/BootLoader';
 import { DeskScene } from './DeskScene';
+import {
+  GlassDriver,
+  HtmlMonitorTerminal,
+  OverlayTerminal,
+  type MonitorTerminalContent,
+} from './MonitorTerminal';
 import { useParallaxEnabled } from './Parallax';
 
 declare global {
@@ -39,6 +46,8 @@ export interface DeskExperienceProps {
   onError: () => void;
   /** The floor tier is still too slow (S12): the island reverts to static, once. */
   onLowFps: () => void;
+  /** The terminal to put on the monitor, or `null` below 1024px where the 2D frame stays. */
+  terminal: MonitorTerminalContent | null;
 }
 
 /** Catches errors thrown while loading the GLB or rendering the scene. */
@@ -106,58 +115,80 @@ export function DeskExperience({
   onReady,
   onError,
   onLowFps,
+  terminal,
 }: DeskExperienceProps) {
   const [tier, setTier] = useState<Tier>('high');
   const [ready, setReady] = useState(false);
   const active = useActive(observed);
   const parallax = useParallaxEnabled();
+  // The layer is both a ref (drei's `portal`) and state (the overlay portals into it).
+  const screenLayerRef = useRef<HTMLDivElement | null>(null);
+  const [screenLayer, setScreenLayer] = useState<HTMLDivElement | null>(null);
+  const attachLayer = useCallback((node: HTMLDivElement | null) => {
+    screenLayerRef.current = node;
+    setScreenLayer(node);
+  }, []);
+  const overlayBoxRef = useRef<HTMLDivElement | null>(null);
   const { progress } = useProgress();
   const [probe] = useState(() => probeEnabled(window.location.search));
   const step = (event: TierEvent) => setTier((current) => reduceTier(current, event).tier);
   const settings = TIER_SETTINGS[tier];
 
   return createPortal(
-    <div className="hero-canvas" data-ready={ready || undefined} aria-hidden="true">
-      <SceneBoundary onError={onError}>
-        <Canvas
-          frameloop={active ? 'always' : 'never'}
-          dpr={settings.dpr}
-          camera={{
-            fov: initialPose.fov,
-            near: 0.05,
-            far: 20,
-            position: initialPose.position as [number, number, number],
-          }}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
-          onCreated={({ gl }) => {
-            gl.domElement.setAttribute('aria-hidden', 'true');
-            // A lost context cannot be drawn to again: hand the hero back to the still.
-            gl.domElement.addEventListener('webglcontextlost', (event) => {
-              event.preventDefault();
-              onError();
-            });
-          }}
-        >
-          <PerformanceMonitor
-            flipflops={3}
-            onDecline={() => step('decline')}
-            onIncline={() => step('incline')}
-            onFallback={() => step('fallback')}
-          />
-          <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
-          {probe ? <RenderProbe /> : null}
-          <DeskScene
-            shadows={settings.contactShadows}
-            parallax={parallax}
-            onReady={() => {
-              setReady(true);
-              onReady();
+    <>
+      <div className="hero-canvas" data-ready={ready || undefined} aria-hidden="true">
+        <SceneBoundary onError={onError}>
+          <Canvas
+            frameloop={active ? 'always' : 'never'}
+            dpr={settings.dpr}
+            camera={{
+              fov: initialPose.fov,
+              near: 0.05,
+              far: 20,
+              position: initialPose.position as [number, number, number],
             }}
-          />
-        </Canvas>
-      </SceneBoundary>
-      {ready ? null : <BootLoader progress={progress} label={bootLabel} />}
-    </div>,
+            gl={{ antialias: true, powerPreference: 'high-performance' }}
+            onCreated={({ gl }) => {
+              gl.domElement.setAttribute('aria-hidden', 'true');
+              // A lost context cannot be drawn to again: hand the hero back to the still.
+              gl.domElement.addEventListener('webglcontextlost', (event) => {
+                event.preventDefault();
+                onError();
+              });
+            }}
+          >
+            <PerformanceMonitor
+              flipflops={3}
+              onDecline={() => step('decline')}
+              onIncline={() => step('incline')}
+              onFallback={() => step('fallback')}
+            />
+            <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
+            {probe ? <RenderProbe /> : null}
+            {ready && terminal && TERMINAL_ON_SCREEN === 'html' ? (
+              <HtmlMonitorTerminal content={terminal} layerRef={screenLayerRef} />
+            ) : null}
+            {ready && terminal && TERMINAL_ON_SCREEN === 'overlay' ? (
+              <GlassDriver boxRef={overlayBoxRef} />
+            ) : null}
+            <DeskScene
+              shadows={settings.contactShadows}
+              parallax={parallax}
+              onReady={() => {
+                setReady(true);
+                onReady();
+              }}
+            />
+          </Canvas>
+        </SceneBoundary>
+        {ready ? null : <BootLoader progress={progress} label={bootLabel} />}
+      </div>
+      {/* Not aria-hidden: the terminal on the monitor is real, readable DOM. */}
+      <div ref={attachLayer} className="hero-screen-layer" />
+      {ready && terminal && TERMINAL_ON_SCREEN === 'overlay' && screenLayer ? (
+        <OverlayTerminal content={terminal} boxRef={overlayBoxRef} layer={screenLayer} />
+      ) : null}
+    </>,
     container,
   );
 }
