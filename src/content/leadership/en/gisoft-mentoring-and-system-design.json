@@ -1,5 +1,6 @@
 {
   "title": "Mentored two junior developers and designed a platform at Gisoft",
-  "evidence": "At Gisoft I led a project with a team of three developers, two of them just starting out. It was a platform for mobile top-ups, bill payments and streaming subscriptions, where people and businesses signed up and invited others: the network earned a commission on their own purchases and on those of everyone they brought in. I gathered requirements with the clients, guided the new developers through the technical side and how the platform worked, and defined the system design: a monolith with Laravel, Angular and Ionic.",
+  "evidence": "From late 2021 through 2022, I led a project at Gisoft with a team of three developers, two of them just starting out. It was a platform for mobile top-ups, bill payments and streaming subscriptions, where people and businesses signed up and invited others: the network earned a commission on their own purchases and on those of everyone they brought in. I gathered requirements with the clients, guided the new developers through the technical side and how the platform worked, and defined the system design: a monolith with Laravel, Angular and Ionic.",
+  "date": "2021",
   "order": 2
 }

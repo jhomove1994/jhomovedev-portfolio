@@ -1,5 +1,6 @@
 {
   "title": "Guié a dos desarrolladores junior y definí el diseño de una plataforma en Gisoft",
-  "evidence": "En Gisoft acompañé y lideré un proyecto con un equipo de tres desarrolladores, dos de ellos empezando su carrera. Era una plataforma para vender recargas de operadores, pago de facturas y suscripciones a plataformas de streaming, donde personas y comercios se registraban e invitaban a otros: la red ganaba una comisión por sus compras y por las de todos sus invitados. Levanté los requerimientos con los clientes, guié a los nuevos desarrolladores en lo técnico y en el funcionamiento de la plataforma, y definí el diseño del sistema: un monolito con Laravel, Angular e Ionic.",
+  "evidence": "Entre finales de 2021 y 2022, en Gisoft acompañé y lideré un proyecto con un equipo de tres desarrolladores, dos de ellos empezando su carrera. Era una plataforma para vender recargas de operadores, pago de facturas y suscripciones a plataformas de streaming, donde personas y comercios se registraban e invitaban a otros: la red ganaba una comisión por sus compras y por las de todos sus invitados. Levanté los requerimientos con los clientes, guié a los nuevos desarrolladores en lo técnico y en el funcionamiento de la plataforma, y definí el diseño del sistema: un monolito con Laravel, Angular e Ionic.",
+  "date": "2021",
   "order": 2
 }
