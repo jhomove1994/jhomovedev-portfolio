@@ -1,12 +1,15 @@
 // Pure mapping from plain content objects to the serializable TerminalData the engine prints.
 // Takes plain objects (no astro:content), invents nothing, drops unpublished projects.
 import type { Locale } from '../../i18n/locales';
+import { LOCALES } from '../../i18n/locales';
 import { t } from '../../i18n/ui';
+import { resolveCv } from '../content/cv';
 import { sortByOrder } from '../content/filters';
 import { parseBulletList } from '../content/markdown-list';
 import { formatPeriod } from '../content/period';
 import { CLUSTERS } from '../content/schemas';
 import { resolveStackNames, type StackCatalogEntry } from '../content/stack-names';
+import { localizedPath } from '../i18n/paths';
 import type { TerminalCert, TerminalData, TerminalExperience, TerminalProject } from './types';
 
 interface Ordered {
@@ -119,14 +122,34 @@ function buildCerts(content: TerminalContent): TerminalCert[] {
   });
 }
 
-/** The list-shaped sections of the terminal data, mapped from plain content. */
-export type TerminalSections = Pick<TerminalData, 'experience' | 'projects' | 'stack' | 'certs'>;
+export function buildTerminalData(content: TerminalContent): TerminalData {
+  const { locale, profile } = content;
+  const other = LOCALES.find((candidate) => candidate !== locale) ?? locale;
+  const experience = buildExperience(content);
+  const whatsapp = asText(profile.contact.whatsapp);
+  const cv = resolveCv(
+    Object.fromEntries(LOCALES.map((l) => [l, { cv: asText(content.media[l]?.cv) }] as const)),
+    locale,
+  );
 
-export function buildTerminalSections(content: TerminalContent): TerminalSections {
   return {
-    experience: buildExperience(content),
+    locale,
+    prompt: profile.brand.toLowerCase(),
+    whoami: profile.whoami,
+    name: profile.name,
+    headline: profile.headline,
+    experience,
     projects: buildProjects(content),
     stack: buildStack(content),
     certs: buildCerts(content),
+    contact: {
+      email: profile.contact.email,
+      linkedin: profile.contact.linkedin,
+      ...(whatsapp === undefined ? {} : { whatsapp }),
+    },
+    cvUrl: cv?.href ?? null,
+    cvFallback: cv?.isFallback ?? false,
+    altLocale: { locale: other, path: localizedPath(other) },
+    anchors: { experience: experience.length > 0, contact: true },
   };
 }
