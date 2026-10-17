@@ -17,7 +17,7 @@ for (const locale of ['es', 'en'] as const) {
       await expect(page.locator('#about [data-cmd-text]')).toHaveText(command);
       await expect(page.locator('#about [data-cmd-caret]')).toBeHidden();
       const opacities = await page
-        .locator('[data-reveal-item]')
+        .locator('[data-reveal-item], [data-row]')
         .evaluateAll((els) => els.map((el) => getComputedStyle(el).opacity));
       expect(opacities.length).toBeGreaterThan(0);
       expect(new Set(opacities)).toEqual(new Set(['1']));
@@ -122,12 +122,19 @@ for (const locale of ['es', 'en'] as const) {
       await rail.scrollIntoViewIfNeeded();
       const before = await page.locator(lit).count();
       expect(before).toBeLessThan(total);
+      // Entries are tied to the fill: the ones it has not reached stay hidden.
+      const seen = await page.locator('#experience [data-row].is-in').count();
+      expect(seen).toBeLessThan(total);
+      await expect(page.locator('#experience [data-row]').last()).toHaveCSS('opacity', '0');
       // Bring the end of the rail to the reading line: the fill is complete, every node lit.
       await rail.evaluate((el) => {
         const { bottom } = el.getBoundingClientRect();
         window.scrollBy(0, bottom - window.innerHeight * 0.5);
       });
       await expect(page.locator(lit)).toHaveCount(total);
+      await expect(page.locator('#experience [data-row].is-in')).toHaveCount(total, {
+        timeout: 8000,
+      });
       await expect
         .poll(() => rail.evaluate((el) => Number(el.style.getPropertyValue('--fill'))))
         .toBeCloseTo(1, 1);

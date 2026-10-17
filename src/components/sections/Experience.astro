@@ -45,7 +45,7 @@ const { locale, roles } = Astro.props;
       <span data-rail-fill aria-hidden="true" class="rail-fill"></span>
       <ol class="space-y-12 pl-8">
         {roles.map(({ role, company, location, period, achievements, stack, isFallback }) => (
-          <li data-reveal-item class="relative">
+          <li data-row class="relative">
             <span data-rail-node aria-hidden="true" class="rail-node"></span>
             <DevFallbackBadge locale={locale} isFallback={isFallback} />
             <p data-period class="text-sm text-muted">
