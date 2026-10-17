@@ -20,6 +20,15 @@ for (const { locale, about, path } of LOCALES) {
       await expect(hero).toContainText(locale === 'es' ? 'Trabajo en remoto' : 'Remote');
     });
 
+    test('hero carries the whoami line in the terminal and the single h1 inside #hero', async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/`);
+      const hero = page.locator('#hero');
+      await expect(hero.locator('h1')).toHaveText(profile.name);
+      await expect(hero.getByRole('log')).toContainText(profile.whoami);
+    });
+
     test('never renders the availability value', async ({ page }) => {
       await page.goto(`/${locale}/`);
       const text = (await page.locator('body').innerText()).toLowerCase();

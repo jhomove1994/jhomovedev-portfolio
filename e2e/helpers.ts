@@ -8,6 +8,7 @@ export interface SeededProfile {
   name: string;
   brand: string;
   headline: string;
+  whoami: string;
   location: string;
   remote: boolean;
   bio: string;

@@ -90,3 +90,51 @@ for (const locale of ['es', 'en'] as const) {
     }
   });
 }
+
+for (const locale of ['es', 'en'] as const) {
+  test(`/${locale}/ hero is full-bleed, in view and never overflows`, async ({ page }) => {
+    await page.goto(`/${locale}/`);
+    const { viewport, overflow } = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    const hero = await page.locator('#hero').boundingBox();
+    expect(hero?.width).toBeCloseTo(viewport, 0);
+    // The remaining sections keep their reading column; only the hero spans the viewport.
+    const about = await page.locator('section#about').boundingBox();
+    expect(about?.width).toBeLessThan(viewport - 16);
+    await expect(page.locator('main')).toHaveCount(1);
+    await expect(page.locator('main#main #hero')).toHaveCount(1);
+  });
+
+  test(`/${locale}/ hero keeps its terminal inside the stage`, async ({ page }) => {
+    await page.goto(`/${locale}/`);
+    const stage = await page.locator('.hero-stage').boundingBox();
+    const terminal = await page.locator('#hero .term').boundingBox();
+    expect(terminal).not.toBeNull();
+    expect(terminal!.x).toBeGreaterThanOrEqual(stage!.x - 1);
+    expect(terminal!.x + terminal!.width).toBeLessThanOrEqual(stage!.x + stage!.width + 1);
+    expect(terminal!.y).toBeGreaterThanOrEqual(stage!.y - 1);
+    expect(terminal!.y + terminal!.height).toBeLessThanOrEqual(stage!.y + stage!.height + 1);
+    // Readable size at both viewports.
+    expect(terminal!.height).toBeGreaterThanOrEqual(280);
+  });
+}
+
+test('--header-h matches the sticky header height where the stage is viewport-sized', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'the stage only uses --header-h from 1024px');
+  await page.goto('/es/');
+  const { token, header } = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.height = 'var(--header-h)';
+    document.body.appendChild(probe);
+    const token = probe.getBoundingClientRect().height;
+    probe.remove();
+    return { token, header: document.querySelector('header')!.getBoundingClientRect().height };
+  });
+  expect(Math.abs(token - header)).toBeLessThanOrEqual(1);
+});
