@@ -287,6 +287,26 @@ span.term-window {
   color: var(--color-accent);
 }
 
+/* Phones: the window list is one row that scrolls sideways, so the 44 px touch targets never
+   stack up and push the log out of the frame. */
+@media (max-width: 767px) {
+  .term-tmux {
+    align-items: center;
+  }
+
+  .term-tmux-windows {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* The fading edge says the list goes on. */
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+
+  .term-tmux-windows li {
+    flex: none;
+  }
+}
+
 @media (pointer: coarse) {
   .term-window {
     min-height: 2.75rem;

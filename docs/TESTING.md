@@ -116,11 +116,15 @@ screenshots the 1600x1000 stage as JPEG (about 75 KB; the image budget is 150 KB
   past the right or bottom limit) and writes it to `src/lib/hero/still-anchor.json`: the 2D
   terminal frame sits exactly on that rect. A rerun leaves git clean.
 - Wide screens (from 1024px) place the frame on the glass; the left of the still fades into the
-  page so the copy stays readable over the lamp. Stacked screens crop the still around the glass
+  page so the copy stays readable over the lamp. Tablets (768px to 1023px) crop the still around the glass
   (`narrowStillLayout`, `src/lib/hero/still-layout.ts`, as `--n-*` variables in `cqw`), so the
   terminal is in the first viewport below the name; the frame grows down over the monitor stand
   to a usable height (`--hero-frame-min`). In 3D the stacked layout is the plain one (canvas box,
   frame below). `e2e/hero-still.spec.ts` checks all of this.
+- Phones (under 768px) show no still at all: the hero is terminal-first, a compact copy block
+  and then the full-width terminal, all in the first viewport at 390x844 with the log, the
+  statusline and the one-row tmux bar visible. `e2e/hero-layout.spec.ts` checks it, also under
+  reduced motion.
 - Look at the still after capturing: warm desk, lamp glow, no text, no toggle, green only on the
   glass.
 

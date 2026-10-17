@@ -59,11 +59,11 @@ const stageStyle = [
         {name}
       </h1>
       <p class="hero-headline mt-5 max-w-[32ch] font-display leading-snug">{headline}</p>
-      <p class="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-muted">
+      <p class="hero-place mt-6 flex flex-wrap gap-x-6 gap-y-1 text-muted">
         <span>{location}</span>
         {remote && <span>{t(locale, 'labels.remote')}</span>}
       </p>
-      <p class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <p class="hero-cta mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
         <CvButton button={cv} />
         <a href={`mailto:${email}`} class="inline-flex min-h-11 items-center underline">
           {t(locale, 'buttons.sendEmail')}

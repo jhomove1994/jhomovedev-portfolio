@@ -358,6 +358,53 @@
 }
 
 /*
+ * Phones: terminal-first. A compact copy block, then the full-width 2D terminal, both inside the
+ * first viewport. No still and no canvas (decideMode keeps small screens static), so nothing sits
+ * between the name and the prompt.
+ */
+@media (max-width: 767px) {
+  .hero-stage {
+    gap: 1.25rem;
+    padding: 1.25rem 1.25rem 1.75rem;
+  }
+
+  .hero-copy {
+    padding: 0;
+  }
+
+  .hero-copy h1 {
+    font-size: 1.875rem;
+    line-height: 1.15;
+  }
+
+  .hero-headline {
+    margin-top: 0.625rem;
+    font-size: 1.0625rem;
+  }
+
+  .hero-place {
+    margin-top: 0.5rem;
+  }
+
+  .hero-cta {
+    margin-top: 0.5rem;
+  }
+
+  .hero-still {
+    display: none;
+  }
+
+  .hero-monitor {
+    padding: 0 0.5rem;
+  }
+
+  .hero-frame {
+    /* Fills what the first viewport has left under a two-line header and the copy, within bounds. */
+    height: clamp(18rem, calc(100svh - 25rem), 30rem);
+  }
+}
+
+/*
  * Stacked static hero: the still is cropped around the monitor glass (--n-* from Hero.astro, all in
  * cqw of the stage) and the 2D terminal sits on that glass, so it is in the first viewport right
  * below the name. The glass is wider than tall, so on a phone it is shorter than a usable terminal
@@ -365,7 +412,7 @@
  * stand to --hero-frame-min, and the crop grows with it. In 3D the stack is the plain one above:
  * the canvas fills a 4:3 box and the terminal frame stays below it.
  */
-@media (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1023px) {
   .hero:not([data-hero-mode='3d']) .hero-stage {
     --hero-frame-min: 17rem;
     display: grid;

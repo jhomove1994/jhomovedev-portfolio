@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+
+// Phones have no still (terminal-first, see hero-layout.spec.ts); these cover 768px and up.
 import { stubWebgl2 } from './helpers';
 
 // The static hero (no WebGL2): the 2D terminal sits on the monitor glass of the committed still.
@@ -31,37 +33,6 @@ test.describe('static hero still', () => {
       parseFloat(getComputedStyle(document.querySelector('.hero-frame .term-row')!).lineHeight),
     );
     expect(lineHeight).toBeGreaterThanOrEqual(12);
-  });
-
-  test('stacked: the terminal frame is inside the first viewport, on the still', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'stacked layout');
-    await page.goto('/es/');
-    const viewport = page.viewportSize()!;
-    const still = await rect(page, '.hero-still');
-    const frame = await rect(page, '.hero-frame');
-    const title = await rect(page, '#hero-title');
-    expect(title.top).toBeLessThan(viewport.height / 2);
-    expect(frame.top + frame.height).toBeLessThanOrEqual(viewport.height);
-    // The frame lies on the still (the monitor is cropped to the width), not below it.
-    expect(frame.top).toBeGreaterThanOrEqual(still.top);
-    expect(frame.top + frame.height).toBeLessThanOrEqual(still.top + still.height);
-    expect(frame.width / viewport.width).toBeGreaterThan(0.85);
-    await expect(page.locator('.hero-frame').getByRole('textbox')).toBeVisible();
-  });
-
-  test('stacked: the still is cropped to the monitor, the whole width is covered by the image', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'stacked layout');
-    await page.goto('/es/');
-    const still = await rect(page, '.hero-still');
-    const media = await rect(page, '.hero-still-media');
-    expect(media.left).toBeLessThanOrEqual(still.left + 0.5);
-    expect(media.left + media.width).toBeGreaterThanOrEqual(still.left + still.width - 0.5);
-    // Scaled up so the monitor fills the width: far wider than the viewport it is cropped into.
-    expect(media.width).toBeGreaterThan(1.6 * still.width);
   });
 
   test('tablet: the frame sits on the cropped still within the first viewport', async ({
