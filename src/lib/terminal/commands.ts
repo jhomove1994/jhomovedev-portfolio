@@ -53,6 +53,8 @@ function help({ labels }: CommandContext): CommandResult {
         runSeg(name, name),
         seg(`  ${labels.commands[name]}`, 'muted'),
       ]),
+      [seg('')],
+      [seg(`${labels.helpHint} `, 'muted'), seg('sudo hire-me', 'muted')],
     ],
     'help',
   );

@@ -125,6 +125,8 @@ export interface TerminalLabels {
   /** One-line description per advertised command, shown by `help`. */
   commands: Record<CommandName, string>;
   helpIntro: string;
+  /** Muted closing line of `help` that hints at the `sudo hire-me` easter egg. */
+  helpHint: string;
   /** `{input}` is the text the user typed. */
   commandNotFound: string;
   didYouMean: string;

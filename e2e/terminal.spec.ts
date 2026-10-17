@@ -58,7 +58,7 @@ for (const locale of ['es', 'en'] as const) {
       for (const name of COMMAND_NAMES) {
         await expect(term.log).toContainText(`${name}  ${labels.commands[name]}`);
       }
-      await expect(term.log).not.toContainText('sudo');
+      await expect(term.log).toContainText(`${labels.helpHint} sudo hire-me`);
     });
 
     test('Tab completes a command and keeps focus in the input', async ({ page }) => {

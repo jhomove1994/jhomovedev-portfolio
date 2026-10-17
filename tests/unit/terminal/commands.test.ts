@@ -23,9 +23,16 @@ describe('help', () => {
     expect(text(run('help', 'es'))).toContain(labelsFor('es').commands.projects);
   });
 
-  it('hides the sudo easter egg', () => {
-    expect(text(run('help')).toLowerCase()).not.toContain('sudo');
-    expect(text(run('help')).toLowerCase()).not.toContain('hire-me');
+  it('ends with a muted, non-clickable hint about the sudo easter egg', () => {
+    for (const locale of ['es', 'en'] as const) {
+      const result = run('help', locale);
+      const last = result.lines.at(-1) ?? [];
+      const hint = last.map((segment) => segment.text).join('');
+      expect(hint).toContain(labelsFor(locale).helpHint);
+      expect(hint).toContain('sudo hire-me');
+      expect(last.every((segment) => segment.tone === 'muted')).toBe(true);
+      expect(last.some((segment) => segment.run !== undefined)).toBe(false);
+    }
   });
 });
 
