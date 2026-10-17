@@ -1,6 +1,7 @@
 // The lazy chunk of the section motion: the only place (with its effects) that imports gsap.
 // `sections.ts` reaches it through a dynamic import, once the first animated section is in view.
 import type { MotionKit } from './kit';
+import { initPath } from './path';
 import { initRail } from './rail';
 import { initReveal } from './reveal';
 
@@ -24,5 +25,6 @@ export async function runSectionMotion(): Promise<void> {
   const kit: MotionKit = { gsap, ScrollTrigger };
   initReveal(kit);
   initRail(kit);
+  initPath(kit);
   refreshOnResize(kit);
 }

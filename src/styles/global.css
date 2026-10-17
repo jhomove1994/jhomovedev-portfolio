@@ -544,3 +544,68 @@ html.lenis body {
   border-color: var(--color-border);
   background: var(--color-bg);
 }
+
+/*
+ * Tech Lead path. At rest the line is fully drawn and every stage is lit; with motion the trace
+ * (stroke-dashoffset, path length normalised to 1) starts empty and the script draws it, lighting
+ * each stage on the way. The current stage then pulses softly.
+ */
+.path-line {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 4.5px;
+  width: 2px;
+  height: calc(100% - 1rem);
+  overflow: visible;
+}
+
+.path-base,
+.path-trace {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 1;
+}
+
+.path-base {
+  stroke: var(--color-border);
+}
+
+.path-trace {
+  stroke: var(--color-accent);
+  stroke-dashoffset: 0;
+}
+
+.motion .path-trace {
+  stroke-dashoffset: 1;
+}
+
+[data-path-node] {
+  transition: background-color 0.3s ease;
+}
+
+.motion [data-path-node]:not(.is-lit) {
+  background-color: var(--color-border);
+}
+
+.motion [data-path-node][data-current].is-lit::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px solid var(--color-accent);
+  border-radius: inherit;
+  opacity: 0;
+  animation: stage-pulse 2.6s ease-out 0.4s infinite;
+}
+
+@keyframes stage-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}

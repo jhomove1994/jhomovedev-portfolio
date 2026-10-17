@@ -114,3 +114,38 @@ for (const locale of ['es', 'en'] as const) {
     });
   });
 }
+
+for (const locale of ['es', 'en'] as const) {
+  test.describe(`tech lead path /${locale}/`, () => {
+    const nodes = '#path [data-path-node]';
+    const pulse = (selector: string) =>
+      `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return el ? getComputedStyle(el, '::after').animationName : 'missing'; })()`;
+
+    test('reduced motion shows the drawn path, lit stages and no pulse', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(`/${locale}/`);
+      await page.locator('#path').scrollIntoViewIfNeeded();
+      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      const colors = await page
+        .locator(nodes)
+        .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
+      expect(colors.length).toBeGreaterThan(1);
+      expect(new Set(colors)).toEqual(new Set(['rgb(61, 220, 151)']));
+      expect(await page.evaluate(pulse('#path [data-current]'))).toBe('none');
+    });
+
+    test('with motion the path is traced on enter, stages light up and the current one pulses', async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/`);
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion/);
+      const total = await page.locator(nodes).count();
+      await page.locator('#path').scrollIntoViewIfNeeded();
+      await expect(page.locator(`${nodes}.is-lit`)).toHaveCount(total, { timeout: 8000 });
+      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      expect(await page.evaluate(pulse('#path [data-current]'))).toBe('stage-pulse');
+      expect(await page.locator('#path [data-current]').count()).toBe(1);
+    });
+  });
+}
