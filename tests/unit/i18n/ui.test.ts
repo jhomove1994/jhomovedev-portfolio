@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ui, t, type UiKey } from '../../../src/i18n/ui';
+import { ui, t, terminalLabels, type UiKey } from '../../../src/i18n/ui';
+import { COMMAND_NAMES } from '../../../src/lib/terminal/types';
 import { CERTIFICATION_KINDS, CLUSTERS } from '../../../src/lib/content/schemas';
 import { loadCollection } from '../../helpers/load-content';
 
@@ -104,5 +105,62 @@ describe('section copy', () => {
 
   it('translates the remote label', () => {
     expect(t('en', 'labels.remote')).not.toBe(t('es', 'labels.remote'));
+  });
+});
+
+describe('terminal chrome strings', () => {
+  const terminalKeys = (locale: 'es' | 'en') =>
+    flatten(ui[locale]).filter((key) => key.startsWith('terminal.') || key.startsWith('hero.'));
+
+  it('exists in both locales with identical key sets', () => {
+    expect(terminalKeys('es').length).toBeGreaterThan(30);
+    expect(terminalKeys('en').sort()).toEqual(terminalKeys('es').sort());
+  });
+
+  it.each(['es', 'en'] as const)('has no empty terminal or hero value in %s', (locale) => {
+    for (const key of terminalKeys(locale)) {
+      expect(t(locale, key as UiKey).trim(), `${locale}:${key}`).not.toBe('');
+    }
+  });
+
+  it.each(['es', 'en'] as const)('describes every advertised command in %s', (locale) => {
+    for (const name of COMMAND_NAMES) {
+      expect(terminalLabels(locale).commands[name].trim(), `${locale}:${name}`).not.toBe('');
+    }
+  });
+
+  it('reads natively in English and differs from Spanish', () => {
+    expect(t('en', 'hero.toggleEnable3d')).toBe('Enable 3D');
+    expect(t('en', 'hero.toggleDisable3d')).toBe('Disable 3D');
+    expect(t('es', 'hero.toggleEnable3d')).toBe('Activar 3D');
+    expect(t('es', 'hero.toggleDisable3d')).toBe('Desactivar 3D');
+    expect(terminalLabels('en').commandNotFound).toBe('command not found: {input}');
+    expect(terminalLabels('en').commandNotFound).not.toBe(terminalLabels('es').commandNotFound);
+  });
+
+  it('keeps every template placeholder in both locales', () => {
+    const placeholders = (text: string) => text.match(/\{\w+\}/g)?.sort() ?? [];
+    const en = flatten(ui.en).filter((key) => key.startsWith('terminal.'));
+    for (const key of en) {
+      expect(placeholders(t('es', key as UiKey)), key).toEqual(placeholders(t('en', key as UiKey)));
+    }
+  });
+
+  it('falls back to the Spanish value when an English terminal key is missing', () => {
+    const en = ui.en.terminal as unknown as Record<string, string | undefined>;
+    const original = en.askStub;
+    try {
+      delete en.askStub;
+      expect(t('en', 'terminal.askStub')).toBe(ui.es.terminal.askStub);
+      expect(terminalLabels('en').askStub).toBe(ui.es.terminal.askStub);
+    } finally {
+      en.askStub = original;
+    }
+    expect(terminalLabels('en').askStub).toBe(original);
+  });
+
+  it('returns the requested locale labels', () => {
+    expect(terminalLabels('es').inputLabel).toBe(ui.es.terminal.inputLabel);
+    expect(terminalLabels('en').inputLabel).toBe(ui.en.terminal.inputLabel);
   });
 });

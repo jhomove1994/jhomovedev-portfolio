@@ -1,6 +1,7 @@
 // Shared contracts of the pure terminal engine, plus the single command-name list.
 // No logic, no DOM, no framework.
 import type { Locale } from '../../i18n/locales';
+import type { CERTIFICATION_KINDS } from '../content/schemas';
 
 /** Commands the terminal advertises in `help`. The `sudo hire-me` easter egg is not one of them. */
 export const COMMAND_NAMES = [
@@ -113,5 +114,45 @@ export interface TerminalData {
   anchors: { experience: boolean; contact: boolean };
 }
 
-/** Localized chrome strings (command descriptions, errors, usage, empty states). Grows with PR3. */
-export type TerminalLabels = Readonly<Record<string, string>>;
+/**
+ * Localized chrome strings (command descriptions, errors, usage, empty states, accessible names).
+ * Templates use `{name}` placeholders filled by the command engine. Never portfolio content.
+ */
+export interface TerminalLabels {
+  logLabel: string;
+  inputLabel: string;
+  windowsLabel: string;
+  /** One-line description per advertised command, shown by `help`. */
+  commands: Record<CommandName, string>;
+  helpIntro: string;
+  /** `{input}` is the text the user typed. */
+  commandNotFound: string;
+  didYouMean: string;
+  tryHelp: string;
+  experienceEmpty: string;
+  projectsEmpty: string;
+  projectsHint: string;
+  /** `{id}` is the requested project id. */
+  projectNotFound: string;
+  projectContext: string;
+  projectChallenge: string;
+  projectRole: string;
+  projectDecisions: string;
+  projectResult: string;
+  projectStack: string;
+  stackEmpty: string;
+  certsEmpty: string;
+  certKinds: Record<(typeof CERTIFICATION_KINDS)[number], string>;
+  certInProgress: string;
+  contactEmail: string;
+  contactProfile: string;
+  contactWhatsapp: string;
+  cvLabel: string;
+  cvSpanishSuffix: string;
+  cvMissing: string;
+  langUsage: string;
+  langSame: string;
+  langSwitching: string;
+  askStub: string;
+  sudoHireMe: string;
+}

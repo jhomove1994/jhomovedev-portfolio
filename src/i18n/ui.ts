@@ -1,4 +1,5 @@
 import type { CERTIFICATION_KINDS, CLUSTERS } from '../lib/content/schemas';
+import type { TerminalLabels } from '../lib/terminal/types';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
 /**
@@ -41,6 +42,15 @@ export interface UiDict {
   notFound: {
     title: string;
     hint: string;
+  };
+  terminal: TerminalLabels;
+  /** Hero chrome: mode toggle, still image alt text, boot loader. */
+  hero: {
+    toggleEnable3d: string;
+    toggleDisable3d: string;
+    stillAlt: string;
+    bootLoading: string;
+    bootReady: string;
   };
 }
 
@@ -94,6 +104,64 @@ export const ui = {
       title: 'Página no encontrada',
       hint: 'Elige un idioma para volver al inicio.',
     },
+    terminal: {
+      logLabel: 'Salida de la terminal',
+      inputLabel: 'Escribe un comando',
+      windowsLabel: 'Comandos de la terminal',
+      commands: {
+        help: 'lista los comandos disponibles',
+        whoami: 'quién soy en pocas líneas',
+        experience: 'mi trayectoria profesional',
+        projects: 'casos de proyectos publicados',
+        stack: 'tecnologías agrupadas por área',
+        certs: 'certificaciones y formación',
+        contact: 'cómo escribirme',
+        cv: 'descarga mi CV',
+        lang: 'cambia el idioma: lang es|en',
+        ask: 'pregúntale al asistente',
+        clear: 'limpia la pantalla',
+      },
+      helpIntro: 'Comandos disponibles:',
+      commandNotFound: 'comando no encontrado: {input}',
+      didYouMean: '¿Quisiste decir',
+      tryHelp: 'Prueba',
+      experienceEmpty: 'Aún no hay experiencia publicada.',
+      projectsEmpty: 'Todavía no hay proyectos publicados. Mientras tanto, escríbeme:',
+      projectsHint: 'Usa projects <id> para ver el detalle.',
+      projectNotFound: 'proyecto no encontrado: {id}',
+      projectContext: 'Contexto',
+      projectChallenge: 'Reto',
+      projectRole: 'Mi rol',
+      projectDecisions: 'Decisiones',
+      projectResult: 'Resultado',
+      projectStack: 'Stack',
+      stackEmpty: 'Aún no hay tecnologías publicadas.',
+      certsEmpty: 'Aún no hay certificaciones publicadas.',
+      certKinds: {
+        certification: 'Certificaciones',
+        education: 'Educación',
+        training: 'Cursos',
+      },
+      certInProgress: 'en curso',
+      contactEmail: 'Correo',
+      contactProfile: 'Perfil',
+      contactWhatsapp: 'WhatsApp',
+      cvLabel: 'Descargar CV',
+      cvSpanishSuffix: '(Español)',
+      cvMissing: 'Todavía no hay un CV disponible.',
+      langUsage: 'uso: lang es|en',
+      langSame: 'Ya estás viendo el sitio en español.',
+      langSwitching: 'Cambiando de idioma…',
+      askStub: 'El asistente llegará pronto. Por ahora, prueba help.',
+      sudoHireMe: 'Buena decisión. Así me encuentras:',
+    },
+    hero: {
+      toggleEnable3d: 'Activar 3D',
+      toggleDisable3d: 'Desactivar 3D',
+      stillAlt: 'Un escritorio de madera de noche con un monitor que muestra una terminal',
+      bootLoading: 'cargando el escritorio…',
+      bootReady: 'listo',
+    },
   },
   en: {
     nav: {
@@ -144,6 +212,64 @@ export const ui = {
       title: 'Page not found',
       hint: 'Choose a language to go back to the home page.',
     },
+    terminal: {
+      logLabel: 'Terminal output',
+      inputLabel: 'Type a command',
+      windowsLabel: 'Terminal commands',
+      commands: {
+        help: 'list the available commands',
+        whoami: 'who I am in a few lines',
+        experience: 'my professional background',
+        projects: 'published project case studies',
+        stack: 'technologies grouped by area',
+        certs: 'certifications and training',
+        contact: 'how to reach me',
+        cv: 'download my CV',
+        lang: 'switch language: lang es|en',
+        ask: 'ask the assistant',
+        clear: 'clear the screen',
+      },
+      helpIntro: 'Available commands:',
+      commandNotFound: 'command not found: {input}',
+      didYouMean: 'Did you mean',
+      tryHelp: 'Try',
+      experienceEmpty: 'No experience published yet.',
+      projectsEmpty: 'No projects are published yet. In the meantime, get in touch:',
+      projectsHint: 'Use projects <id> for the details.',
+      projectNotFound: 'project not found: {id}',
+      projectContext: 'Context',
+      projectChallenge: 'Challenge',
+      projectRole: 'My role',
+      projectDecisions: 'Decisions',
+      projectResult: 'Result',
+      projectStack: 'Stack',
+      stackEmpty: 'No technologies published yet.',
+      certsEmpty: 'No certifications published yet.',
+      certKinds: {
+        certification: 'Certifications',
+        education: 'Education',
+        training: 'Courses',
+      },
+      certInProgress: 'in progress',
+      contactEmail: 'Email',
+      contactProfile: 'Profile',
+      contactWhatsapp: 'WhatsApp',
+      cvLabel: 'Download CV',
+      cvSpanishSuffix: '(Spanish)',
+      cvMissing: 'No CV is available yet.',
+      langUsage: 'usage: lang es|en',
+      langSame: 'You are already viewing the site in English.',
+      langSwitching: 'Switching language…',
+      askStub: 'The assistant is coming soon. For now, try help.',
+      sudoHireMe: 'Good call. Here is how to find me:',
+    },
+    hero: {
+      toggleEnable3d: 'Enable 3D',
+      toggleDisable3d: 'Disable 3D',
+      stillAlt: 'A wooden desk at night with a monitor showing a terminal',
+      bootLoading: 'loading the desk…',
+      bootReady: 'ready',
+    },
   },
 } satisfies Record<Locale, UiDict>;
 
@@ -170,4 +296,16 @@ export function t(locale: Locale, key: UiKey): string {
     throw new Error(`Unknown UI key "${key}"`);
   }
   return value;
+}
+
+/** Terminal chrome for `locale`; any missing key falls back to the default locale (es). */
+export function terminalLabels(locale: Locale): TerminalLabels {
+  const base = ui[DEFAULT_LOCALE].terminal;
+  const own = ui[locale].terminal;
+  return {
+    ...base,
+    ...own,
+    commands: { ...base.commands, ...own.commands },
+    certKinds: { ...base.certKinds, ...own.certKinds },
+  };
 }
