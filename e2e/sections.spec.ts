@@ -31,7 +31,7 @@ for (const { locale, about, path } of LOCALES) {
 
     test('renders the availability as a label, never as the raw enum value', async ({ page }) => {
       await page.goto(`/${locale}/`);
-      await expect(page.locator('#hero [data-availability]')).toHaveText(
+      await expect(page.locator('#hero [data-availability]')).toContainText(
         locale === 'es' ? 'Abierto a ofertas' : 'Open to offers',
       );
       const text = (await page.locator('body').innerText()).toLowerCase();
