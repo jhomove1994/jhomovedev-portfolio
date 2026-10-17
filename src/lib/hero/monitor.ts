@@ -1,0 +1,66 @@
+/**
+ * Where and how big the terminal sits on the 3D monitor (design AD11), pure and three-free.
+ * drei's `<Html transform>` lays a CSS box in the scene: the box is `cssWidth` px wide, one world
+ * unit spans `1 / pxToUnit` px at scale 1, and `scale` stretches it to the glass.
+ */
+import { screenWorldCenter } from './layout';
+import screenAnchor from './screen-anchor.json';
+import type { Vec3 } from './screen-anchor';
+
+/**
+ * How the terminal reaches the screen. `html` renders it through drei `<Html transform occlude>`;
+ * `overlay` is the documented fallback (a DOM box aligned to the projected glass) for the case
+ * the CSS3D text is too blurry or too slow. Flip this one constant to switch.
+ */
+export type TerminalOnScreen = 'html' | 'overlay';
+export const TERMINAL_ON_SCREEN: TerminalOnScreen = 'html';
+
+/**
+ * Width of the terminal's CSS box. Small on purpose: the glass is ~270 px wide on a 1440 stage,
+ * so a 440 px box shrinks to ~0.6 and keeps 14 px text near 9 px on screen. The box is wider than
+ * the glass in CSS pixels only; the scene scales it down.
+ */
+export const TERMINAL_CSS_WIDTH = 440;
+
+/**
+ * World units per CSS pixel of drei's Html transform at scale 1. drei maps
+ * `1 / (distanceFactor / 400)` px to one unit and `distanceFactor` defaults to 10, so 40 px = 1
+ * unit. Verified against the rendered box by the `@3d terminal` e2e (terminal width vs the
+ * projected glass), not just assumed.
+ */
+export const HTML_PX_TO_UNIT = 1 / 40;
+
+/** How far in front of the glass the box floats, metres: enough to avoid z-fighting. */
+export const SCREEN_LIFT = 0.001;
+
+export interface MonitorMount {
+  position: Vec3;
+  /** Euler angles (XYZ order is enough: the glass only tilts about X). */
+  rotation: Vec3;
+  /** Value for drei Html's `scale`. */
+  scale: number;
+  cssWidth: number;
+  cssHeight: number;
+}
+
+export interface MonitorMountOptions {
+  cssWidth?: number;
+  pxToUnit?: number;
+  lift?: number;
+}
+
+export function monitorMount({
+  cssWidth = TERMINAL_CSS_WIDTH,
+  pxToUnit = HTML_PX_TO_UNIT,
+  lift = SCREEN_LIFT,
+}: MonitorMountOptions = {}): MonitorMount {
+  const [cx, cy, cz] = screenWorldCenter();
+  const [nx, ny, nz] = screenAnchor.normal;
+  return {
+    position: [cx + nx * lift, cy + ny * lift, cz + nz * lift],
+    rotation: [...screenAnchor.rotation] as unknown as Vec3,
+    scale: screenAnchor.width / (cssWidth * pxToUnit),
+    cssWidth,
+    cssHeight: Math.round(cssWidth / screenAnchor.aspect),
+  };
+}
