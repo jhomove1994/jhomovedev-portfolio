@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '../../i18n/locales';
 import { t, type UiKey } from '../../i18n/ui';
+import { splitCommand } from '../../lib/motion/typing';
 
 interface Props {
   locale: Locale;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const { locale, id, titleKey, commandKey } = Astro.props;
+const { prompt, body } = splitCommand(t(locale, commandKey));
 ---
 
 <div
@@ -19,7 +21,8 @@ const { locale, id, titleKey, commandKey } = Astro.props;
   class="mb-8 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:mb-0 lg:self-start"
 >
   <p data-cmd aria-hidden="true" class="cmd">
-    <span data-cmd-text>{t(locale, commandKey)}</span>
+    {prompt && <span class="cmd-prompt">{prompt} </span>}
+    <span data-cmd-text>{body}</span>
     <span data-cmd-caret class="cmd-caret"></span>
   </p>
   <h2 id={id}>{t(locale, titleKey)}</h2>

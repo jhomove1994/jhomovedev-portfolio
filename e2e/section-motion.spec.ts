@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-const CONTACT_COMMANDS = { es: '$ ./contacto.sh', en: '$ ./contact.sh' } as const;
-const COMMANDS = { es: '$ cat sobre-mi.md', en: '$ cat about.md' } as const;
+const CONTACT_COMMANDS = { es: './contacto.sh', en: './contact.sh' } as const;
+const COMMANDS = { es: 'cat sobre-mi.md', en: 'cat about.md' } as const;
 
 for (const locale of ['es', 'en'] as const) {
   const command = COMMANDS[locale];
@@ -44,9 +44,14 @@ for (const locale of ['es', 'en'] as const) {
       const contact = page.locator('#contact');
       await expect(contact).not.toHaveAttribute('data-revealed', '');
       await contact.scrollIntoViewIfNeeded();
-      const typed = contact.locator('[data-cmd-text]');
-      await expect(typed).toHaveText(CONTACT_COMMANDS[locale]);
+      const typed = contact.locator('[data-cmd-text] [data-typed]');
       const first = contact.locator('[data-reveal-item]').first();
+      // The content is the command's output: it stays hidden until the command is fully typed.
+      await expect.poll(async () => (await typed.textContent())!.length).toBeGreaterThan(0);
+      if ((await typed.textContent()) !== CONTACT_COMMANDS[locale]) {
+        await expect(first).not.toHaveClass(/is-in/);
+      }
+      await expect(typed).toHaveText(CONTACT_COMMANDS[locale]);
       await expect(first).toHaveClass(/is-in/);
       await expect(first).toHaveCSS('opacity', '1');
       await expect(contact.locator('[data-cmd-caret]')).toHaveAttribute('data-done', '');
@@ -54,6 +59,21 @@ for (const locale of ['es', 'en'] as const) {
       await page.evaluate(() => window.scrollTo(0, 0));
       await contact.scrollIntoViewIfNeeded();
       await expect(typed).toHaveText(CONTACT_COMMANDS[locale]);
+    });
+
+    test('items of a section arrive one after another, not together', async ({ page }) => {
+      await page.goto(`/${locale}/`);
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion/);
+      const items = page.locator('#contact [data-reveal-item]');
+      expect(await items.count()).toBeGreaterThan(1);
+      await page.locator('#contact').scrollIntoViewIfNeeded();
+      await expect(items.first()).toHaveClass(/is-in/);
+      const settled = await items.evaluateAll((els) =>
+        els.map((el) => parseFloat((el as HTMLElement).style.transitionDelay || '0')),
+      );
+      expect(new Set(settled).size).toBeGreaterThan(1);
+      expect(settled).toEqual([...settled].sort((a, b) => a - b));
     });
 
     test('does not scroll horizontally', async ({ page }) => {

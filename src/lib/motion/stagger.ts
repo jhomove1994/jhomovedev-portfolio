@@ -1,7 +1,7 @@
 /** Gap between two consecutive items entering a section. */
-export const STAGGER_STEP_MS = 100;
+export const STAGGER_STEP_MS = 150;
 /** Items past this index enter together with it, so a long list does not trail behind the reader. */
-export const STAGGER_MAX_STEPS = 6;
+export const STAGGER_MAX_STEPS = 8;
 
 /** Delay for the `index`-th item of a batch, after `baseMs`. */
 export function staggerDelayMs(index: number, baseMs = 0): number {
