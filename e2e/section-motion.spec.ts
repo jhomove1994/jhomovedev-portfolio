@@ -129,7 +129,7 @@ for (const locale of ['es', 'en'] as const) {
       // Bring the end of the rail to the reading line: the fill is complete, every node lit.
       await rail.evaluate((el) => {
         const { bottom } = el.getBoundingClientRect();
-        window.scrollBy(0, bottom - window.innerHeight * 0.5);
+        window.scrollBy({ top: bottom - window.innerHeight * 0.5, behavior: 'instant' });
       });
       await expect(page.locator(lit)).toHaveCount(total);
       await expect(page.locator('#experience [data-row].is-in')).toHaveCount(total, {
