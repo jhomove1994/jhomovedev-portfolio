@@ -57,8 +57,17 @@ describe('frameGeometry', () => {
     }
   });
 
-  it('finishes growing before the copy has been gone for long, so no column stays empty', () => {
-    expect(FRAME_GROW_END).toBeLessThanOrEqual(COPY_FADE_END + 0.1);
+  it('lets the copy fade almost completely before the growing frame reaches it', () => {
+    for (let step = 0; step <= 100; step++) {
+      const progress = step / 100;
+      if (frameGeometry(BOUNDS, progress).grow < 0.05) continue;
+      expect(copyOpacity(progress)).toBeLessThanOrEqual(0.15);
+    }
+  });
+
+  it('finishes growing by the middle of the zoom, so no column stays empty for long', () => {
+    expect(FRAME_GROW_END).toBeLessThanOrEqual(0.5);
+    expect(COPY_FADE_END).toBeLessThan(FRAME_GROW_END);
     expect(FRAME_GROW_START).toBeGreaterThanOrEqual(0);
     expect(FRAME_GROW_START).toBeLessThan(FRAME_GROW_END);
   });

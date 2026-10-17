@@ -10,9 +10,9 @@
 import { easeInOutCubic, zoomProgress } from './zoom';
 
 /** The hero copy is gone by this much of the zoom (it fades over the first part). */
-export const COPY_FADE_END = 0.4;
-/** The frame starts growing a little after the copy starts to fade, and is done a little after it is gone. */
-export const FRAME_GROW_START = 0.12;
+export const COPY_FADE_END = 0.2;
+/** The frame starts growing as the copy is almost gone, so it never wipes over visible text. */
+export const FRAME_GROW_START = 0.16;
 export const FRAME_GROW_END = 0.48;
 
 /** Copy opacity for a zoom progress: 1 at rest, 0 once the fade range ends. */
