@@ -19,9 +19,11 @@ import {
   getLeadership,
   getMedia,
   getProfile,
+  getProjects,
   getStack,
 } from '../../lib/content/queries';
 import { cvButton } from '../../lib/content/cv';
+import { parseEntryId } from '../../lib/content/entry-id';
 import { groupByKind } from '../../lib/content/group';
 import { parseBulletList } from '../../lib/content/markdown-list';
 import { formatPeriod } from '../../lib/content/period';
@@ -29,6 +31,7 @@ import { CERTIFICATION_KINDS } from '../../lib/content/schemas';
 import { resolveStackNames } from '../../lib/content/stack-names';
 import { t } from '../../i18n/ui';
 import { withTodoVisibility } from '../../lib/content/todo';
+import { buildTerminalData } from '../../lib/terminal/data';
 
 export const getStaticPaths = (() =>
   LOCALES.map((lang) => ({ params: { lang } }))) satisfies GetStaticPaths;
@@ -65,7 +68,8 @@ const milestones: Milestone[] = withTodoVisibility(
 }));
 
 const stackCatalog = await getStack();
-const roles: Role[] = (await getExperience(locale)).map(({ entry, isFallback }) => ({
+const experience = await getExperience(locale);
+const roles: Role[] = experience.map(({ entry, isFallback }) => ({
   role: entry.data.role,
   company: entry.data.company,
   location: entry.data.location,
@@ -75,8 +79,9 @@ const roles: Role[] = (await getExperience(locale)).map(({ entry, isFallback }) 
   isFallback,
 }));
 
+const certifications = await getCertifications(locale);
 const credentialGroups: CredentialGroup[] = groupByKind(
-  (await getCertifications(locale)).map(({ entry, isFallback }) => ({
+  certifications.map(({ entry, isFallback }) => ({
     kind: entry.data.kind,
     credential: {
       name: entry.data.name,
@@ -90,6 +95,19 @@ const credentialGroups: CredentialGroup[] = groupByKind(
   })),
   CERTIFICATION_KINDS,
 ).map(({ kind, items }) => ({ kind, items: items.map(({ credential }) => credential) }));
+
+// G1 applies to the terminal too: placeholders are hidden in production and visible in development.
+const projects = await getProjects(locale);
+const terminal = buildTerminalData({
+  locale,
+  isDev: import.meta.env.DEV,
+  profile,
+  experience: experience.map(({ entry }) => entry),
+  projects: projects.map(({ entry }) => ({ slug: parseEntryId(entry.id).slug, data: entry.data })),
+  stackCatalog: stackCatalog,
+  certifications: certifications.map(({ entry }) => entry),
+  media: { es: mediaByLocale.es, en: mediaByLocale.en },
+});
 
 const navItems: NavItem[] = [
   { id: 'about', labelKey: 'nav.about' },
@@ -118,6 +136,7 @@ const navItems: NavItem[] = [
       remote={profile.remote}
       email={profile.contact.email}
       cv={cvButton(mediaByLocale, locale)}
+      terminal={terminal}
     />
     <div class="mx-auto w-full max-w-5xl px-5 pt-10 lg:px-8 lg:pt-16">
       <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />

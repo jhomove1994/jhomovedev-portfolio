@@ -1,7 +1,11 @@
 ---
 import type { Locale } from '../../i18n/locales';
-import { t } from '../../i18n/ui';
+import { t, terminalLabels } from '../../i18n/ui';
 import type { CvButtonModel } from '../../lib/content/cv';
+import stillAnchor from '../../lib/hero/still-anchor.json';
+import { shippableLabels } from '../../lib/terminal/labels';
+import type { TerminalData } from '../../lib/terminal/types';
+import { HeroIsland } from '../hero/HeroIsland';
 import HeroStill from '../hero/HeroStill.astro';
 import CvButton from '../ui/CvButton.astro';
 
@@ -14,10 +18,24 @@ interface Props {
   email: string;
   /** `null` until a CV is uploaded; the button is then omitted. */
   cv: CvButtonModel | null;
+  /** Content the terminal prints, already filtered for the current environment. */
+  terminal: TerminalData;
 }
 
 // Availability is deliberately not a prop: it is not rendered until the author confirms the value.
-const { locale, name, headline, location, remote, email, cv } = Astro.props;
+const { locale, name, headline, location, remote, email, cv, terminal } = Astro.props;
+
+const labels = shippableLabels(terminalLabels(locale), terminal);
+const chrome = {
+  enable3d: t(locale, 'hero.toggleEnable3d'),
+  disable3d: t(locale, 'hero.toggleDisable3d'),
+};
+const monitorStyle = [
+  `--mon-x:${stillAnchor.x * 100}%`,
+  `--mon-y:${stillAnchor.y * 100}%`,
+  `--mon-w:${stillAnchor.width * 100}%`,
+  `--mon-h:${stillAnchor.height * 100}%`,
+].join(';');
 ---
 
 <section id="hero" aria-labelledby="hero-title" data-hero-mode="static" class="hero">
@@ -39,5 +57,8 @@ const { locale, name, headline, location, remote, email, cv } = Astro.props;
       </p>
     </div>
     <HeroStill locale={locale} />
+    <div class="hero-monitor" style={monitorStyle}>
+      <HeroIsland client:visible data={terminal} labels={labels} chrome={chrome} />
+    </div>
   </div>
 </section>
