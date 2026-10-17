@@ -36,6 +36,8 @@ Mode: strict (orchestrator configuration). Runner: `pnpm test` (vitest); e2e `pn
 - [x] T2 Earlier zoom end pose with bezel and desk visible (tested end-pose bounds) — delegated — `99a9b98` (+ e2e adaptation commit for the full-width canvas)
 - [x] T3 Verification: format, lint, check, test, build, e2e; frame captures at 1440 across zoom progress — delegated
 
+- [x] T4 User feedback: monitor too small at max zoom — raise `ZOOM_FRACTION` 0.7 → 0.9 (terminal text ~24 px at 1440, bezel still visible) — inline (one constant + doc) — unit 1084 passed, hero e2e 52 passed
+
 ## Acceptance
 
 - At every zoom progress there is no empty column beside the frame at 1440px.

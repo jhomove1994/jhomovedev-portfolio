@@ -93,7 +93,7 @@ export function screenCorners({ lift = SCREEN_LIFT }: { lift?: number } = {}): C
  * Share of the view the monitor (glass plus bezel) may cover at the end of the zoom, on both axes:
  * the rest is the desk and wall around it. Lower it to pull the camera back.
  */
-export const ZOOM_FRACTION = 0.7;
+export const ZOOM_FRACTION = 0.9;
 /**
  * Bezel around the glass, metres. The model's side bezel is thinner (about 7 mm); this is a little
  * generous so the frame, not only the glass, has clear room in the view.
