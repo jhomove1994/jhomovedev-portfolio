@@ -1,5 +1,6 @@
 // Command table: turns one input line into printable lines plus UI effects.
 // Pure: every string comes from `TerminalData` (content) or `TerminalLabels` (chrome).
+import { safeHref } from './href';
 import { parseInput } from './parser';
 import { suggestCommand } from './suggest';
 import {
@@ -24,7 +25,9 @@ export interface CommandContext {
 const seg = (text: string, tone?: Tone): Segment =>
   tone === undefined ? { text } : { text, tone };
 const plain = (text: string, tone?: Tone): Line => [seg(text, tone)];
-const blank = (): Line => [seg('')];
+/** Joins blocks of lines with one blank line between them. */
+const separated = (blocks: Line[][]): Line[] =>
+  blocks.flatMap((block, index) => (index === 0 ? block : [[seg('')], ...block]));
 /** A segment that runs `command` when activated, exactly as if it had been typed. */
 const runSeg = (text: string, command: string): Segment => ({ text, tone: 'amber', run: command });
 
@@ -62,15 +65,18 @@ function whoami({ data }: CommandContext): CommandResult {
 function experience({ data, labels }: CommandContext): CommandResult {
   if (data.experience.length === 0)
     return result([plain(labels.experienceEmpty, 'muted')], 'experience');
-  const lines = data.experience.flatMap((entry, index): Line[] => {
-    const meta = [entry.location, entry.period].filter((part) => part !== undefined && part !== '');
-    return [
-      ...(index > 0 ? [blank()] : []),
-      [seg(entry.role, 'amber'), seg(` @ ${entry.company}`)],
-      plain(meta.join(' · '), 'muted'),
-      ...entry.achievements.map((achievement) => plain(`  - ${achievement}`)),
-    ];
-  });
+  const lines = separated(
+    data.experience.map((entry): Line[] => {
+      const meta = [entry.location, entry.period].filter(
+        (part) => part !== undefined && part !== '',
+      );
+      return [
+        [seg(entry.role, 'amber'), seg(` @ ${entry.company}`)],
+        plain(meta.join(' · '), 'muted'),
+        ...entry.achievements.map((achievement) => plain(`  - ${achievement}`)),
+      ];
+    }),
+  );
   const effects: CommandResult['effects'] = data.anchors.experience
     ? [{ kind: 'scroll', section: 'experience' }]
     : [];
@@ -137,6 +143,83 @@ function lang({ data, labels }: CommandContext, args: string[]): CommandResult {
   ]);
 }
 
+function stack({ data, labels }: CommandContext): CommandResult {
+  const clusters = data.stack.filter((cluster) => cluster.items.length > 0);
+  if (clusters.length === 0) return result([plain(labels.stackEmpty, 'muted')], 'stack');
+  const lines = separated(
+    clusters.map((cluster): Line[] => [
+      plain(cluster.cluster, 'amber'),
+      plain(`  ${cluster.items.join(', ')}`),
+    ]),
+  );
+  return result(lines, 'stack');
+}
+
+function certs({ data, labels }: CommandContext): CommandResult {
+  if (data.certs.length === 0) return result([plain(labels.certsEmpty, 'muted')], 'certs');
+  const kinds = [...new Set(data.certs.map((cert) => cert.kind))];
+  const lines = separated(
+    kinds.map((kind): Line[] => {
+      const heading = labels.certKinds[kind as keyof TerminalLabels['certKinds']] ?? kind;
+      const entries = data.certs
+        .filter((cert) => cert.kind === kind)
+        .map((cert): Line => {
+          const href = cert.url === undefined ? null : safeHref(cert.url);
+          const name: Segment = href === null ? seg(cert.name) : { text: cert.name, href };
+          const year = cert.year === undefined ? '' : ` (${cert.year})`;
+          return [
+            seg('  '),
+            name,
+            seg(` - ${cert.issuer}${year}`, 'muted'),
+            ...(cert.inProgress ? [seg(` [${labels.certInProgress}]`, 'amber')] : []),
+          ];
+        });
+      return [plain(heading, 'amber'), ...entries];
+    }),
+  );
+  return result(lines, 'certs');
+}
+
+const stripProtocol = (url: string): string => url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+
+/** Email, profile and, only when it is a web link, WhatsApp. A raw phone number is never printed. */
+function contactLines({ data, labels }: CommandContext): Line[] {
+  const field = (label: string, text: string, href: string | null): Line[] =>
+    href === null ? [] : [[seg(`${label}: `, 'amber'), { text, href }]];
+  const web = (url: string | undefined): string | null =>
+    url !== undefined && /^https?:/i.test(url) ? safeHref(url) : null;
+  const { email, linkedin, whatsapp } = data.contact;
+  return [
+    ...field(labels.contactEmail, email, safeHref(`mailto:${email}`)),
+    ...field(labels.contactProfile, stripProtocol(linkedin), web(linkedin)),
+    ...(whatsapp === undefined
+      ? []
+      : field(labels.contactWhatsapp, stripProtocol(whatsapp), web(whatsapp))),
+  ];
+}
+
+function contact(context: CommandContext): CommandResult {
+  return result(contactLines(context), 'contact');
+}
+
+function cv({ data, labels }: CommandContext): CommandResult {
+  const href = data.cvUrl === null ? null : safeHref(data.cvUrl);
+  if (href === null) return result([plain(labels.cvMissing, 'muted')], 'cv');
+  const text = data.cvFallback ? `${labels.cvLabel} ${labels.cvSpanishSuffix}` : labels.cvLabel;
+  return result([[{ text, href }]], 'cv', [{ kind: 'download', href }]);
+}
+
+function sudoHireMe(context: CommandContext): CommandResult {
+  const effects: CommandResult['effects'] = context.data.anchors.contact
+    ? [{ kind: 'scroll', section: 'contact' }]
+    : [];
+  return result(
+    [plain(context.labels.sudoHireMe, 'amber'), ...contactLines(context)],
+    'contact',
+    effects,
+  );
+}
+
 function ask({ labels }: CommandContext): CommandResult {
   return result([plain(labels.askStub, 'muted')], 'ask');
 }
@@ -172,6 +255,16 @@ export function runCommand(input: string, context: CommandContext): CommandResul
       return projects(context, parsed.args);
     case 'lang':
       return lang(context, parsed.args);
+    case 'stack':
+      return stack(context);
+    case 'certs':
+      return certs(context);
+    case 'contact':
+      return contact(context);
+    case 'cv':
+      return cv(context);
+    case 'sudo hire-me':
+      return sudoHireMe(context);
     case 'ask':
       return ask(context);
     case 'clear':
