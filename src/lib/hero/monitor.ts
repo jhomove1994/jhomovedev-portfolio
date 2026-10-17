@@ -64,3 +64,26 @@ export function monitorMount({
     cssHeight: Math.round(cssWidth / screenAnchor.aspect),
   };
 }
+
+type Corners = readonly [Vec3, Vec3, Vec3, Vec3];
+
+/**
+ * World-space corners of the glass (top-left, top-right, bottom-right, bottom-left), lifted like
+ * the mount. The glass only tilts about X, so its right edge is world X and its up edge is the
+ * normal turned a quarter about X.
+ */
+export function screenCorners({ lift = SCREEN_LIFT }: { lift?: number } = {}): Corners {
+  const { position } = monitorMount({ lift });
+  const [, ny, nz] = screenAnchor.normal;
+  const right: Vec3 = [1, 0, 0];
+  const upLength = Math.hypot(ny, nz);
+  const up: Vec3 = [0, nz / upLength, -ny / upLength];
+  const halfW = screenAnchor.width / 2;
+  const halfH = screenAnchor.height / 2;
+  const at = (sx: number, sy: number): Vec3 => [
+    position[0] + right[0] * halfW * sx + up[0] * halfH * sy,
+    position[1] + right[1] * halfW * sx + up[1] * halfH * sy,
+    position[2] + right[2] * halfW * sx + up[2] * halfH * sy,
+  ];
+  return [at(-1, 1), at(1, 1), at(1, -1), at(-1, -1)];
+}

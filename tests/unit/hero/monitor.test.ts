@@ -6,6 +6,7 @@ import {
   TERMINAL_CSS_WIDTH,
   TERMINAL_ON_SCREEN,
   monitorMount,
+  screenCorners,
 } from '../../../src/lib/hero/monitor';
 import screenAnchor from '../../../src/lib/hero/screen-anchor.json';
 
@@ -64,5 +65,39 @@ describe('monitorMount', () => {
 describe('terminal on screen mode', () => {
   it('is one of the two supported renderers', () => {
     expect(['html', 'overlay']).toContain(TERMINAL_ON_SCREEN);
+  });
+});
+
+describe('screenCorners', () => {
+  const corners = screenCorners();
+  const sub = (a: readonly number[], b: readonly number[]) => a.map((v, i) => v - b[i]!);
+  const length = (v: readonly number[]) => Math.hypot(...v);
+
+  it('returns top-left, top-right, bottom-right, bottom-left', () => {
+    const [tl, tr, br, bl] = corners;
+    expect(tr[0]).toBeGreaterThan(tl[0]);
+    expect(br[0]).toBeGreaterThan(bl[0]);
+    expect(tl[1]).toBeGreaterThan(bl[1]);
+    expect(tr[1]).toBeGreaterThan(br[1]);
+  });
+
+  it('spans the glass: its width and height, centred on the anchor', () => {
+    const [tl, tr, br, bl] = corners;
+    expect(length(sub(tr, tl))).toBeCloseTo(screenAnchor.width, 9);
+    expect(length(sub(tl, bl))).toBeCloseTo(screenAnchor.height, 9);
+    const centre = [0, 1, 2].map((i) => (tl[i]! + tr[i]! + br[i]! + bl[i]!) / 4);
+    const expected = screenWorldCenter();
+    centre.forEach((v, i) =>
+      expect(v).toBeCloseTo(expected[i]! + screenAnchor.normal[i]! * SCREEN_LIFT, 7),
+    );
+  });
+
+  it('lies in the tilted glass plane: the top edge leans back with the normal', () => {
+    const [tl, , , bl] = corners;
+    const up = sub(tl, bl);
+    expect(up[0]).toBeCloseTo(0, 9);
+    const dotNormal = up.reduce((sum, v, i) => sum + v * screenAnchor.normal[i]!, 0);
+    expect(dotNormal).toBeCloseTo(0, 6); // the edge is perpendicular to the normal
+    expect(up[2]).toBeLessThan(0); // the top is further from the viewer than the bottom
   });
 });
