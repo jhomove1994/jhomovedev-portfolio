@@ -38,8 +38,8 @@ Mode: strict (orchestrator configuration). Runner: `pnpm test` (vitest); e2e `pn
 - [x] T1 Amber `>J` favicon + ico + apple-touch icon — inline (mechanical) — commit `3862566`
 - [x] T2 Shared reveal module: typed command + staggered entrance (1) — route: delegated (writer trigger: 2+ non-trivial files) — commit `ac42ac2`
 - [x] T3 Experience scroll-drawn timeline (2) — route: delegated — commit `a2a35a1`
-- [x] T4 TechLeadPath traced path + pulsing current stage (3) — route: delegated — commit: next entry records it
-- [ ] T5 Sticky heading + section progress bar on desktop (6) — delegated
+- [x] T4 TechLeadPath traced path + pulsing current stage (3) — route: delegated — commit `e52a121`
+- [x] T5 Sticky heading + section progress bar on desktop (6) — route: delegated — commit: recorded in the follow-up docs commit
 - [ ] T6 Verification: build, check, lint, test, Playwright captures at 1440/390
 
 ## Acceptance
@@ -50,4 +50,4 @@ Mode: strict (orchestrator configuration). Runner: `pnpm test` (vitest); e2e `pn
 
 ## Progress
 
-T1 done. Next: T2–T5 via one writer.
+T1–T5 done. Next: T6 verification.

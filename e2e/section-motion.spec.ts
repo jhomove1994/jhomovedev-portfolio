@@ -149,3 +149,75 @@ for (const locale of ['es', 'en'] as const) {
     });
   });
 }
+
+for (const locale of ['es', 'en'] as const) {
+  test.describe(`sticky heading /${locale}/`, () => {
+    test('is sticky with a progress bar from 1024px, static without a bar below', async ({
+      page,
+    }, testInfo) => {
+      await page.goto(`/${locale}/`);
+      const head = page.locator('#experience [data-section-head]');
+      const bar = page.locator('#experience [data-progress]');
+      const desktop = testInfo.project.name === 'desktop';
+      await expect(head).toHaveCSS('position', desktop ? 'sticky' : 'static');
+      if (!desktop) {
+        await expect(bar).toBeHidden();
+        return;
+      }
+      // Reserved from the start, shown only once motion is confirmed by the first scroll.
+      await expect(bar).toBeHidden();
+      const reserved = await bar.evaluate((el) => el.getBoundingClientRect().height);
+      expect(reserved).toBeGreaterThan(0);
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion/);
+      await expect(bar).toBeVisible();
+      expect((await bar.evaluate((el) => el.getBoundingClientRect().height)) - reserved).toBe(0);
+    });
+
+    test('the heading stays under the header while the section scrolls and the bar fills', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'sticky columns are desktop only');
+      await page.goto(`/${locale}/`);
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion/);
+      const section = page.locator('#experience');
+      const head = section.locator('[data-section-head]');
+      const progress = () =>
+        section.evaluate((el) =>
+          Number(
+            el.querySelector<HTMLElement>('[data-progress]')!.style.getPropertyValue('--p') || 0,
+          ),
+        );
+      const headerH = await page.evaluate(
+        () => document.querySelector('header')!.getBoundingClientRect().height,
+      );
+      const box = await section.boundingBox();
+      // Land a third of the way through the section.
+      await page.evaluate(
+        (y) => window.scrollTo({ top: y, behavior: 'instant' }),
+        box!.y + box!.height * 0.35 - 100 + (await page.evaluate(() => window.scrollY)),
+      );
+      await expect.poll(progress).toBeGreaterThan(0);
+      expect(await progress()).toBeLessThan(1);
+      const top = (await head.boundingBox())!.y;
+      expect(top).toBeGreaterThanOrEqual(headerH - 1);
+      expect(top).toBeLessThanOrEqual(headerH + 40);
+      await page.evaluate(() =>
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }),
+      );
+      await expect.poll(progress).toBeCloseTo(1, 1);
+    });
+
+    test('reduced motion keeps the sticky heading and never shows the bar', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'sticky columns are desktop only');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(`/${locale}/`);
+      await page.locator('#experience').scrollIntoViewIfNeeded();
+      await expect(page.locator('#experience [data-section-head]')).toHaveCSS('position', 'sticky');
+      await expect(page.locator('#experience [data-progress]')).toBeHidden();
+    });
+  });
+}

@@ -14,10 +14,16 @@ interface Props {
 const { locale, id, titleKey, commandKey } = Astro.props;
 ---
 
-<div data-section-head class="mb-8 lg:mb-0">
+<div
+  data-section-head
+  class="mb-8 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:mb-0 lg:self-start"
+>
   <p data-cmd aria-hidden="true" class="cmd">
     <span data-cmd-text>{t(locale, commandKey)}</span>
     <span data-cmd-caret class="cmd-caret"></span>
   </p>
   <h2 id={id}>{t(locale, titleKey)}</h2>
+  <div data-progress aria-hidden="true" class="section-bar">
+    <i></i>
+  </div>
 </div>

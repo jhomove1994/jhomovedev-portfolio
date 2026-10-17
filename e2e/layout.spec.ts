@@ -74,8 +74,8 @@ for (const locale of ['es', 'en'] as const) {
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {
       const section = sections.nth(i);
-      const title = section.locator('> h2').first();
-      const content = section.locator('> :not(h2)').first();
+      const title = section.locator('> [data-section-head] > h2').first();
+      const content = section.locator('> :not([data-section-head])').first();
       const id = await section.getAttribute('id');
       const [t, c] = await Promise.all([title.boundingBox(), content.boundingBox()]);
       expect(t, `#${id} title`).not.toBeNull();
