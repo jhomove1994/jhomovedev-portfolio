@@ -10,7 +10,7 @@ const READING_LINE = '65%';
  * Experience: the vertical rail fills as the page scrolls past it; each node lights when the fill
  * reaches it and, at that moment, its entry slides in (once: scrolling back leaves it shown). The fill is a CSS variable (`--fill`, 0..1) so it only ever costs a transform.
  */
-export const initRail: Effect = ({ gsap, ScrollTrigger }) => {
+export const initRail: Effect = ({ gsap, ScrollTrigger, profile }) => {
   for (const rail of document.querySelectorAll<HTMLElement>('[data-rail]')) {
     const track = rail.querySelector<HTMLElement>('[data-rail-track]');
     const rows = [...rail.querySelectorAll<HTMLElement>('[data-row]')];
@@ -30,9 +30,12 @@ export const initRail: Effect = ({ gsap, ScrollTrigger }) => {
     };
     let reached = nodes.map(() => false);
     const apply = (progress: number) => {
-      rail.style.setProperty('--fill', String(progress));
       const lit = litNodes(offsets, fillLength(progress, height));
-      nodes.forEach((node, index) => node.classList.toggle('is-lit', lit[index] ?? false));
+      // Reduced motion keeps the rail drawn and lit (CSS); only the entries fade in as it is reached.
+      if (profile.scrubRail) {
+        rail.style.setProperty('--fill', String(progress));
+        nodes.forEach((node, index) => node.classList.toggle('is-lit', lit[index] ?? false));
+      }
       const now = lit.map((isLit, index) => isLit || reached[index]!);
       const fresh = newlyReached(reached, now);
       reached = now;

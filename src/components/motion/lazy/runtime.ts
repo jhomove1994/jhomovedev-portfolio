@@ -1,5 +1,6 @@
 // The lazy chunk of the section motion: the only place (with its effects) that imports gsap.
 // `sections.ts` reaches it through a dynamic import, once the first animated section is in view.
+import type { MotionProfile } from '../../../lib/motion/mode';
 import type { MotionKit } from './kit';
 import { initPath } from './path';
 import { initProgress } from './progress';
@@ -21,16 +22,16 @@ function refreshOnResize({ ScrollTrigger }: MotionKit): void {
   }).observe(main);
 }
 
-export async function runSectionMotion(): Promise<void> {
+export async function runSectionMotion(profile: MotionProfile): Promise<void> {
   const [{ gsap }, { ScrollTrigger }] = await Promise.all([
     import('gsap'),
     import('gsap/ScrollTrigger'),
   ]);
   gsap.registerPlugin(ScrollTrigger);
-  const kit: MotionKit = { gsap, ScrollTrigger };
+  const kit: MotionKit = { gsap, ScrollTrigger, profile };
   initReveal(kit);
   initRail(kit);
   initPath(kit);
-  initProgress(kit);
+  if (profile.progressBar) initProgress(kit);
   refreshOnResize(kit);
 }

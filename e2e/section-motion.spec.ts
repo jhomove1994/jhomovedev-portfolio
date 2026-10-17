@@ -1,26 +1,48 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 const CONTACT_COMMANDS = { es: './contacto.sh', en: './contact.sh' } as const;
+/** True when none of the elements has a transform (reduced motion never displaces anything). */
+async function noTransforms(locator: Locator): Promise<boolean> {
+  const transforms = await locator.evaluateAll((els) =>
+    els.map((el) => getComputedStyle(el).transform),
+  );
+  return transforms.every((value) => value === 'none');
+}
+
 const COMMANDS = { es: 'cat sobre-mi.md', en: 'cat about.md' } as const;
 
 for (const locale of ['es', 'en'] as const) {
   const command = COMMANDS[locale];
 
   test.describe(`section motion /${locale}/`, () => {
-    test('reduced motion shows the final state at once and never hides content', async ({
+    test('reduced motion types the command and fades the content in, without any transform', async ({
       page,
     }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`/${locale}/`);
-      await page.locator('#about').scrollIntoViewIfNeeded();
-      await expect(page.locator('html')).not.toHaveClass(/motion/);
-      await expect(page.locator('#about [data-cmd-text]')).toHaveText(command);
-      await expect(page.locator('#about [data-cmd-caret]')).toBeHidden();
-      const opacities = await page
-        .locator('[data-reveal-item], [data-row]')
-        .evaluateAll((els) => els.map((el) => getComputedStyle(el).opacity));
-      expect(opacities.length).toBeGreaterThan(0);
-      expect(new Set(opacities)).toEqual(new Set(['1']));
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion-reduced/);
+      const contact = page.locator('#contact');
+      await contact.scrollIntoViewIfNeeded();
+      const typed = contact.locator('[data-cmd-text] [data-typed]');
+      const items = contact.locator('[data-reveal-item]');
+      expect(await items.count()).toBeGreaterThan(1);
+      // The command types; no item is shown before it is done, and no frame carries a transform.
+      await expect.poll(async () => (await typed.textContent())!.length).toBeGreaterThan(0);
+      if ((await typed.textContent()) !== CONTACT_COMMANDS[locale]) {
+        await expect(items.first()).not.toHaveClass(/is-in/);
+      }
+      expect(await noTransforms(contact.locator('[data-reveal-item], [data-row]'))).toBe(true);
+      await expect(typed).toHaveText(CONTACT_COMMANDS[locale]);
+      await expect(items.first()).toHaveClass(/is-in/);
+      // The fade is real (opacity transition kept) and staggered, item by item.
+      await expect(items.first()).toHaveCSS('transition-property', 'opacity');
+      const delays = await items.evaluateAll((els) =>
+        els.map((el) => parseFloat((el as HTMLElement).style.transitionDelay || '0')),
+      );
+      expect(new Set(delays).size).toBeGreaterThan(1);
+      for (const item of await items.all()) await expect(item).toHaveCSS('opacity', '1');
+      expect(await noTransforms(items)).toBe(true);
     });
 
     test('without JavaScript every command and item is visible', async ({ browser }) => {
@@ -92,21 +114,45 @@ for (const locale of ['es', 'en'] as const) {
     const nodes = '#experience [data-rail-node]';
     const lit = '#experience [data-rail-node].is-lit';
 
-    test('reduced motion renders the rail full with every node lit', async ({ page }) => {
+    test('reduced motion keeps the rail full and lit and fades the entries in one by one', async ({
+      page,
+    }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`/${locale}/`);
-      await page.locator('#experience').scrollIntoViewIfNeeded();
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion-reduced/);
+      const rail = page.locator('#experience [data-rail]');
+      const rows = page.locator('#experience [data-row]');
+      const total = await rows.count();
+      expect(total).toBeGreaterThan(1);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await rail.scrollIntoViewIfNeeded();
+      // Drawn in full from the first frame: no scrub, nodes lit, scale untouched.
       const fill = await page.locator('#experience [data-rail-fill]').evaluate((el) => {
         const { height } = el.getBoundingClientRect();
         return { height, track: el.parentElement!.getBoundingClientRect().height };
       });
-      expect(fill.height).toBeGreaterThan(0);
       expect(fill.height).toBeCloseTo(fill.track - 16, 0);
       const colors = await page
         .locator(nodes)
         .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
-      expect(colors.length).toBeGreaterThan(1);
       expect(new Set(colors)).toEqual(new Set(['rgb(61, 220, 151)']));
+      // Entries arrive with the scroll, opacity only.
+      expect(await page.locator('#experience [data-row].is-in').count()).toBeLessThan(total);
+      await expect(rows.last()).toHaveCSS('opacity', '0');
+      expect(await noTransforms(rows)).toBe(true);
+      await rail.evaluate((el) => {
+        const { bottom } = el.getBoundingClientRect();
+        window.scrollBy({ top: bottom - window.innerHeight * 0.5, behavior: 'instant' });
+      });
+      await expect(page.locator('#experience [data-row].is-in')).toHaveCount(total, {
+        timeout: 8000,
+      });
+      for (const row of await rows.all()) await expect(row).toHaveCSS('opacity', '1');
+      expect(await noTransforms(rows)).toBe(true);
+      expect(await rail.evaluate((el) => getComputedStyle(el).getPropertyValue('--fill'))).toBe(
+        '1',
+      );
     });
 
     test('with motion the fill follows the scroll and lights the nodes it passes', async ({
@@ -148,26 +194,42 @@ for (const locale of ['es', 'en'] as const) {
     const pulse = (selector: string) =>
       `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return el ? getComputedStyle(el, '::after').animationName : 'missing'; })()`;
 
-    test('reduced motion shows the whole log: every row, the drawn graph, lit dots, no pulse', async ({
+    test('reduced motion fades the commits in one by one on a fully drawn graph, no pulse', async ({
       page,
     }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`/${locale}/`);
-      await page.locator('#path').scrollIntoViewIfNeeded();
-      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      await page.mouse.wheel(0, 40);
+      await expect(page.locator('html')).toHaveClass(/motion-reduced/);
       const rows = page.locator('#path [data-row]');
       const total = await rows.count();
-      expect(total).toBeGreaterThan(1);
+      expect(total).toBeGreaterThan(2);
+      await page.evaluate(() => {
+        const top = document.querySelector('#path [data-path]')!.getBoundingClientRect().top;
+        window.scrollBy({ top: top - window.innerHeight * 0.5, behavior: 'instant' });
+      });
+      // The graph is complete before any commit shows; commits then appear progressively.
+      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      const shown = () => page.locator('#path [data-row].is-in').count();
+      await expect.poll(shown, { timeout: 8000 }).toBeGreaterThan(0);
+      expect(await shown()).toBeLessThan(total);
+      await expect(rows.last()).toHaveCSS('opacity', '0');
+      expect(await noTransforms(rows)).toBe(true);
+      await page.evaluate(() => {
+        const { bottom } = document.querySelector('#path [data-path]')!.getBoundingClientRect();
+        window.scrollBy({ top: bottom - window.innerHeight * 0.4, behavior: 'instant' });
+      });
+      await expect.poll(shown, { timeout: 12000 }).toBe(total);
       for (const row of await rows.all()) {
         await expect(row).toHaveCSS('opacity', '1');
         await expect(row.locator('[data-row-body]')).toHaveCSS('opacity', '1');
         await expect(row.locator('.commit-hash')).toHaveText(/^[0-9a-f]{7}$/);
       }
+      expect(await noTransforms(rows.locator('[data-row-body]'))).toBe(true);
       await expect(page.locator('#path .commit-ref')).toHaveText('(HEAD -> tech-lead)');
       const colors = await page
         .locator(nodes)
         .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
-      expect(colors.length).toBeGreaterThan(1);
       expect(new Set(colors)).toEqual(new Set(['rgb(61, 220, 151)']));
       expect(await page.evaluate(pulse('#path [data-current]'))).toBe('none');
     });
@@ -283,4 +345,45 @@ for (const locale of ['es', 'en'] as const) {
       await expect(page.locator('#experience [data-progress]')).toBeHidden();
     });
   });
+}
+
+const VIEWPORTS = [
+  { name: 'phone', width: 390, height: 844 },
+  { name: 'tablet', width: 820, height: 1180 },
+  { name: 'desktop', width: 1440, height: 900 },
+] as const;
+
+for (const mode of ['reduce', 'no-preference'] as const) {
+  for (const viewport of VIEWPORTS) {
+    test.describe(`motion at ${viewport.name} (${mode})`, () => {
+      test('sections reveal, nothing overflows, reduced motion never transforms', async ({
+        page,
+      }, testInfo) => {
+        test.skip(testInfo.project.name !== 'desktop', 'viewport sizes are set by this test');
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await page.emulateMedia({ reducedMotion: mode });
+        await page.goto('/en/');
+        await page.mouse.wheel(0, 40);
+        await expect(page.locator('html')).toHaveClass(
+          mode === 'reduce' ? /motion-reduced/ : /motion/,
+        );
+        const contact = page.locator('#contact');
+        await contact.scrollIntoViewIfNeeded();
+        await expect(contact.locator('[data-cmd-text] [data-typed]')).toHaveText(
+          CONTACT_COMMANDS.en,
+        );
+        const items = contact.locator('[data-reveal-item]');
+        await expect(items.first()).toHaveClass(/is-in/);
+        for (const item of await items.all()) await expect(item).toHaveCSS('opacity', '1');
+        if (mode === 'reduce') {
+          await expect(page.locator('html')).toHaveClass(/motion-reduced/);
+          expect(await noTransforms(items)).toBe(true);
+        }
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow).toBeLessThanOrEqual(0);
+      });
+    });
+  }
 }

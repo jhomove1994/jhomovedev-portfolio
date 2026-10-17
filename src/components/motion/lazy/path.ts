@@ -19,7 +19,7 @@ const LINE_INSET_REM = 0.5;
  * lights, its header line (hash, ref, date) types out quickly and then the message fades in.
  */
 export const initPath: Effect = (kit) => {
-  const { gsap, ScrollTrigger } = kit;
+  const { gsap, ScrollTrigger, profile } = kit;
   for (const path of document.querySelectorAll<HTMLElement>('[data-path]')) {
     const line = path.querySelector<SVGPathElement>('[data-path-line]');
     const rows = [...path.querySelectorAll<HTMLElement>('[data-row]')];
@@ -38,9 +38,12 @@ export const initPath: Effect = (kit) => {
       continue;
     }
 
-    const heads: Typewriter[] = rows.map((row) =>
-      prepareTyping([...row.querySelectorAll<HTMLElement>('[data-commit-head] [data-type]')]),
-    );
+    // Reduced motion: the graph is drawn and lit by CSS; each commit just fades in whole.
+    const heads: Typewriter[] = profile.typeCommitHeads
+      ? rows.map((row) =>
+          prepareTyping([...row.querySelectorAll<HTMLElement>('[data-commit-head] [data-type]')]),
+        )
+      : [];
     const bodies = rows.map((row) => row.querySelector<HTMLElement>('[data-row-body]'));
 
     // Layout-based (offsetTop ignores the rows' entrance offset), relative to the log box.
@@ -78,6 +81,7 @@ export const initPath: Effect = (kit) => {
       shown[index] = true;
       rows[index]!.classList.add('is-in');
       dots[index]?.classList.add('is-lit');
+      if (!profile.growGraph) return;
       growTo(traceTarget(shown, fractions));
       void playTyping(kit, heads[index]!, {
         msPerChar: COMMIT_MS_PER_CHAR,

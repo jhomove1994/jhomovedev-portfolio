@@ -464,7 +464,9 @@ html.lenis body {
 /*
  * Section motion (below the hero). Everything is visible at rest: the script adds `.motion` on
  * <html> only after it confirmed motion is allowed, and only then is anything offset or hidden.
- * Reduced motion and no JS never get the class, so they keep the final state.
+ * No JS never gets the class, so it keeps the final state. Reduced motion also gets
+ * `.motion-reduced`: the same flow (typing, items fading in one by one) with every displacement
+ * undone, see the `.motion-reduced` overrides below and `motionProfile` in lib/motion/mode.ts.
  */
 .cmd {
   display: block;
@@ -665,7 +667,7 @@ html.lenis body {
   background-color: var(--color-border);
 }
 
-.motion [data-path-node][data-current].is-lit::after {
+.motion:not(.motion-reduced) [data-path-node][data-current].is-lit::after {
   content: '';
   position: absolute;
   inset: -3px;
@@ -706,7 +708,7 @@ html.lenis body {
     visibility: hidden;
   }
 
-  .motion .section-bar {
+  .motion:not(.motion-reduced) .section-bar {
     visibility: visible;
   }
 
@@ -717,4 +719,38 @@ html.lenis body {
     transform: scaleX(var(--p, 0));
     transform-origin: left;
   }
+}
+
+/*
+ * Reduced motion (`.motion-reduced` next to `.motion`): opacity is the only thing that changes.
+ * No offsets or transforms, the rail and the git graph stay fully drawn and lit, and HEAD does not
+ * pulse (its rule above is scoped out). The reduced-motion block at the top of this file zeroes
+ * every transition; the fade is restored here with `!important` on the longhands, which beat that
+ * universal rule by specificity and leave the inline stagger `transition-delay` alone.
+ */
+.motion-reduced [data-reveal-item],
+.motion-reduced [data-row] {
+  transform: none;
+  transition-property: opacity !important;
+  transition-duration: 0.5s !important;
+  transition-timing-function: ease !important;
+}
+
+.motion-reduced [data-row-body]:not(.is-in) {
+  opacity: 1;
+  transform: none;
+}
+
+.motion-reduced [data-rail] {
+  --fill: 1;
+}
+
+.motion-reduced .rail-node:not(.is-lit),
+.motion-reduced [data-path-node]:not(.is-lit) {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+}
+
+.motion-reduced .path-trace {
+  stroke-dashoffset: 0;
 }
