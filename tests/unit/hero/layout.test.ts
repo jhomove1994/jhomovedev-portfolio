@@ -6,6 +6,8 @@ import {
   DESK_PLACEMENT,
   FLOOR_PLACEMENTS,
   PROP_PLACEMENTS,
+  REST_CAMERA,
+  lampBulbWorld,
   screenWorldCenter,
   worldBounds,
   type Bounds,
@@ -108,5 +110,36 @@ describe('screenWorldCenter', () => {
     expect(center[1]).toBeCloseTo(screen.position[1] + 0.17128, 5);
     expect(center[2]).toBeCloseTo(screen.position[2] - 0.05207, 5);
     expect(center[1]).toBeGreaterThan(DESK_TOP_Y);
+  });
+});
+
+describe('lampBulbWorld', () => {
+  it('sits inside the lamp footprint, above the desk top and below the lamp height', () => {
+    const lamp = worldBounds(PROP_PLACEMENTS.find((p) => p.id === 'lampRoundTable')!);
+    const bulb = lampBulbWorld();
+    expect(bulb[0]).toBeGreaterThan(lamp.min[0]);
+    expect(bulb[0]).toBeLessThan(lamp.max[0]);
+    expect(bulb[2]).toBeGreaterThan(lamp.min[2]);
+    expect(bulb[2]).toBeLessThan(lamp.max[2]);
+    expect(bulb[1]).toBeGreaterThan(DESK_TOP_Y + 0.1);
+    expect(bulb[1]).toBeLessThan(lamp.max[1]);
+  });
+});
+
+describe('REST_CAMERA', () => {
+  const center = screenWorldCenter();
+
+  it('aims 0.22 m left of the monitor so the left of the frame stays free for the hero text', () => {
+    expect(REST_CAMERA.target[0]).toBeCloseTo(center[0] - 0.22, 6);
+    expect(REST_CAMERA.target[1]).toBeCloseTo(center[1], 6);
+    expect(REST_CAMERA.target[2]).toBeCloseTo(center[2], 6);
+  });
+
+  it('stands about 1.1 m back and 0.22 m above the target with a low-distortion lens', () => {
+    const offset = REST_CAMERA.position.map((v, i) => v - REST_CAMERA.target[i]!);
+    expect(offset[0]).toBeCloseTo(0, 6);
+    expect(offset[1]).toBeCloseTo(0.22, 6);
+    expect(offset[2]).toBeCloseTo(1.1, 6);
+    expect(REST_CAMERA.fov).toBe(32);
   });
 });

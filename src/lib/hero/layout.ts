@@ -86,3 +86,40 @@ export function screenWorldCenter(): Vec3 {
   const [cx, cy, cz] = screenAnchor.center;
   return [screen.position[0] + cx, screen.position[1] + cy, screen.position[2] + cz];
 }
+
+/** Bulb centre inside the lamp model (the shade glows from here): lamp-local offset, metres. */
+const LAMP_BULB_LOCAL: Vec3 = [0.06, 0.24, -0.06];
+
+/** World position of the lamp's warm point light. */
+export function lampBulbWorld(): Vec3 {
+  const lamp = PROP_PLACEMENTS.find((p) => p.id === 'lampRoundTable')!;
+  return [
+    lamp.position[0] + LAMP_BULB_LOCAL[0],
+    lamp.position[1] + LAMP_BULB_LOCAL[1],
+    lamp.position[2] + LAMP_BULB_LOCAL[2],
+  ];
+}
+
+export interface CameraPose {
+  position: Vec3;
+  target: Vec3;
+  fov: number;
+}
+
+const REST_AIM_OFFSET_X = 0.22;
+const REST_DISTANCE = 1.1;
+const REST_ELEVATION = 0.22;
+
+/**
+ * Rest pose: aimed left of the monitor so it sits right of centre and the left 40% (wall in
+ * shadow) carries the hero text. The scroll zoom (later change) interpolates away from this.
+ */
+export const REST_CAMERA: CameraPose = (() => {
+  const center = screenWorldCenter();
+  const target: Vec3 = [center[0] - REST_AIM_OFFSET_X, center[1], center[2]];
+  return {
+    position: [target[0], target[1] + REST_ELEVATION, target[2] + REST_DISTANCE],
+    target,
+    fov: 32,
+  };
+})();
