@@ -3,6 +3,7 @@ import {
   ACCENT_HUE_BAND,
   hexToHsv,
   hexToLinear,
+  emissiveParams,
   hsvToHex,
   linearToHex,
   resolveMaterial,
@@ -116,5 +117,23 @@ describe('resolveMaterial', () => {
     expect(resolveMaterial('books', 'carpetWhite', '#f8ffff').spec.color).toBe(
       warmRetint('#f8ffff'),
     );
+  });
+});
+
+describe('emissiveParams', () => {
+  it('scales the factor when the strength is below 1 (no extension needed)', () => {
+    const { factor, strength } = emissiveParams({ color: '#3ddc97', strength: 0.18 });
+    const [r, g, b] = hexToLinear('#3ddc97');
+    expect(strength).toBeNull();
+    expect(factor[0]).toBeCloseTo(r * 0.18, 6);
+    expect(factor[1]).toBeCloseTo(g * 0.18, 6);
+    expect(factor[2]).toBeCloseTo(b * 0.18, 6);
+  });
+
+  it('keeps the factor in [0,1] and carries the strength for values above 1', () => {
+    const { factor, strength } = emissiveParams({ color: '#ffb35c', strength: 2 });
+    expect(factor).toEqual(hexToLinear('#ffb35c'));
+    expect(strength).toBe(2);
+    expect(Math.max(...factor)).toBeLessThanOrEqual(1);
   });
 });

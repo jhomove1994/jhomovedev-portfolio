@@ -149,3 +149,18 @@ export function resolveMaterial(
   if (known) return { spec: known, mapped: true };
   return { spec: spec(materialName, warmRetint(sourceHex), 0.8, 0), mapped: false };
 }
+
+export interface EmissiveParams {
+  /** glTF `emissiveFactor`, linear, each channel in [0, 1]. */
+  factor: [number, number, number];
+  /** KHR_materials_emissive_strength value, or null when the factor alone carries it. */
+  strength: number | null;
+}
+
+/** glTF caps emissiveFactor at 1, so brighter-than-1 emission needs the strength extension. */
+export function emissiveParams(emissive: { color: string; strength: number }): EmissiveParams {
+  const [r, g, b] = hexToLinear(emissive.color);
+  if (emissive.strength >= 1) return { factor: [r, g, b], strength: emissive.strength };
+  const k = emissive.strength;
+  return { factor: [r * k, g * k, b * k], strength: null };
+}
