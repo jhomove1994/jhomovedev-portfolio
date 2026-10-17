@@ -23,6 +23,7 @@ describe('profileSchema', () => {
     expect(result.success).toBe(true);
     expect(result.data).toMatchObject({
       name: 'Ada Example',
+      whoami: 'Short whoami used only by tests.',
       yearsExperience: 6,
       availability: 'open-to-offers',
       contact: { email: 'ada@example.com' },
@@ -32,6 +33,32 @@ describe('profileSchema', () => {
       { name: 'Spanish', level: 'Native' },
       { name: 'English', level: 'Intermediate' },
     ]);
+  });
+
+  it('requires whoami naming the field when missing', () => {
+    const withoutWhoami = validProfile();
+    delete withoutWhoami.whoami;
+    const result = profileSchema.safeParse(withoutWhoami);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(['whoami']);
+  });
+
+  it('rejects an empty whoami naming the field', () => {
+    const result = profileSchema.safeParse(withProfile({ whoami: '' }));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(['whoami']);
+  });
+
+  it('accepts whoami of exactly 280 characters and rejects 281', () => {
+    expect(profileSchema.safeParse(withProfile({ whoami: 'a'.repeat(280) })).success).toBe(true);
+    const tooLong = profileSchema.safeParse(withProfile({ whoami: 'a'.repeat(281) }));
+    expect(tooLong.success).toBe(false);
+    expect(tooLong.error?.issues[0].path).toEqual(['whoami']);
+  });
+
+  it('accepts a TODO(autor) whoami placeholder', () => {
+    const whoami = 'TODO(autor): one-line self introduction';
+    expect(profileSchema.parse(withProfile({ whoami })).whoami).toBe(whoami);
   });
 
   it('rejects an invalid email naming contact.email', () => {

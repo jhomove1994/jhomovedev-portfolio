@@ -136,6 +136,28 @@ describe('seed: profile', () => {
     );
   });
 
+  it('seeds a short first-person whoami per locale from the CV summary wording', () => {
+    const byLocale = Object.fromEntries(
+      profile.map((file) => [parseEntryId(file.id).locale, file]),
+    );
+    expect(byLocale.es?.data.whoami).toBe(
+      'Soy desarrollador Full Stack Senior con más de 6 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.',
+    );
+    expect(byLocale.en?.data.whoami).toBe(
+      "I'm a Senior Full Stack Developer with 6+ years of experience in scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel and AWS.",
+    );
+  });
+
+  it.each(profile.map((file) => [file.id, file] as const))(
+    '%s whoami is within 1-280 characters and never names mainframe or COBOL',
+    (_id, file) => {
+      const whoami = String(file.data.whoami);
+      expect(whoami.length).toBeGreaterThanOrEqual(1);
+      expect(whoami.length).toBeLessThanOrEqual(280);
+      expect(whoami).not.toMatch(/mainframe|cobol/i);
+    },
+  );
+
   it('lists the same number of languages in both locales (Sveltia cannot add items in en)', () => {
     const counts = profile.map((file) => (file.data.languages as unknown[]).length);
     expect(new Set(counts).size).toBe(1);

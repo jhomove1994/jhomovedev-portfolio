@@ -40,6 +40,8 @@ export const profileSchema = z.object({
   brand: z.string(),
   headline: z.string(),
   bio: z.string(),
+  /** One-line self introduction printed by the terminal `whoami` command (1-280 chars). */
+  whoami: z.string().min(1).max(280),
   location: z.string(),
   remote: z.boolean(),
   yearsExperience: z.number().int().positive(),

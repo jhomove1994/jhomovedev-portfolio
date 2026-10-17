@@ -3,6 +3,7 @@
   "brand": "ExampleBrand",
   "headline": "Senior Full Stack Developer",
   "bio": "Short bio used only by tests.",
+  "whoami": "Short whoami used only by tests.",
   "location": "Example City, Country",
   "remote": true,
   "yearsExperience": 6,

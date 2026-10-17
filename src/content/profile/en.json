@@ -3,6 +3,7 @@
   "brand": "JhomoveDev",
   "headline": "Senior Full Stack Developer · on the path to Tech Lead",
   "bio": "I'm a Senior Full Stack Developer with 6+ years of experience designing, developing and maintaining scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel, AWS and microservices. I build serverless solutions with Lambda, Step Functions, API Gateway and DynamoDB, with infrastructure as code in Terraform. On the frontend I work with Angular, React and React Native, and I apply Scrum, CI/CD and good practices for performance, scalability and security.",
+  "whoami": "I'm a Senior Full Stack Developer with 6+ years of experience in scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel and AWS.",
   "location": "Bogotá, Colombia",
   "remote": true,
   "yearsExperience": 6,
