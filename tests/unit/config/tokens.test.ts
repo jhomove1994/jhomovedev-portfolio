@@ -62,7 +62,7 @@ describe('terminal tokens (design AD16)', () => {
   });
 
   it('defines the sticky header height used by the hero stage', () => {
-    expect(token('header-h')).toBe('4rem');
+    expect(token('header-h')).toBe('calc(3rem + 1px)');
   });
 
   const color = (name: string) => token(`color-${name}`)!;

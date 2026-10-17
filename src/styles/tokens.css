@@ -45,6 +45,9 @@
   --color-term-amber: #e3a857;
   --color-term-rust: #d9785a;
 
-  /* Height of the sticky site header, used to size the hero stage and anchor offsets. */
-  --header-h: 4rem;
+  /*
+   * Height of the sticky site header from 640px up (one row): a 2.5rem nav link, 0.25rem padding
+   * above and below, and the 1px border. e2e/layout.spec.ts compares it with the real header.
+   */
+  --header-h: calc(3rem + 1px);
 }
