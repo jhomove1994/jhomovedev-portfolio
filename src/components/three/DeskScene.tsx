@@ -131,9 +131,9 @@ export function DeskScene({ onReady, shadows, parallax }: DeskSceneProps) {
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, 2.5, 5]} />
       <CameraRig enabled={parallax} />
-      <hemisphereLight args={[SKY, GROUND, 0.9]} />
+      <hemisphereLight args={[SKY, GROUND, 1.2]} />
       <directionalLight position={[-0.6, 1.4, 1.2]} color={MOON} intensity={1} />
-      <pointLight position={lamp} color={LAMP_COLOR} intensity={1} decay={2} distance={2.2} />
+      <pointLight position={lamp} color={LAMP_COLOR} intensity={2} decay={2} distance={3.6} />
       <ScreenGlow />
       <mesh position={[0.4, 0.8, WALL_Z]}>
         <planeGeometry args={[4, 2.4]} />

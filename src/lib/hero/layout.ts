@@ -6,6 +6,7 @@
  * The boxes below are the raw model bounds measured by `scripts/models/build-hero.ts`'s
  * source files; the layout test keeps placements, footprint and collisions honest.
  */
+import { frameSubject } from './camera';
 import screenAnchor from './screen-anchor.json';
 import type { HeroModelId, Vec3 } from './screen-anchor';
 
@@ -58,8 +59,11 @@ export const PROP_PLACEMENTS: readonly Placement[] = [
   at('radio', 0.62, DESK_TOP_Y, -0.35, -Math.PI / 2),
 ];
 
-/** The plant is 0.65 m tall with a 0.24 m footprint: it stands on the floor left of the desk. */
-export const FLOOR_PLACEMENTS: readonly Placement[] = [at('pottedPlant', -0.3, 0, -0.2)];
+/**
+ * The plant is 0.65 m tall with a 0.24 m footprint: it stands on the floor right of the desk. That
+ * closes the composition on the right edge and leaves the left of the frame to the hero text.
+ */
+export const FLOOR_PLACEMENTS: readonly Placement[] = [at('pottedPlant', 0.86, 0, -0.2)];
 
 /** World-space bounds of a placed model (rotation about Y applied to the local box). */
 export function worldBounds({ id, position, rotationY }: Placement): Bounds {
@@ -106,20 +110,37 @@ export interface CameraPose {
   fov: number;
 }
 
-const REST_AIM_OFFSET_X = 0.22;
-const REST_DISTANCE = 1.1;
-const REST_ELEVATION = 0.22;
+/** The 16:10 stage used from 1024px; narrower screens stack the copy above a 4:3 stage. */
+export const DESKTOP_ASPECT = 1.6;
+/** From this aspect the hero copy overlays the left of the stage; below it the copy is above. */
+const COPY_OVERLAY_MIN_ASPECT = 1.5;
+/** Share of the stage width the overlaid copy owns (it spans 3% to 33% of the stage). */
+export const HERO_TEXT_RESERVE = 0.36;
+const REST_FOV = 32;
+const REST_MARGIN = 0.03;
+const REST_ELEVATION = 0.25;
+
+/** Box around everything that stands in the scene: desk, props and the floor plant. */
+export function sceneSubject(): Bounds {
+  const boxes = [DESK_PLACEMENT, ...PROP_PLACEMENTS, ...FLOOR_PLACEMENTS].map(worldBounds);
+  return {
+    min: [0, 1, 2].map((i) => Math.min(...boxes.map((b) => b.min[i]!))) as unknown as Vec3,
+    max: [0, 1, 2].map((i) => Math.max(...boxes.map((b) => b.max[i]!))) as unknown as Vec3,
+  };
+}
 
 /**
- * Rest pose: aimed left of the monitor so it sits right of centre and the left 40% (wall in
- * shadow) carries the hero text. The scroll zoom (later change) interpolates away from this.
+ * Rest pose for a stage of the given aspect: the whole setup in view, a little above it. On the
+ * desktop stage the setup sits right of the hero copy; on the stacked mobile stage it is centred.
+ * The scroll zoom (later change) interpolates away from this.
  */
-export const REST_CAMERA: CameraPose = (() => {
-  const center = screenWorldCenter();
-  const target: Vec3 = [center[0] - REST_AIM_OFFSET_X, center[1], center[2]];
-  return {
-    position: [target[0], target[1] + REST_ELEVATION, target[2] + REST_DISTANCE],
-    target,
-    fov: 32,
-  };
-})();
+export function restCameraFor(aspect: number): CameraPose {
+  return frameSubject({
+    subject: sceneSubject(),
+    aspect,
+    fov: REST_FOV,
+    reserveLeft: aspect >= COPY_OVERLAY_MIN_ASPECT ? HERO_TEXT_RESERVE : 0,
+    margin: REST_MARGIN,
+    elevation: REST_ELEVATION,
+  });
+}

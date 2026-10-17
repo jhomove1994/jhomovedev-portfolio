@@ -4,7 +4,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import type { PerspectiveCamera } from 'three';
-import { REST_CAMERA } from '../../lib/hero/layout';
+import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
 import {
   dampValue,
   normalizePointer,
@@ -31,6 +31,8 @@ export function useParallaxEnabled(): boolean {
 export function CameraRig({ enabled }: { enabled: boolean }) {
   const pointer = useRef<PointerPosition>({ x: 0, y: 0 });
   const offset = useRef<PointerPosition>({ x: 0, y: 0 });
+  // The framing solve is cheap but not free: redo it only when the canvas aspect changes.
+  const rest = useRef({ aspect: 0, pose: restCameraFor(DESKTOP_ASPECT) });
 
   useEffect(() => {
     if (!enabled) return;
@@ -46,16 +48,19 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
     return () => window.removeEventListener('pointermove', onMove);
   }, [enabled]);
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera, size }, delta) => {
     const goal = parallaxOffset(pointer.current, { limits: LIMITS, coarse: !enabled });
     offset.current = {
       x: dampValue(offset.current.x, goal.x, FOLLOW_RATE, delta),
       y: dampValue(offset.current.y, goal.y, FOLLOW_RATE, delta),
     };
-    const [x, y, z] = REST_CAMERA.position;
+    const aspect = size.width / size.height;
+    if (rest.current.aspect !== aspect) rest.current = { aspect, pose: restCameraFor(aspect) };
+    const { pose } = rest.current;
+    const [x, y, z] = pose.position;
     const cam = camera as PerspectiveCamera;
     cam.position.set(x + offset.current.x, y + offset.current.y, z);
-    cam.lookAt(...REST_CAMERA.target);
+    cam.lookAt(...pose.target);
   });
   return null;
 }

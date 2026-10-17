@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { projectPoint } from '../../../src/lib/hero/camera';
+import screenAnchor from '../../../src/lib/hero/screen-anchor.json';
 import { HERO_MODEL_IDS } from '../../../src/lib/hero/screen-anchor';
 import {
   DESK_FOOTPRINT,
@@ -6,7 +8,9 @@ import {
   DESK_PLACEMENT,
   FLOOR_PLACEMENTS,
   PROP_PLACEMENTS,
-  REST_CAMERA,
+  DESKTOP_ASPECT,
+  HERO_TEXT_RESERVE,
+  restCameraFor,
   lampBulbWorld,
   screenWorldCenter,
   worldBounds,
@@ -126,20 +130,67 @@ describe('lampBulbWorld', () => {
   });
 });
 
-describe('REST_CAMERA', () => {
-  const center = screenWorldCenter();
+describe('restCameraFor', () => {
+  const allBounds = (): Bounds[] =>
+    [DESK_PLACEMENT, ...PROP_PLACEMENTS, ...FLOOR_PLACEMENTS].map(worldBounds);
+  const extentsOfSetup = (aspect: number) => {
+    const pose = restCameraFor(aspect);
+    const points = allBounds().flatMap(({ min, max }) =>
+      [min[0], max[0]].flatMap((x) =>
+        [min[1], max[1]].flatMap((y) =>
+          [min[2], max[2]].map((z) => projectPoint(pose, aspect, [x, y, z])),
+        ),
+      ),
+    );
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
+    };
+  };
 
-  it('aims 0.22 m left of the monitor so the left of the frame stays free for the hero text', () => {
-    expect(REST_CAMERA.target[0]).toBeCloseTo(center[0] - 0.22, 6);
-    expect(REST_CAMERA.target[1]).toBeCloseTo(center[1], 6);
-    expect(REST_CAMERA.target[2]).toBeCloseTo(center[2], 6);
+  it('keeps a low-distortion lens', () => {
+    expect(restCameraFor(DESKTOP_ASPECT).fov).toBe(32);
   });
 
-  it('stands about 1.1 m back and 0.22 m above the target with a low-distortion lens', () => {
-    const offset = REST_CAMERA.position.map((v, i) => v - REST_CAMERA.target[i]!);
-    expect(offset[0]).toBeCloseTo(0, 6);
-    expect(offset[1]).toBeCloseTo(0.22, 6);
-    expect(offset[2]).toBeCloseTo(1.1, 6);
-    expect(REST_CAMERA.fov).toBe(32);
+  it.each([DESKTOP_ASPECT, 4 / 3, 1])(
+    'shows the whole setup at aspect %s: monitor, keyboard, mouse, books, lamp, radio and plant',
+    (aspect) => {
+      const e = extentsOfSetup(aspect);
+      expect(e.minX).toBeGreaterThanOrEqual(-1);
+      expect(e.maxX).toBeLessThanOrEqual(1);
+      expect(e.minY).toBeGreaterThanOrEqual(-1);
+      expect(e.maxY).toBeLessThanOrEqual(1);
+    },
+  );
+
+  it('keeps the left of the desktop stage free for the hero text', () => {
+    const e = extentsOfSetup(DESKTOP_ASPECT);
+    const leftEdge = (e.minX + 1) / 2; // 0 = left edge of the stage
+    expect(leftEdge).toBeGreaterThanOrEqual(HERO_TEXT_RESERVE - 0.01);
+  });
+
+  it('centres the setup when the copy is stacked above the stage instead', () => {
+    const e = extentsOfSetup(4 / 3);
+    expect((e.minX + e.maxX) / 2).toBeCloseTo(0, 1);
+  });
+
+  it('makes the monitor large enough for terminal text to read at 1440 (>= 20% of the stage, about 270 px)', () => {
+    const pose = restCameraFor(DESKTOP_ASPECT);
+    const screen = PROP_PLACEMENTS.find((p) => p.id === 'computerScreen')!;
+    const [cx, cy, cz] = screenWorldCenter();
+    const half = screenAnchor.width / 2;
+    const left = projectPoint(pose, DESKTOP_ASPECT, [cx - half, cy, cz]);
+    const right = projectPoint(pose, DESKTOP_ASPECT, [cx + half, cy, cz]);
+    expect(screen.id).toBe('computerScreen');
+    expect((right.x - left.x) / 2).toBeGreaterThanOrEqual(0.2);
+  });
+
+  it('stands the plant on the floor right of the desk, so the left reads as open wall', () => {
+    const plant = worldBounds(FLOOR_PLACEMENTS.find((p) => p.id === 'pottedPlant')!);
+    expect(plant.min[0]).toBeGreaterThanOrEqual(DESK_FOOTPRINT.max[0] - EPS);
   });
 });

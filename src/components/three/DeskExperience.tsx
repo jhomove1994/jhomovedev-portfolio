@@ -6,7 +6,7 @@ import { PerformanceMonitor, useProgress } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { REST_CAMERA } from '../../lib/hero/layout';
+import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
 import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import {
   FLOOR_TIER,
@@ -96,6 +96,9 @@ function useActive(observed: HTMLElement): boolean {
   return frameloopFor({ inViewport, documentHidden }) === 'always';
 }
 
+// Before the first frame the rig has not read the canvas size yet; the desktop pose is a good guess.
+const initialPose = restCameraFor(DESKTOP_ASPECT);
+
 export function DeskExperience({
   container,
   observed,
@@ -120,10 +123,10 @@ export function DeskExperience({
           frameloop={active ? 'always' : 'never'}
           dpr={settings.dpr}
           camera={{
-            fov: REST_CAMERA.fov,
+            fov: initialPose.fov,
             near: 0.05,
             far: 20,
-            position: REST_CAMERA.position as [number, number, number],
+            position: initialPose.position as [number, number, number],
           }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           onCreated={({ gl }) => {
