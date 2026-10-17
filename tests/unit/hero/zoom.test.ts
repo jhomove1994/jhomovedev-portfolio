@@ -229,22 +229,27 @@ describe('zoomEndPose', () => {
     normal: [0, 0.6, 0.8],
     fov: 32,
     aspect: 1.6,
-    minWidthFraction: 0.6,
-    heightFraction: 0.85,
+    bezel: 0.02,
+    fraction: 0.7,
   } as const;
-  const widthShare = (glassWidth: number, glassHeight: number, aspect: number = base.aspect) => {
+  /** Share of the view width and height the glass and the glass plus its bezel cover. */
+  const shares = (glassWidth: number, glassHeight: number, aspect: number = base.aspect) => {
     const pose = zoomEndPose({ ...base, aspect, glassWidth, glassHeight });
     const distance = Math.hypot(...pose.position.map((v, i) => v - base.center[i]!));
     const tan = Math.tan((base.fov * Math.PI) / 360);
+    const across = (extent: number, axisAspect: number) =>
+      extent / (2 * distance * tan * axisAspect);
     return {
-      width: glassWidth / (2 * distance * tan * aspect),
-      height: glassHeight / (2 * distance * tan),
       pose,
+      glassWidth: across(glassWidth, aspect),
+      glassHeight: across(glassHeight, 1),
+      bezelWidth: across(glassWidth + 2 * base.bezel, aspect),
+      bezelHeight: across(glassHeight + 2 * base.bezel, 1),
     };
   };
 
   it('looks straight at the glass along its normal', () => {
-    const { pose } = widthShare(0.38, 0.234);
+    const { pose } = shares(0.38, 0.234);
     expect(pose.target).toEqual([0.2, 0.4, -0.1]);
     const offset = pose.position.map((v, i) => v - base.center[i]!);
     const length = Math.hypot(...offset);
@@ -252,23 +257,34 @@ describe('zoomEndPose', () => {
     expect(pose.fov).toBe(32);
   });
 
-  it('fills the height up to the fraction when that keeps the width above the minimum', () => {
-    const { width, height } = widthShare(0.38, 0.234);
-    expect(height).toBeCloseTo(0.85, 9);
-    expect(width).toBeGreaterThanOrEqual(0.6);
-  });
-
-  it('lets the width minimum win for a tall glass (S10)', () => {
-    const { width, height } = widthShare(0.2, 0.4);
-    expect(width).toBeGreaterThanOrEqual(0.6 - 1e-9);
-    expect(width).toBeCloseTo(0.6, 9);
-    expect(height).toBeGreaterThan(0.85);
-  });
-
-  it('gives a terminal at least 60% of the width on any stage aspect', () => {
-    for (const aspect of [1.2, 1.6, 2.4]) {
-      expect(widthShare(0.38, 0.234, aspect).width).toBeGreaterThanOrEqual(0.6 - 1e-9);
+  it('keeps the bezel in view on every side: it never covers more than the fraction', () => {
+    for (const aspect of [1.2, 1.6, 2.2, 2.6]) {
+      const s = shares(0.38, 0.234, aspect);
+      expect(s.bezelWidth).toBeLessThanOrEqual(0.7 + 1e-9);
+      expect(s.bezelHeight).toBeLessThanOrEqual(0.7 + 1e-9);
     }
+  });
+
+  it('stops as close as that allows: the bezel touches the fraction on the tighter axis', () => {
+    for (const aspect of [1.2, 1.6, 2.2, 2.6]) {
+      const s = shares(0.38, 0.234, aspect);
+      expect(Math.max(s.bezelWidth, s.bezelHeight)).toBeCloseTo(0.7, 9);
+    }
+  });
+
+  it('is limited by the height on a wide stage and by the width on a narrow one', () => {
+    const wide = shares(0.38, 0.234, 2.6);
+    expect(wide.bezelHeight).toBeCloseTo(0.7, 9);
+    expect(wide.bezelWidth).toBeLessThan(0.7);
+    const narrow = shares(0.38, 0.234, 1.0);
+    expect(narrow.bezelWidth).toBeCloseTo(0.7, 9);
+    expect(narrow.bezelHeight).toBeLessThan(0.7);
+  });
+
+  it('leaves the glass smaller than the bezel box', () => {
+    const s = shares(0.38, 0.234);
+    expect(s.glassWidth).toBeLessThan(s.bezelWidth);
+    expect(s.glassHeight).toBeLessThan(s.bezelHeight);
   });
 });
 

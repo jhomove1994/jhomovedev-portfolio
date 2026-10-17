@@ -162,34 +162,35 @@ export interface ZoomEndRequest {
   glassWidth: number;
   glassHeight: number;
   fov: number;
-  /** Canvas width over height. */
+  /** Width over height of the visible frame. */
   aspect: number;
-  /** The glass must cover at least this share of the canvas width (S10). */
-  minWidthFraction: number;
-  /** ...and is not allowed to cover more than this share of the canvas height. */
-  heightFraction: number;
+  /** Margin of the bezel around the glass, metres: it must stay in view on every side. */
+  bezel: number;
+  /** The glass plus its bezel covers at most this share of the view, on both axes. */
+  fraction: number;
 }
 
 /**
- * Where the camera ends the zoom: on the glass normal, as close as the height allows but never so
- * far that the glass drops under the minimum width. When both cannot hold (a tall glass) the
- * width minimum wins, so the terminal is always at least `minWidthFraction` of the canvas wide.
+ * Where the camera ends the zoom: on the glass normal, as close as it can get while the glass and
+ * its bezel still fit `fraction` of the view on both axes. The monitor therefore ends with its
+ * bezel visible on every side and some of the desk around it, and the terminal on the glass stays
+ * readable instead of filling the frame.
  */
 export function zoomEndPose(request: ZoomEndRequest): CameraPose {
-  const { center, normal, glassWidth, glassHeight, fov, aspect } = request;
+  const { center, normal, glassWidth, glassHeight, fov, aspect, bezel, fraction } = request;
   const forHeight = screenFillDistance({
-    extent: glassHeight,
+    extent: glassHeight + 2 * bezel,
     fov,
     aspect: 1,
-    fraction: request.heightFraction,
+    fraction,
   });
   const forWidth = screenFillDistance({
-    extent: glassWidth,
+    extent: glassWidth + 2 * bezel,
     fov,
     aspect,
-    fraction: request.minWidthFraction,
+    fraction,
   });
-  const distance = Math.min(forHeight, forWidth);
+  const distance = Math.max(forHeight, forWidth);
   return {
     position: [
       center[0] + normal[0] * distance,

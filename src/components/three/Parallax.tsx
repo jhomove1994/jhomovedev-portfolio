@@ -19,8 +19,6 @@ import { easeInOutCubic, interpolatePose, type ZoomStore } from '../../lib/hero/
 
 /** How far the camera may slide from the rest pose, metres: slight, never a swing. */
 const LIMITS: ParallaxLimits = { x: 0.07, y: 0.035 };
-/** The zoomed terminal covers at least this share of the viewport width (S10), with a little slack. */
-const MIN_TERMINAL_WIDTH = 0.6 * 1.03;
 
 /** Follow rate in 1/s: roughly a third of a second to settle. */
 const FOLLOW_RATE = 5;
@@ -53,7 +51,6 @@ export function CameraRig({
   // The framing solve is cheap but not free: redo it only when the canvas aspect changes.
   const rest = useRef({
     aspect: 0,
-    viewport: 0,
     pose: restCameraFor(DESKTOP_ASPECT),
     end: restCameraFor(DESKTOP_ASPECT),
   });
@@ -86,12 +83,9 @@ export function CameraRig({
     const view = cameraView(zoom.frame, size.width, size.height);
     const aspect = view.aspect;
     const visibleWidth = aspect * size.height;
-    const viewport = window.innerWidth;
-    if (rest.current.aspect !== aspect || rest.current.viewport !== viewport) {
+    if (rest.current.aspect !== aspect) {
       const pose = still ? stillCameraFor(aspect) : restCameraFor(aspect);
-      // The 60% is of the viewport, the canvas may be narrower (the stage is capped in width).
-      const fraction = Math.min(0.95, (MIN_TERMINAL_WIDTH * viewport) / visibleWidth);
-      rest.current = { aspect, viewport, pose, end: monitorZoomPose(aspect, pose.fov, fraction) };
+      rest.current = { aspect, pose, end: monitorZoomPose(aspect, pose.fov) };
     }
     const { pose, end } = rest.current;
     const framed =

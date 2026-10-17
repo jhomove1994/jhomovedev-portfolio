@@ -550,14 +550,30 @@ test.describe('@3d zoom', () => {
     await expect(page.locator('.hero-pin')).toHaveCount(1);
   });
 
-  test('at the end of the range the terminal covers 60% of the viewport width and still works', async ({
+  test('at the end of the range the monitor is centered with its bezel in view and the terminal still works', async ({
     page,
   }) => {
     const term = await openMonitor(page);
     await introDone(page);
     await scrollInstantly(page, ZOOM_END);
     const end = await settled(page);
-    expect(end.width).toBeGreaterThanOrEqual(0.6 * 1440);
+    const frame = await page.evaluate(() => {
+      const r = document.querySelector('.hero-still')!.getBoundingClientRect();
+      const stage = document.querySelector('.hero-stage')!;
+      const left =
+        stage.getBoundingClientRect().left + parseFloat(getComputedStyle(stage).paddingLeft);
+      return { left: r.left, width: r.width, top: r.top, height: r.height, stageLeft: left };
+    });
+    // The frame has grown over the copy column: no empty column on its left.
+    expect(Math.abs(frame.left - frame.stageLeft)).toBeLessThanOrEqual(1);
+    // Readable but not oversized: a share of the frame, centered, with the bezel and desk around it.
+    expect(end.width).toBeGreaterThanOrEqual(0.3 * frame.width);
+    expect(end.width).toBeLessThanOrEqual(0.6 * frame.width);
+    expect(Math.abs(end.left + end.width / 2 - (frame.left + frame.width / 2))).toBeLessThanOrEqual(
+      4,
+    );
+    expect(end.top).toBeGreaterThan(frame.top + 0.1 * frame.height);
+    expect(end.top + end.height).toBeLessThan(frame.top + 0.9 * frame.height);
     await term.run('whoami');
     await expect(term.log).toContainText(profile.whoami.slice(0, 20));
     await term.input.click();

@@ -89,14 +89,22 @@ export function screenCorners({ lift = SCREEN_LIFT }: { lift?: number } = {}): C
   return [at(-1, 1), at(1, 1), at(1, -1), at(-1, -1)];
 }
 
-/** Share of the canvas height the glass may fill at the end of the zoom. */
-const ZOOM_HEIGHT_FRACTION = 0.85;
+/**
+ * Share of the view the monitor (glass plus bezel) may cover at the end of the zoom, on both axes:
+ * the rest is the desk and wall around it. Lower it to pull the camera back.
+ */
+export const ZOOM_FRACTION = 0.7;
+/**
+ * Bezel around the glass, metres. The model's side bezel is thinner (about 7 mm); this is a little
+ * generous so the frame, not only the glass, has clear room in the view.
+ */
+export const BEZEL_MARGIN = 0.02;
 
 /**
- * Camera pose that ends the scroll zoom: head-on to the glass, the terminal covering at least
- * `minWidthFraction` of the canvas width (S10).
+ * Camera pose that ends the scroll zoom: head-on to the glass, the whole bezel in view and the
+ * terminal covering about half of the frame instead of filling it.
  */
-export function monitorZoomPose(aspect: number, fov: number, minWidthFraction: number): CameraPose {
+export function monitorZoomPose(aspect: number, fov: number): CameraPose {
   return zoomEndPose({
     center: monitorMount().position,
     normal: screenAnchor.normal as unknown as Vec3,
@@ -104,7 +112,7 @@ export function monitorZoomPose(aspect: number, fov: number, minWidthFraction: n
     glassHeight: screenAnchor.height,
     fov,
     aspect,
-    minWidthFraction,
-    heightFraction: ZOOM_HEIGHT_FRACTION,
+    bezel: BEZEL_MARGIN,
+    fraction: ZOOM_FRACTION,
   });
 }

@@ -133,10 +133,12 @@ screenshots the 1600x1000 stage as JPEG (about 75 KB; the image budget is 150 KB
 
 ### Zoom tuning
 
-At the end of the scroll zoom the camera looks head-on at the glass. `ZOOM_HEIGHT_FRACTION`
-in `src/lib/hero/monitor.ts` (0.85) is the share of the canvas height the glass may fill, and the
-terminal must also cover at least 60% of the width. Today the terminal text ends near 35 px,
-which reads large. Lower the fraction to get smaller text; the width rule keeps the S10 minimum.
+At the end of the scroll zoom the camera looks head-on at the glass (`zoomEndPose`). The glass plus
+its bezel (`BEZEL_MARGIN`, 2 cm) may cover `ZOOM_FRACTION` (0.7) of the frame on both axes, in
+`src/lib/hero/monitor.ts`, so the bezel and some desk stay in view and the terminal text reads at
+about 19 px at 1440. Lower the fraction to pull the camera back. While the copy fades the frame grows
+to the full stage width (`src/lib/hero/frame.ts`); the canvas keeps that width the whole time and the
+camera frames only the visible part, so nothing resizes while scrolling.
 
 ### Manual checks (hero change)
 

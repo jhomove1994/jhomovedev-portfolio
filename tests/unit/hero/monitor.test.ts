@@ -5,6 +5,7 @@ import {
   SCREEN_LIFT,
   TERMINAL_CSS_WIDTH,
   TERMINAL_ON_SCREEN,
+  ZOOM_FRACTION,
   monitorMount,
   monitorZoomPose,
   screenCorners,
@@ -104,16 +105,37 @@ describe('screenCorners', () => {
 });
 
 describe('monitorZoomPose', () => {
-  it('ends facing the glass head-on with the terminal at least 60% of the canvas wide', () => {
-    for (const aspect of [1.6, 2]) {
-      const pose = monitorZoomPose(aspect, 32, 0.6);
-      const { position } = monitorMount();
-      const toCamera = pose.position.map((v, i) => v - position[i]!);
-      const distance = Math.hypot(...toCamera);
-      const tan = Math.tan((32 * Math.PI) / 360);
-      expect(screenAnchor.width / (2 * distance * tan * aspect)).toBeGreaterThanOrEqual(0.6 - 1e-9);
-      // The camera sits on the glass normal.
+  const tan = Math.tan((32 * Math.PI) / 360);
+  const frame = (aspect: number) => {
+    const pose = monitorZoomPose(aspect, 32);
+    const { position } = monitorMount();
+    const toCamera = pose.position.map((v, i) => v - position[i]!);
+    const distance = Math.hypot(...toCamera);
+    const glassWidth = screenAnchor.width / (2 * distance * tan * aspect);
+    const glassHeight = screenAnchor.height / (2 * distance * tan);
+    return { toCamera, distance, glassWidth, glassHeight };
+  };
+
+  it('ends facing the glass head-on', () => {
+    for (const aspect of [1.6, 2.2]) {
+      const { toCamera, distance } = frame(aspect);
       toCamera.forEach((v, i) => expect(v / distance).toBeCloseTo(screenAnchor.normal[i]!, 4));
+    }
+  });
+
+  it('keeps the whole bezel and some desk in view on every side', () => {
+    for (const aspect of [1.6, 2, 2.2, 2.6]) {
+      const { glassWidth, glassHeight } = frame(aspect);
+      // The bezel is wider than the glass by BEZEL_MARGIN on each side; the glass itself stays
+      // well inside the view so the bezel and the desk around it show.
+      expect(glassHeight).toBeLessThanOrEqual(ZOOM_FRACTION - 1e-9);
+      expect(glassWidth).toBeLessThanOrEqual(ZOOM_FRACTION - 1e-9);
+    }
+  });
+
+  it('keeps the terminal readable: the glass is at least a third of the canvas width', () => {
+    for (const aspect of [1.6, 2, 2.2, 2.6]) {
+      expect(frame(aspect).glassWidth).toBeGreaterThanOrEqual(1 / 3);
     }
   });
 });
