@@ -90,9 +90,11 @@ function ScreenGlow() {
 function Desk({ onFirstFrame, shadows }: { onFirstFrame: () => void; shadows: boolean }) {
   const { scene } = useGLTF(HERO_GLB_URL, USE_DRACO, USE_MESHOPT);
   const frames = useRef(0);
-  useFrame(() => {
+  useFrame(({ invalidate }) => {
     frames.current += 1;
-    // Two frames: the first uploads the GPU resources, the second is the one worth showing.
+    // Two frames: the first uploads the GPU resources, the second is the one worth showing. On
+    // demand (reduced motion) nothing else asks for the second one, so ask here.
+    if (frames.current < 2) invalidate();
     if (frames.current === 2) onFirstFrame();
   });
   const placements = [DESK_PLACEMENT, ...PROP_PLACEMENTS, ...FLOOR_PLACEMENTS];
