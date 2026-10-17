@@ -4,7 +4,15 @@
 // dynamic import in HeroIsland.
 import { PerformanceMonitor, useProgress } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
 import { TERMINAL_ON_SCREEN } from '../../lib/hero/monitor';
@@ -48,6 +56,8 @@ export interface DeskExperienceProps {
   onLowFps: () => void;
   /** The terminal to put on the monitor, or `null` below 1024px where the 2D frame stays. */
   terminal: MonitorTerminalContent | null;
+  /** Written when the monitor terminal takes over from a focused 2D input. */
+  focusHandoffRef: RefObject<boolean>;
 }
 
 /** Catches errors thrown while loading the GLB or rendering the scene. */
@@ -116,6 +126,7 @@ export function DeskExperience({
   onError,
   onLowFps,
   terminal,
+  focusHandoffRef,
 }: DeskExperienceProps) {
   const [tier, setTier] = useState<Tier>('high');
   const [ready, setReady] = useState(false);
@@ -166,7 +177,11 @@ export function DeskExperience({
             <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
             {probe ? <RenderProbe /> : null}
             {ready && terminal && TERMINAL_ON_SCREEN === 'html' ? (
-              <HtmlMonitorTerminal content={terminal} layerRef={screenLayerRef} />
+              <HtmlMonitorTerminal
+                content={terminal}
+                handoffRef={focusHandoffRef}
+                layerRef={screenLayerRef}
+              />
             ) : null}
             {ready && terminal && TERMINAL_ON_SCREEN === 'overlay' ? (
               <GlassDriver boxRef={overlayBoxRef} />
@@ -186,7 +201,12 @@ export function DeskExperience({
       {/* Not aria-hidden: the terminal on the monitor is real, readable DOM. */}
       <div ref={attachLayer} className="hero-screen-layer" />
       {ready && terminal && TERMINAL_ON_SCREEN === 'overlay' && screenLayer ? (
-        <OverlayTerminal content={terminal} boxRef={overlayBoxRef} layer={screenLayer} />
+        <OverlayTerminal
+          content={terminal}
+          handoffRef={focusHandoffRef}
+          boxRef={overlayBoxRef}
+          layer={screenLayer}
+        />
       ) : null}
     </>,
     container,

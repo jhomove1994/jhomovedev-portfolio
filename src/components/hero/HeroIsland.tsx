@@ -2,7 +2,15 @@
 // the static transcript; once hydrated it decides the mode, reflects it on `#hero` for CSS and
 // tests, and shows the 3D toggle. The 3D scene is a dynamic import, so the static path never
 // downloads three, R3F or the model.
-import { useEffect, useReducer, useState, useSyncExternalStore, type ComponentType } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ComponentType,
+} from 'react';
 import {
   browserModeDeps,
   createModeController,
@@ -57,6 +65,14 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
   const [scene, dispatch] = useReducer(reduceScene, 'idle');
   const [Experience, setExperience] = useState<DeskExperienceComponent | null>(null);
   const desktop = useSyncExternalStore(subscribeDesktop, getDesktop, getServerDesktop);
+  const focusHandoffRef = useRef(false);
+  // The 2D input may be focused when it is replaced by the monitor's: remember it as it leaves.
+  const frameRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    return () => {
+      focusHandoffRef.current = node.contains(document.activeElement);
+    };
+  }, []);
 
   const wants3d = mode?.decision.mode === '3d';
   // Nothing has settled yet for a 3D decision: that is the loading state, derived not stored.
@@ -108,7 +124,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
   return (
     <div className="hero-island">
       {terminalOnMonitor ? null : (
-        <div className="hero-frame">
+        <div className="hero-frame" ref={frameRef}>
           <Terminal session={session} data={data} labels={labels} />
         </div>
       )}
@@ -121,6 +137,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
           onError={() => dispatch('failed')}
           onLowFps={() => dispatch('slow')}
           terminal={desktop ? { session, data, labels } : null}
+          focusHandoffRef={focusHandoffRef}
         />
       ) : null}
       {mode?.decision.toggle.available ? (

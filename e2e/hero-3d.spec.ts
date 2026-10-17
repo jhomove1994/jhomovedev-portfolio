@@ -327,4 +327,96 @@ test.describe('@3d terminal', () => {
     await expect(hero(page).locator('.monitor-terminal')).toHaveCount(0);
     await expect(hero(page).getByRole('textbox')).toHaveCount(1);
   });
+
+  test('types the intro on first show, then idles at the prompt', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __typed?: boolean };
+      new MutationObserver(() => {
+        if (document.querySelector('.term-live[data-typing="true"]')) w.__typed = true;
+      }).observe(document, { subtree: true, childList: true, attributes: true });
+    });
+    const term = await openMonitor(page);
+    await introDone(page);
+    expect(await page.evaluate(() => (window as unknown as { __typed?: boolean }).__typed)).toBe(
+      true,
+    );
+    await expect(term.log).toContainText(profile.whoami);
+    await expect(term.input).toBeVisible();
+    await expect(term.input).toHaveValue('');
+  });
+
+  test('a keypress while the intro types completes it at once', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as {
+        __skip?: { typingAfter: string | undefined; draft: string };
+      };
+      const observer = new MutationObserver(() => {
+        if (!document.querySelector('.term-live[data-typing="true"]')) return;
+        const input = document.querySelector<HTMLInputElement>('.monitor-terminal .term-input');
+        if (!input) return;
+        observer.disconnect();
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+        // React flushes the store update right after the handler: look a moment later, well
+        // inside the ~700 ms the intro would otherwise take.
+        window.setTimeout(() => {
+          w.__skip = {
+            typingAfter: document.querySelector<HTMLElement>('.term-live')?.dataset.typing,
+            draft: input.value,
+          };
+        }, 60);
+      });
+      observer.observe(document, { subtree: true, childList: true, attributes: true });
+    });
+    const term = await openMonitor(page);
+    await page.waitForFunction(() => (window as unknown as { __skip?: unknown }).__skip);
+    const skip = await page.evaluate(
+      () => (window as unknown as { __skip?: { typingAfter?: string } }).__skip,
+    );
+    expect(skip?.typingAfter).toBe('false');
+    await expect(term.log).toContainText(profile.whoami);
+    await expect(term.input).toBeVisible();
+  });
+
+  test('does not take the focus on its own', async ({ page }) => {
+    await openMonitor(page);
+    await introDone(page);
+    const focusedInput = await page.evaluate(
+      () => document.activeElement?.classList.contains('term-input') === true,
+    );
+    expect(focusedInput).toBe(false);
+  });
+
+  test('hands a focused, half-typed 2D prompt over to the monitor, keeping the draft', async ({
+    page,
+  }) => {
+    await page.route('**/DeskExperience*.js', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2_500));
+      await route.continue();
+    });
+    await open3d(page);
+    const twoD = hero(page).getByRole('textbox', { name: labels.inputLabel });
+    await twoD.click();
+    await twoD.pressSequentially('proj');
+    await untilReady(page);
+    const monitor = hero(page).locator('.monitor-terminal').getByRole('textbox');
+    await expect(monitor).toBeFocused();
+    await expect(monitor).toHaveValue('proj');
+    await page.keyboard.type('ects');
+    await page.keyboard.press('Enter');
+    await expect(hero(page).getByRole('log')).toContainText(/projects|proyectos/i);
+  });
+
+  test('leaves the focus alone when the 2D prompt was not focused', async ({ page }) => {
+    await page.route('**/DeskExperience*.js', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await route.continue();
+    });
+    await open3d(page);
+    await expect(hero(page).getByRole('textbox', { name: labels.inputLabel })).toBeVisible();
+    await untilReady(page);
+    const monitor = hero(page).locator('.monitor-terminal').getByRole('textbox');
+    await expect(monitor).toBeVisible();
+    await expect(monitor).not.toBeFocused();
+  });
 });

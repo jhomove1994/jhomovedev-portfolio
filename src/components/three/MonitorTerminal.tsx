@@ -6,7 +6,7 @@
 // 150 px off its computed rect (see the apply notes), while the overlay stays pixel-exact.
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useMemo, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Vector3 } from 'three';
 import { monitorMount, screenCorners } from '../../lib/hero/monitor';
@@ -23,16 +23,36 @@ export interface MonitorTerminalContent {
 
 interface ScreenContentProps {
   content: MonitorTerminalContent;
+  /** True when the 2D terminal's input had focus as it left: the new input takes it over. */
+  handoffRef: RefObject<boolean>;
   /** The sized box; the overlay driver writes its transform. */
   boxRef?: RefObject<HTMLDivElement | null>;
 }
 
 const mount = monitorMount();
 
-function ScreenContent({ content, boxRef }: ScreenContentProps) {
+function ScreenContent({ content, handoffRef, boxRef }: ScreenContentProps) {
+  const own = useRef<HTMLDivElement>(null);
+  const box = boxRef ?? own;
+
+  // Runs once, when the monitor first shows the terminal: type `whoami` unless the visitor already
+  // typed (the session refuses) or asked for less motion (it then shows the finished state).
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    content.session.playIntro({ animate: !reduced });
+    if (handoffRef.current) {
+      handoffRef.current = false;
+      const input = box.current?.querySelector('input');
+      if (input) {
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+  }, [content.session, handoffRef, box]);
+
   return (
     <div
-      ref={boxRef}
+      ref={box}
       className="monitor-terminal"
       style={{ width: mount.cssWidth, height: mount.cssHeight }}
     >
@@ -44,6 +64,7 @@ function ScreenContent({ content, boxRef }: ScreenContentProps) {
 /** `html` mode, rendered inside the Canvas: drei mounts the DOM in `layerRef`. */
 export function HtmlMonitorTerminal({
   content,
+  handoffRef,
   layerRef,
 }: ScreenContentProps & { layerRef: RefObject<HTMLElement | null> }) {
   return (
@@ -55,7 +76,7 @@ export function HtmlMonitorTerminal({
       rotation={mount.rotation}
       scale={mount.scale}
     >
-      <ScreenContent content={content} />
+      <ScreenContent content={content} handoffRef={handoffRef} />
     </Html>
   );
 }
@@ -63,10 +84,14 @@ export function HtmlMonitorTerminal({
 /** `overlay` mode, rendered outside the Canvas into the layer; `GlassDriver` positions it. */
 export function OverlayTerminal({
   content,
+  handoffRef,
   boxRef,
   layer,
 }: ScreenContentProps & { layer: HTMLElement }) {
-  return createPortal(<ScreenContent content={content} boxRef={boxRef} />, layer);
+  return createPortal(
+    <ScreenContent content={content} handoffRef={handoffRef} boxRef={boxRef} />,
+    layer,
+  );
 }
 
 /**
