@@ -612,6 +612,40 @@ html.lenis body {
   transition: background-color 0.3s ease;
 }
 
+/* A commit line: short hash in amber, ref label, date; the message sits below it. */
+.commit-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.commit-hash {
+  color: var(--color-term-amber);
+}
+
+.commit-ref {
+  color: var(--color-accent);
+}
+
+.commit-date {
+  color: var(--color-muted);
+}
+
+.motion [data-row-body]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+[data-row-body] {
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
 .motion [data-path-node]:not(.is-lit) {
   background-color: var(--color-border);
 }

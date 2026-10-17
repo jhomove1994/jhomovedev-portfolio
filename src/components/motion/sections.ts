@@ -13,7 +13,9 @@ function settleVisibleSections(): void {
     if (!hasEntered(section.getBoundingClientRect().top, window.innerHeight)) continue;
     section.setAttribute('data-revealed', '');
     section.querySelector('[data-cmd-caret]')?.setAttribute('data-done', '');
-    section.querySelectorAll('[data-reveal-item]').forEach((item) => item.classList.add('is-in'));
+    section
+      .querySelectorAll('[data-reveal-item], [data-row], [data-row-body]')
+      .forEach((item) => item.classList.add('is-in'));
   }
 }
 

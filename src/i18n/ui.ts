@@ -60,6 +60,11 @@ export interface UiDict {
     certifications: string;
     contact: string;
   };
+  /** Chrome of the `git log --graph` rendering of the Tech Lead path; decorative. */
+  gitLog: {
+    /** Ref label of the current milestone, like `(HEAD -> main)` in a real log. */
+    headRef: string;
+  };
 }
 
 export const ui = {
@@ -178,6 +183,9 @@ export const ui = {
       certifications: '$ ls certificaciones/',
       contact: '$ ./contacto.sh',
     },
+    gitLog: {
+      headRef: '(HEAD -> tech-lead)',
+    },
   },
   en: {
     nav: {
@@ -293,6 +301,9 @@ export const ui = {
       experience: '$ cat experience.log',
       certifications: '$ ls certifications/',
       contact: '$ ./contact.sh',
+    },
+    gitLog: {
+      headRef: '(HEAD -> tech-lead)',
     },
   },
 } satisfies Record<Locale, UiDict>;

@@ -2,10 +2,14 @@
 import type { Locale } from '../../i18n/locales';
 import SectionHead from '../layout/SectionHead.astro';
 import { formatDate } from '../../lib/content/period';
+import { shortHash } from '../../lib/motion/commit-hash';
 import { currentStage } from '../../lib/motion/stage';
+import { t } from '../../i18n/ui';
 import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
 
 export interface Milestone {
+  /** Content slug; only seeds the decorative short hash of the commit line. */
+  slug: string;
   title: string;
   evidence: string;
   date?: string | undefined;
@@ -50,8 +54,8 @@ const current = currentStage(milestones.map(({ marked }) => marked));
         <path data-path-line class="path-trace" d="M1 0V100" pathLength="1"></path>
       </svg>
       <ol>
-        {milestones.map(({ title, evidence, date, link, isFallback, marked }, index) => (
-          <li data-reveal-item class="relative pb-10 pl-9 last:pb-0">
+        {milestones.map(({ slug, title, evidence, date, link, isFallback, marked }, index) => (
+          <li data-row class="relative pb-10 pl-9 last:pb-0">
             <span
               data-commit-node
               data-path-node={marked ? undefined : ''}
@@ -64,17 +68,33 @@ const current = currentStage(milestones.map(({ marked }) => marked));
             />
             <div class:list={[marked && 'border border-dashed border-warn p-3']}>
               <DevFallbackBadge locale={locale} isFallback={isFallback} />
-              {date && <p class="text-sm text-muted">{formatDate(date, locale)}</p>}
-              <h3 class="text-lg">
-                {link ? (
-                  <a href={link} rel="noopener" class="underline">
-                    {title}
-                  </a>
-                ) : (
-                  title
+              <p data-commit-head class="commit-head">
+                <span data-type class="commit-hash">
+                  {shortHash(slug)}
+                </span>
+                {index === current && (
+                  <span data-type class="commit-ref">
+                    {t(locale, 'gitLog.headRef')}
+                  </span>
                 )}
-              </h3>
-              <p class="mt-2">{evidence}</p>
+                {date && (
+                  <span data-type class="commit-date">
+                    {formatDate(date, locale)}
+                  </span>
+                )}
+              </p>
+              <div data-row-body>
+                <h3 class="text-lg">
+                  {link ? (
+                    <a href={link} rel="noopener" class="underline">
+                      {title}
+                    </a>
+                  ) : (
+                    title
+                  )}
+                </h3>
+                <p class="mt-2">{evidence}</p>
+              </div>
             </div>
           </li>
         ))}

@@ -141,11 +141,22 @@ for (const locale of ['es', 'en'] as const) {
     const pulse = (selector: string) =>
       `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return el ? getComputedStyle(el, '::after').animationName : 'missing'; })()`;
 
-    test('reduced motion shows the drawn path, lit stages and no pulse', async ({ page }) => {
+    test('reduced motion shows the whole log: every row, the drawn graph, lit dots, no pulse', async ({
+      page,
+    }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`/${locale}/`);
       await page.locator('#path').scrollIntoViewIfNeeded();
       await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      const rows = page.locator('#path [data-row]');
+      const total = await rows.count();
+      expect(total).toBeGreaterThan(1);
+      for (const row of await rows.all()) {
+        await expect(row).toHaveCSS('opacity', '1');
+        await expect(row.locator('[data-row-body]')).toHaveCSS('opacity', '1');
+        await expect(row.locator('.commit-hash')).toHaveText(/^[0-9a-f]{7}$/);
+      }
+      await expect(page.locator('#path .commit-ref')).toHaveText('(HEAD -> tech-lead)');
       const colors = await page
         .locator(nodes)
         .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
@@ -154,16 +165,41 @@ for (const locale of ['es', 'en'] as const) {
       expect(await page.evaluate(pulse('#path [data-current]'))).toBe('none');
     });
 
-    test('with motion the path is traced on enter, stages light up and the current one pulses', async ({
+    test('with motion the commits appear one by one as the scroll reaches them', async ({
       page,
     }) => {
       await page.goto(`/${locale}/`);
       await page.mouse.wheel(0, 40);
       await expect(page.locator('html')).toHaveClass(/motion/);
-      const total = await page.locator(nodes).count();
-      await page.locator('#path').scrollIntoViewIfNeeded();
-      await expect(page.locator(`${nodes}.is-lit`)).toHaveCount(total, { timeout: 8000 });
-      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px');
+      const rows = page.locator('#path [data-row]');
+      const total = await rows.count();
+      expect(total).toBeGreaterThan(2);
+      const shown = () => page.locator('#path [data-row].is-in').count();
+      // Enter the section: its command types first, then the first commits show.
+      await page.evaluate(() => {
+        const top = document.querySelector('#path [data-path]')!.getBoundingClientRect().top;
+        window.scrollBy({
+          top: top + window.scrollY - window.innerHeight * 0.5 - window.scrollY,
+          behavior: 'instant',
+        });
+      });
+      await expect.poll(shown, { timeout: 8000 }).toBeGreaterThan(0);
+      // Partway in: later rows are still hidden (and not yet typed).
+      expect(await shown()).toBeLessThan(total);
+      await expect(rows.last()).toHaveCSS('opacity', '0');
+      // Keep going to the end of the log: every commit appeared, the graph is closed, HEAD pulses.
+      await page.evaluate(() => {
+        const { bottom } = document.querySelector('#path [data-path]')!.getBoundingClientRect();
+        window.scrollBy({ top: bottom - window.innerHeight * 0.4, behavior: 'instant' });
+      });
+      await expect.poll(shown, { timeout: 12000 }).toBe(total);
+      await expect(page.locator(`${nodes}.is-lit`)).toHaveCount(await page.locator(nodes).count(), {
+        timeout: 8000,
+      });
+      await expect(page.locator('#path [data-path-line]')).toHaveCSS('stroke-dashoffset', '0px', {
+        timeout: 8000,
+      });
+      await expect(rows.last().locator('[data-row-body]')).toHaveClass(/is-in/, { timeout: 8000 });
       expect(await page.evaluate(pulse('#path [data-current]'))).toBe('stage-pulse');
       expect(await page.locator('#path [data-current]').count()).toBe(1);
     });

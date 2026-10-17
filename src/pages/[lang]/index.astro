@@ -59,6 +59,7 @@ const milestones: Milestone[] = withTodoVisibility(
   ({ entry }) => [entry.data.title, entry.data.evidence],
   import.meta.env.DEV,
 ).map(({ item, marked }) => ({
+  slug: parseEntryId(item.entry.id).slug,
   title: item.entry.data.title,
   evidence: item.entry.data.evidence,
   // optionalText() types its output as unknown (the preprocess step); narrow it here.

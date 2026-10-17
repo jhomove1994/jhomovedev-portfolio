@@ -1,58 +1,113 @@
-import { litNodes } from '../../../lib/motion/rail';
-import { nodeFractions } from '../../../lib/motion/stage';
-import { ENTER_LINE } from '../../../lib/motion/viewport';
+import { fillLength, litNodes, newlyReached } from '../../../lib/motion/rail';
+import { nodeFractions, traceTarget } from '../../../lib/motion/stage';
+import { staggerDelayMs } from '../../../lib/motion/stagger';
+import { COMMIT_JITTER_MS, COMMIT_MS_PER_CHAR } from '../../../lib/motion/typing';
 import type { Effect } from './kit';
+import { whenTyped } from './typed';
+import { playTyping, prepareTyping, type Typewriter } from './typewriter';
 
-/** Seconds the path takes to trace from the first stage to the last. */
-const TRACE_SECONDS = 1.6;
+/** The commit appears when the reader's line (this viewport height) reaches its dot. */
+const READING_LINE = '72%';
+/** Seconds the graph line takes to grow down to the commit that just appeared. */
+const GROW_SECONDS = 0.45;
+/** The graph line starts and ends this far (in rem) inside the box that holds the commits. */
+const LINE_INSET_REM = 0.5;
 
 /**
- * TechLeadPath: the line between the stages is traced once when the path enters the view
- * (`stroke-dashoffset`, with the path length normalised to 1) and each stage lights as the trace
- * reaches it. The pulse on the current stage is pure CSS, started by the stage being lit.
+ * TechLeadPath as `git log --graph`: commits appear one at a time as the scroll reaches them (once;
+ * scrolling back leaves them). When a commit appears the graph line grows down to its dot, the dot
+ * lights, its header line (hash, ref, date) types out quickly and then the message fades in.
  */
-export const initPath: Effect = ({ gsap, ScrollTrigger }) => {
+export const initPath: Effect = (kit) => {
+  const { gsap, ScrollTrigger } = kit;
   for (const path of document.querySelectorAll<HTMLElement>('[data-path]')) {
     const line = path.querySelector<SVGPathElement>('[data-path-line]');
-    const nodes = [...path.querySelectorAll<HTMLElement>('[data-path-node]')];
-    if (!line) continue;
+    const rows = [...path.querySelectorAll<HTMLElement>('[data-row]')];
+    const section = path.closest<HTMLElement>('[data-reveal]');
+    if (!line || rows.length === 0 || !section) continue;
 
-    const fractions = () => {
-      const box = path.getBoundingClientRect();
-      return nodeFractions(
-        nodes.map((node) => {
-          const nodeBox = node.getBoundingClientRect();
-          return nodeBox.top + nodeBox.height / 2 - box.top;
-        }),
-        box.height,
-      );
-    };
-    const show = (traced: number, at: readonly number[]) => {
+    const dots = rows.map((row) => row.querySelector<HTMLElement>('[data-commit-node]'));
+    const setLine = (traced: number) => {
       line.style.strokeDashoffset = String(1 - traced);
-      const lit = litNodes(at, traced);
-      nodes.forEach((node, index) => node.classList.toggle('is-lit', lit[index] ?? false));
     };
 
-    // Already in view when the motion started: show the finished path instead of redrawing it.
-    if (path.closest('[data-revealed]')) {
-      show(1, fractions());
+    // Already in view when the motion started: the finished log, nothing redrawn or retyped.
+    if (section.hasAttribute('data-revealed')) {
+      setLine(1);
+      dots.forEach((dot) => dot?.classList.add('is-lit'));
       continue;
     }
 
+    const heads: Typewriter[] = rows.map((row) =>
+      prepareTyping([...row.querySelectorAll<HTMLElement>('[data-commit-head] [data-type]')]),
+    );
+    const bodies = rows.map((row) => row.querySelector<HTMLElement>('[data-row-body]'));
+
+    // Layout-based (offsetTop ignores the rows' entrance offset), relative to the log box.
+    let offsets: number[] = [];
+    let fractions: number[] = [];
+    let height = 0;
+    const measure = () => {
+      const inset =
+        LINE_INSET_REM * parseFloat(getComputedStyle(document.documentElement).fontSize);
+      height = path.offsetHeight;
+      offsets = dots.map((dot, index) => {
+        const row = rows[index]!;
+        return row.offsetTop + (dot ? dot.offsetTop + dot.offsetHeight / 2 : 0);
+      });
+      fractions = nodeFractions(
+        offsets.map((offset) => offset - inset),
+        height - inset * 2,
+      );
+    };
+
+    let reached = rows.map(() => false);
+    const shown = rows.map(() => false);
+    const grown = { value: 0 };
+    const growTo = (target: number) => {
+      gsap.to(grown, {
+        value: target,
+        duration: GROW_SECONDS,
+        ease: 'power1.out',
+        overwrite: true,
+        onUpdate: () => setLine(grown.value),
+      });
+    };
+
+    const showCommit = (index: number) => {
+      shown[index] = true;
+      rows[index]!.classList.add('is-in');
+      dots[index]?.classList.add('is-lit');
+      growTo(traceTarget(shown, fractions));
+      void playTyping(kit, heads[index]!, {
+        msPerChar: COMMIT_MS_PER_CHAR,
+        jitterMs: COMMIT_JITTER_MS,
+      }).then(() => bodies[index]?.classList.add('is-in'));
+    };
+
+    const update = (progress: number) => {
+      const now = litNodes(offsets, fillLength(progress, height)).map(
+        (isReached, index) => isReached || reached[index]!,
+      );
+      const fresh = newlyReached(reached, now);
+      reached = now;
+      if (fresh.length === 0) return;
+      void whenTyped(section).then(() =>
+        fresh.forEach((index, order) =>
+          gsap.delayedCall(staggerDelayMs(order) / 1000, () => showCommit(index)),
+        ),
+      );
+    };
+
     ScrollTrigger.create({
       trigger: path,
-      start: `top ${ENTER_LINE * 100}%`,
-      once: true,
-      onEnter: () => {
-        const at = fractions();
-        const state = { traced: 0 };
-        gsap.to(state, {
-          traced: 1,
-          duration: TRACE_SECONDS,
-          ease: 'power1.inOut',
-          onUpdate: () => show(state.traced, at),
-        });
+      start: `top ${READING_LINE}`,
+      end: `bottom ${READING_LINE}`,
+      onRefresh: (self) => {
+        measure();
+        update(self.progress);
       },
+      onUpdate: (self) => update(self.progress),
     });
   }
 };

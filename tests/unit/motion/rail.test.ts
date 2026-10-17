@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillLength, litNodes } from '../../../src/lib/motion/rail';
+import { fillLength, litNodes, newlyReached } from '../../../src/lib/motion/rail';
 
 describe('fillLength', () => {
   it('maps progress onto the rail height', () => {
@@ -31,5 +31,17 @@ describe('litNodes', () => {
 
   it('handles an empty rail', () => {
     expect(litNodes([], 100)).toEqual([]);
+  });
+});
+
+describe('newlyReached', () => {
+  it('lists the rows reached since the last update, in order', () => {
+    expect(newlyReached([false, false, false], [true, true, false])).toEqual([0, 1]);
+    expect(newlyReached([true, false, false], [true, true, false])).toEqual([1]);
+  });
+
+  it('never reports a row twice or a row that was left behind', () => {
+    expect(newlyReached([true, true], [true, true])).toEqual([]);
+    expect(newlyReached([true, true], [false, false])).toEqual([]);
   });
 });

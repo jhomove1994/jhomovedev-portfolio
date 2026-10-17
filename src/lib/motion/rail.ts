@@ -9,3 +9,8 @@ export function fillLength(progress: number, height: number): number {
 export function litNodes(offsets: readonly number[], fill: number): boolean[] {
   return offsets.map((offset) => offset <= fill);
 }
+
+/** Indices of the rows that are reached now but were not before, in order (rows never go back). */
+export function newlyReached(before: readonly boolean[], now: readonly boolean[]): number[] {
+  return now.flatMap((reached, index) => (reached && !before[index] ? [index] : []));
+}
