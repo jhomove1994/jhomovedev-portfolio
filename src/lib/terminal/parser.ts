@@ -1,4 +1,5 @@
 // Turns a raw input line into a normalized command. Pure: no DOM, no framework.
+import { COMMAND_NAMES } from './types';
 
 export interface ParsedInput {
   /** Lowercased command name; `sudo hire-me` is the one two-word command. */
@@ -8,19 +9,6 @@ export interface ParsedInput {
   known: boolean;
 }
 
-const COMMANDS = [
-  'help',
-  'whoami',
-  'experience',
-  'projects',
-  'stack',
-  'certs',
-  'contact',
-  'cv',
-  'lang',
-  'ask',
-  'clear',
-];
 const EASTER_EGG = 'sudo hire-me';
 
 /** `ask` forwards free text, so its arguments keep their original case. */
@@ -38,5 +26,5 @@ export function parseInput(raw: string): ParsedInput | null {
   }
 
   const args = CASE_SENSITIVE_ARGS.has(name) ? rest : rest.map((word) => word.toLowerCase());
-  return { name, args, known: COMMANDS.includes(name) };
+  return { name, args, known: (COMMAND_NAMES as readonly string[]).includes(name) };
 }

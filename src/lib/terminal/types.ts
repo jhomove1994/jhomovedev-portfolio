@@ -1,19 +1,23 @@
-// Shared contracts of the pure terminal engine. Types only: no logic, no DOM, no framework.
+// Shared contracts of the pure terminal engine, plus the single command-name list.
+// No logic, no DOM, no framework.
 import type { Locale } from '../../i18n/locales';
 
 /** Commands the terminal advertises in `help`. The `sudo hire-me` easter egg is not one of them. */
-export type CommandName =
-  | 'help'
-  | 'whoami'
-  | 'experience'
-  | 'projects'
-  | 'stack'
-  | 'certs'
-  | 'contact'
-  | 'cv'
-  | 'lang'
-  | 'ask'
-  | 'clear';
+export const COMMAND_NAMES = [
+  'help',
+  'whoami',
+  'experience',
+  'projects',
+  'stack',
+  'certs',
+  'contact',
+  'cv',
+  'lang',
+  'ask',
+  'clear',
+] as const;
+
+export type CommandName = (typeof COMMAND_NAMES)[number];
 
 export type Tone = 'fg' | 'muted' | 'amber' | 'error' | 'accent';
 
