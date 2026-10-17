@@ -23,8 +23,9 @@ const meta = noindex ? undefined : buildHeadMeta({ site: Astro.site?.href, local
 <meta name="generator" content={Astro.generator} />
 <title>{title}</title>
 {description && <meta name="description" content={description} />}
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 {noindex && <meta name="robots" content="noindex" />}
 {meta && (
   <>
