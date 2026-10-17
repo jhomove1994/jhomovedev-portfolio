@@ -1,0 +1,23 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { t, type UiKey } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  /** Id of the heading, referenced by the section's `aria-labelledby`. */
+  id: string;
+  titleKey: UiKey;
+  /** Shell command typed above the heading (decorative, hidden from assistive tech). */
+  commandKey: UiKey;
+}
+
+const { locale, id, titleKey, commandKey } = Astro.props;
+---
+
+<div data-section-head class="mb-8 lg:mb-0">
+  <p data-cmd aria-hidden="true" class="cmd">
+    <span data-cmd-text>{t(locale, commandKey)}</span>
+    <span data-cmd-caret class="cmd-caret"></span>
+  </p>
+  <h2 id={id}>{t(locale, titleKey)}</h2>
+</div>

@@ -15,9 +15,13 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-/** Pages, layouts and always-loaded components: everything that is not the lazy scene chunk. */
+/** Lazy chunks: the 3D scene and the section-motion runtime (gsap), both behind a dynamic import. */
+const LAZY_DIRS = ['src/components/three/', 'src/components/motion/lazy/'];
+const MOTION_IMPORT = /['"][^'"]*motion\/lazy\//;
+
+/** Pages, layouts and always-loaded components: everything that is not a lazy chunk. */
 const ALWAYS_LOADED = ['src/pages', 'src/layouts', 'src/components', 'src/lib'].flatMap((dir) =>
-  sourceFiles(dir).filter((file) => !file.startsWith('src/components/three/')),
+  sourceFiles(dir).filter((file) => !LAZY_DIRS.some((lazy) => file.startsWith(lazy))),
 );
 
 describe('the 3D scene is only reachable through a dynamic import', () => {
@@ -40,6 +44,20 @@ describe('the 3D scene is only reachable through a dynamic import', () => {
             /^\s*import\b(?!\s*\()/.test(line) &&
             !/^\s*import type\b/.test(line) &&
             SCENE_IMPORT.test(line),
+        ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('never statically imports src/components/motion/lazy', () => {
+    const offenders = ALWAYS_LOADED.filter((file) =>
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .some(
+          (line) =>
+            /^\s*import\b(?!\s*\()/.test(line) &&
+            !/^\s*import type\b/.test(line) &&
+            MOTION_IMPORT.test(line),
         ),
     );
     expect(offenders).toEqual([]);

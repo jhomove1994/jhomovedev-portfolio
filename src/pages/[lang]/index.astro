@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Header, { type NavItem } from '../../components/layout/Header.astro';
 import Footer from '../../components/layout/Footer.astro';
+import SectionMotion from '../../components/motion/SectionMotion.astro';
 import Hero from '../../components/sections/Hero.astro';
 import About from '../../components/sections/About.astro';
 import TechLeadPath, { type Milestone } from '../../components/sections/TechLeadPath.astro';
@@ -150,6 +151,7 @@ const navItems: NavItem[] = [
         whatsapp={asText(profile.contact.whatsapp)}
       />
     </div>
+    <SectionMotion />
   </main>
   <Footer slot="footer" name={profile.name} />
 </BaseLayout>

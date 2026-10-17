@@ -2,6 +2,7 @@
 import type { Locale } from '../../i18n/locales';
 import { t } from '../../i18n/ui';
 import type { CERTIFICATION_KINDS } from '../../lib/content/schemas';
+import SectionHead from '../layout/SectionHead.astro';
 import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
 
 export interface Credential {
@@ -32,14 +33,18 @@ const { locale, groups } = Astro.props;
   <section
     id="certifications"
     aria-labelledby="certifications-title"
+    data-reveal
     class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[15rem_1fr] lg:gap-x-12 lg:py-16"
   >
-    <h2 id="certifications-title" class="mb-8 lg:mb-0">
-      {t(locale, 'nav.certifications')}
-    </h2>
+    <SectionHead
+      locale={locale}
+      id="certifications-title"
+      titleKey="nav.certifications"
+      commandKey="sectionCommands.certifications"
+    />
     <div class="space-y-10">
       {groups.map(({ kind, items }) => (
-        <div>
+        <div data-reveal-item>
           <h3 class="mb-3 text-lg">{t(locale, `certificationKinds.${kind}`)}</h3>
           <ul class="space-y-4">
             {items.map(({ name, code, issuer, year, inProgress, credentialUrl, isFallback }) => (

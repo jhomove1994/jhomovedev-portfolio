@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '../../i18n/locales';
-import { t } from '../../i18n/ui';
+import SectionHead from '../layout/SectionHead.astro';
 import { formatDate } from '../../lib/content/period';
 import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
 
@@ -27,14 +27,18 @@ const { locale, milestones } = Astro.props;
   <section
     id="path"
     aria-labelledby="path-title"
+    data-reveal
     class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[15rem_1fr] lg:gap-x-12 lg:py-16"
   >
-    <h2 id="path-title" class="mb-8 lg:mb-0">
-      {t(locale, 'nav.pathToTechLead')}
-    </h2>
+    <SectionHead
+      locale={locale}
+      id="path-title"
+      titleKey="nav.pathToTechLead"
+      commandKey="sectionCommands.path"
+    />
     <ol class="relative before:absolute before:top-2 before:bottom-2 before:left-[5px] before:w-px before:bg-border before:content-['']">
       {milestones.map(({ title, evidence, date, link, isFallback, marked }) => (
-        <li class="relative pb-10 pl-9 last:pb-0">
+        <li data-reveal-item class="relative pb-10 pl-9 last:pb-0">
           <span
             data-commit-node
             aria-hidden="true"

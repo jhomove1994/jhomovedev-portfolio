@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '../../i18n/locales';
-import { t } from '../../i18n/ui';
+import SectionHead from '../layout/SectionHead.astro';
 import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
 
 interface Props {
@@ -15,12 +15,16 @@ const { locale, bio, isFallback = false } = Astro.props;
 <section
   id="about"
   aria-labelledby="about-title"
+  data-reveal
   class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[15rem_1fr] lg:gap-x-12 lg:py-16"
 >
-  <h2 id="about-title" class="mb-5 lg:mb-0">
-    {t(locale, 'nav.about')}
-  </h2>
-  <div>
+  <SectionHead
+    locale={locale}
+    id="about-title"
+    titleKey="nav.about"
+    commandKey="sectionCommands.about"
+  />
+  <div data-reveal-item>
     <DevFallbackBadge locale={locale} isFallback={isFallback} />
     <p>{bio}</p>
   </div>

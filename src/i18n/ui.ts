@@ -52,6 +52,14 @@ export interface UiDict {
     bootLoading: string;
     bootReady: string;
   };
+  /** Shell command typed above each section heading; decorative, so no portfolio fact belongs here. */
+  sectionCommands: {
+    about: string;
+    path: string;
+    experience: string;
+    certifications: string;
+    contact: string;
+  };
 }
 
 export const ui = {
@@ -163,6 +171,13 @@ export const ui = {
       bootLoading: 'cargando el escritorio…',
       bootReady: 'listo',
     },
+    sectionCommands: {
+      about: '$ cat sobre-mi.md',
+      path: '$ git log --graph',
+      experience: '$ cat experiencia.log',
+      certifications: '$ ls certificaciones/',
+      contact: '$ ./contacto.sh',
+    },
   },
   en: {
     nav: {
@@ -271,6 +286,13 @@ export const ui = {
       stillAlt: 'A wooden desk at night with a monitor showing a terminal',
       bootLoading: 'loading the desk…',
       bootReady: 'ready',
+    },
+    sectionCommands: {
+      about: '$ cat about.md',
+      path: '$ git log --graph',
+      experience: '$ cat experience.log',
+      certifications: '$ ls certifications/',
+      contact: '$ ./contact.sh',
     },
   },
 } satisfies Record<Locale, UiDict>;

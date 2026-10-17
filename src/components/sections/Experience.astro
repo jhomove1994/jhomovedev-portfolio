@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '../../i18n/locales';
 import { t } from '../../i18n/ui';
+import SectionHead from '../layout/SectionHead.astro';
 import Chip from '../ui/Chip.astro';
 import DevFallbackBadge from '../ui/DevFallbackBadge.astro';
 
@@ -30,14 +31,18 @@ const { locale, roles } = Astro.props;
   <section
     id="experience"
     aria-labelledby="experience-title"
+    data-reveal
     class="scroll-mt-20 border-t border-border py-12 lg:grid lg:grid-cols-[15rem_1fr] lg:gap-x-12 lg:py-16"
   >
-    <h2 id="experience-title" class="mb-8 lg:mb-0">
-      {t(locale, 'nav.experience')}
-    </h2>
+    <SectionHead
+      locale={locale}
+      id="experience-title"
+      titleKey="nav.experience"
+      commandKey="sectionCommands.experience"
+    />
     <ol class="space-y-12">
       {roles.map(({ role, company, location, period, achievements, stack, isFallback }) => (
-        <li>
+        <li data-reveal-item>
           <DevFallbackBadge locale={locale} isFallback={isFallback} />
           <p data-period class="text-sm text-muted">
             {period}
