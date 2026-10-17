@@ -10,6 +10,7 @@ import {
   type Segment,
   type TerminalData,
   type TerminalLabels,
+  type TerminalProject,
   type Tone,
 } from './types';
 
@@ -76,6 +77,66 @@ function experience({ data, labels }: CommandContext): CommandResult {
   return result(lines, 'experience', effects);
 }
 
+function projectList(data: TerminalData, labels: TerminalLabels): Line[] {
+  return [
+    ...data.projects.flatMap((project): Line[] => [
+      [runSeg(project.id, `projects ${project.id}`), seg(` - ${project.title}`)],
+      plain(`  ${project.summary}`, 'muted'),
+    ]),
+    plain(labels.projectsHint, 'muted'),
+  ];
+}
+
+function projectDetail(project: TerminalProject, labels: TerminalLabels): Line[] {
+  const field = (label: string, value: string | undefined): Line[] =>
+    value === undefined || value === '' ? [] : [[seg(`${label}: `, 'amber'), seg(value)]];
+  return [
+    plain(project.title, 'amber'),
+    plain(project.summary, 'muted'),
+    ...field(labels.projectContext, project.context),
+    ...field(labels.projectChallenge, project.challenge),
+    ...field(labels.projectRole, project.role),
+    ...(project.decisions && project.decisions.length > 0
+      ? [
+          plain(`${labels.projectDecisions}:`, 'amber'),
+          ...project.decisions.map((decision) => plain(`  - ${decision}`)),
+        ]
+      : []),
+    ...field(labels.projectResult, project.result),
+    ...field(labels.projectStack, project.stack.join(', ')),
+  ];
+}
+
+function projects({ data, labels }: CommandContext, args: string[]): CommandResult {
+  if (data.projects.length === 0) {
+    return result(
+      [plain(labels.projectsEmpty, 'muted'), [runSeg('contact', 'contact')]],
+      'projects',
+    );
+  }
+  const id = args[0];
+  if (id === undefined) return result(projectList(data, labels), 'projects');
+  const project = data.projects.find((candidate) => candidate.id.toLowerCase() === id);
+  if (project === undefined) {
+    return result(
+      [plain(fill(labels.projectNotFound, { id }), 'error'), ...projectList(data, labels)],
+      'projects',
+    );
+  }
+  return result(projectDetail(project, labels), 'projects');
+}
+
+function lang({ data, labels }: CommandContext, args: string[]): CommandResult {
+  const target = args.length === 1 ? args[0] : undefined;
+  if (target === undefined || (target !== data.locale && target !== data.altLocale.locale)) {
+    return result([plain(labels.langUsage, 'error')], 'lang');
+  }
+  if (target === data.locale) return result([plain(labels.langSame, 'muted')], 'lang');
+  return result([plain(labels.langSwitching, 'muted')], 'lang', [
+    { kind: 'navigate', href: data.altLocale.path },
+  ]);
+}
+
 function ask({ labels }: CommandContext): CommandResult {
   return result([plain(labels.askStub, 'muted')], 'ask');
 }
@@ -107,6 +168,10 @@ export function runCommand(input: string, context: CommandContext): CommandResul
       return whoami(context);
     case 'experience':
       return experience(context);
+    case 'projects':
+      return projects(context, parsed.args);
+    case 'lang':
+      return lang(context, parsed.args);
     case 'ask':
       return ask(context);
     case 'clear':

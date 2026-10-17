@@ -62,6 +62,81 @@ describe('experience', () => {
   });
 });
 
+describe('projects', () => {
+  it('lists published projects with clickable ids', () => {
+    const result = run('projects');
+    const runs = segments(result).filter((segment) => segment.run !== undefined);
+    expect(runs.map((segment) => segment.run)).toEqual([
+      'projects virtual-card',
+      'projects ledger',
+    ]);
+    expect(text(result)).toContain('Fixture summary two');
+  });
+
+  it('shows the detail of one project, case-insensitively', () => {
+    const output = text(run('projects Virtual-Card'));
+    for (const part of [
+      'Virtual Card',
+      'Fixture context',
+      'Fixture challenge',
+      'Fixture role',
+      'Decision B',
+      'Fixture result',
+      'TypeScript',
+      'Node.js',
+    ]) {
+      expect(output).toContain(part);
+    }
+  });
+
+  it('shows a detail with only the fields the project has', () => {
+    const output = text(run('projects ledger'));
+    expect(output).toContain('Ledger');
+    expect(output).not.toContain(labelsFor('en').projectChallenge);
+  });
+
+  it('reports an unknown id and lists the projects', () => {
+    const result = run('projects nope');
+    expect(text(result)).toContain('project not found: nope');
+    expect(segments(result).some((segment) => segment.run === 'projects ledger')).toBe(true);
+  });
+
+  it('never reveals a project that is not in the published data', () => {
+    const data = makeData('en', { projects: [makeData().projects[1]!] });
+    expect(text(run('projects virtual-card', 'en', data))).toContain('project not found');
+    expect(text(run('projects', 'en', data))).not.toContain('Virtual Card');
+  });
+
+  it.each(['projects', 'projects x'])(
+    'points to contact when nothing is published (%s)',
+    (input) => {
+      const result = run(input, 'en', makeData('en', { projects: [] }));
+      expect(text(result)).toContain(labelsFor('en').projectsEmpty);
+      expect(segments(result).some((segment) => segment.run === 'contact')).toBe(true);
+      expect(result.effects).toEqual([]);
+    },
+  );
+});
+
+describe('lang', () => {
+  it('navigates to the other locale path', () => {
+    expect(run('lang en', 'es').effects).toEqual([{ kind: 'navigate', href: '/en/' }]);
+    expect(run('lang es', 'en').effects).toEqual([{ kind: 'navigate', href: '/es/' }]);
+  });
+
+  it('answers with an informational line for the current locale', () => {
+    const result = run('lang es', 'es');
+    expect(text(result)).toBe(labelsFor('es').langSame);
+    expect(result.effects).toEqual([]);
+  });
+
+  it.each(['lang fr', 'lang', 'lang es en'])('shows usage for %j', (input) => {
+    const result = run(input);
+    expect(text(result)).toContain('usage: lang es|en');
+    expect(result.effects).toEqual([]);
+  });
+});
+
 describe('clear and ask', () => {
   it('clear emits a clear effect and prints nothing', () => {
     expect(run('clear')).toEqual({ lines: [], effects: [{ kind: 'clear' }], window: undefined });
@@ -104,6 +179,11 @@ describe('serialization', () => {
     'help',
     'whoami',
     'experience',
+    'projects',
+    'projects virtual-card',
+    'projects nope',
+    'lang en',
+    'lang xx',
     'clear',
     'ask hi',
     'proyects',
