@@ -52,8 +52,13 @@ a hardware WebGL2 context.
   Playwright gives every test a fresh browser context, so nothing leaks between tests.
 - **Stored override**: localStorage key `jhomove:hero-mode`, values `1` (on) and `0` (off).
 - **Hooks**: `#hero[data-hero-mode]`, `[data-hero-reason]` and `[data-hero-state]`.
-- **Reduced motion**: `await page.emulateMedia({ reducedMotion: 'reduce' })` keeps the hero
-  static and removes the toggle. An override cannot bypass it.
+- **Reduced motion**: `await page.emulateMedia({ reducedMotion: 'reduce' })` does not pick the
+  mode: a capable desktop still gets the 3D scene, motionless, and `#hero[data-hero-motion]` is
+  `reduced` (`full` otherwise, in both modes). There is no parallax, no Lenis, no `.hero-pin`
+  and no ScrollTrigger zoom, the intro `whoami` is printed instead of typed, the canvas renders
+  on demand (the `?probe=1` frame count stays flat) and the toggle stays available. The static
+  hero remains for no WebGL2, mobile or low-end/software defaults, `?3d=0`, load failures and
+  low fps. The scenarios live in the `@3d reduced motion` block of `e2e/hero-3d.spec.ts`.
 - **WebGL2 stub**: `stubWebgl2(page, 'none' | 'software' | 'hardware')` in `e2e/helpers.ts`
   replaces `HTMLCanvasElement.prototype.getContext('webgl2')` before any script runs. Call it
   before `page.goto`. `none` is the deterministic way to land on the static hero in any
@@ -125,15 +130,15 @@ which reads large. Lower the fraction to get smaller text; the width rule keeps 
 These cannot run headless. They are the hero change's checks, not the author steps in
 `docs/DEPLOY.md`. Record the date, machine and numbers next to each one.
 
-| ID  | Check                                                                                                                         | Result                                                                                                                                                   |
-| --- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M1  | FPS >= 50 on a reference desktop, idle and during the zoom (Chrome DevTools, Rendering, FPS meter), plus how the scroll feels | Pending (manual).                                                                                                                                        |
-| M2  | LCP < 2.5 s on the static path, mobile profile with Slow 4G and 4x CPU (Lighthouse or DevTools)                               | Pending (manual). Headless indication, 3 runs of a Playwright CDP throttle (1.6 Mbps, 150 ms, 4x CPU, 390px): 604, 604 and 612 ms.                       |
-| M3  | Visual review at 1440 and 390, static and 3D: composition, warm palette, accent at most ~10%, subtle bloom, no "Matrix" look  | Pending (manual). Static and 3D shots at 1440 reviewed by eye while capturing the still: warm and contained.                                             |
-| M4  | Touch device: no parallax, terminal usable, the virtual keyboard opens on tap                                                 | Pending (manual).                                                                                                                                        |
-| M5  | Toggle the OS reduced-motion setting live: the hero returns to static without a reload (SHOULD)                               | Pending (manual).                                                                                                                                        |
-| M6  | `whoami` schema, `public/admin/config.yml` and both seeds land in the same commit                                             | Done: schema, admin config and both seeds are in `08476cf`.                                                                                              |
-| M7  | The scene loads with no third-party request (Network panel) and the GLB total stays under 3 MB                                | Pending (manual). Automated: `tests/unit/tooling/models-budget.test.ts` (GLB size) and `e2e/js-budget.spec.ts` (static path has no third-party request). |
+| ID  | Check                                                                                                                           | Result                                                                                                                                                   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1  | FPS >= 50 on a reference desktop, idle and during the zoom (Chrome DevTools, Rendering, FPS meter), plus how the scroll feels   | Pending (manual).                                                                                                                                        |
+| M2  | LCP < 2.5 s on the static path, mobile profile with Slow 4G and 4x CPU (Lighthouse or DevTools)                                 | Pending (manual). Headless indication, 3 runs of a Playwright CDP throttle (1.6 Mbps, 150 ms, 4x CPU, 390px): 604, 604 and 612 ms.                       |
+| M3  | Visual review at 1440 and 390, static and 3D: composition, warm palette, accent at most ~10%, subtle bloom, no "Matrix" look    | Pending (manual). Static and 3D shots at 1440 reviewed by eye while capturing the still: warm and contained.                                             |
+| M4  | Touch device: no parallax, terminal usable, the virtual keyboard opens on tap                                                   | Pending (manual).                                                                                                                                        |
+| M5  | Toggle the OS reduced-motion setting live: the 3D scene freezes (no parallax or zoom) and moves again without a reload (SHOULD) | Pending (manual).                                                                                                                                        |
+| M6  | `whoami` schema, `public/admin/config.yml` and both seeds land in the same commit                                               | Done: schema, admin config and both seeds are in `08476cf`.                                                                                              |
+| M7  | The scene loads with no third-party request (Network panel) and the GLB total stays under 3 MB                                  | Pending (manual). Automated: `tests/unit/tooling/models-budget.test.ts` (GLB size) and `e2e/js-budget.spec.ts` (static path has no third-party request). |
 
 How to run M1: open `/es/?3d=1`, enable the FPS meter, leave the page idle for 10 s, then scroll
 the whole zoom range slowly and back. Note the lowest value seen in each phase. Below 50 on a

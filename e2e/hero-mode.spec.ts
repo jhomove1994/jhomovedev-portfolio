@@ -45,14 +45,18 @@ for (const locale of ['es', 'en'] as const) {
       await expect(page.locator('h1')).toHaveCount(1);
     });
 
-    test('reduced motion keeps the static hero and removes the toggle', async ({ page }) => {
-      await stubWebgl2(page, 'hardware');
+    test('reduced motion keeps the toggle on a static default and reports the motion', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'desktop heuristics');
+      await stubWebgl2(page, 'software');
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(`/${locale}/`);
       const hero = page.locator('#hero');
-      await expect(hero).toHaveAttribute('data-hero-reason', 'reduced-motion');
+      await expect(hero).toHaveAttribute('data-hero-reason', 'software-renderer');
       await expect(hero).toHaveAttribute('data-hero-mode', 'static');
-      await expect(hero.locator('[data-hero-toggle]')).toHaveCount(0);
+      await expect(hero).toHaveAttribute('data-hero-motion', 'reduced');
+      await expect(hero.locator('[data-hero-toggle]')).toHaveText(labels.enable);
       await expect(hero.getByRole('log')).toContainText(profile.whoami);
     });
 
