@@ -1,5 +1,6 @@
 // External store that owns the hero mode: reads the environment once, applies the `?3d=` query
-// and the stored choice, and re-decides when the visitor toggles or reduced motion changes.
+// and the stored choice, and re-decides when the visitor toggles, reduced motion changes or the
+// viewport crosses 768px.
 // No React and no DOM globals: the browser wiring is injected (see `browserModeDeps`).
 import {
   HERO_MODE_QUERY_PARAM,
@@ -10,6 +11,8 @@ import {
   type ModeOverride,
 } from '../capabilities';
 import {
+  REDUCED_MOTION_QUERY,
+  SMALL_SCREEN_QUERY,
   browserEnvDeps,
   readEnvSnapshot,
   readStoredOverride,
@@ -28,8 +31,11 @@ export interface ModeControllerDeps {
   storage: StorageLike | null;
   /** `location.search` at page load. */
   search: string;
-  /** Calls the listener whenever the reduced-motion preference changes; returns the unwatch. */
-  watchReducedMotion(listener: () => void): () => void;
+  /**
+   * Calls the listener whenever the reduced-motion preference or the small-screen breakpoint
+   * changes; returns the unwatch.
+   */
+  watchEnvironment(listener: () => void): () => void;
 }
 
 export interface HeroModeController {
@@ -78,7 +84,7 @@ export function createModeController(deps: ModeControllerDeps): HeroModeControll
 
     subscribe(listener) {
       listeners.add(listener);
-      unwatch ??= deps.watchReducedMotion(() => {
+      unwatch ??= deps.watchEnvironment(() => {
         env = readEnvSnapshot(deps.env);
         redecide();
       });
@@ -113,10 +119,12 @@ export function browserModeDeps(): ModeControllerDeps {
     env: browserEnvDeps(),
     storage: safeStorage(),
     search: window.location.search,
-    watchReducedMotion(listener) {
-      const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-      query.addEventListener('change', listener);
-      return () => query.removeEventListener('change', listener);
+    watchEnvironment(listener) {
+      const queries = [REDUCED_MOTION_QUERY, SMALL_SCREEN_QUERY].map((q) => window.matchMedia(q));
+      for (const query of queries) query.addEventListener('change', listener);
+      return () => {
+        for (const query of queries) query.removeEventListener('change', listener);
+      };
     },
   };
 }

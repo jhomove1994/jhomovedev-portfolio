@@ -8,6 +8,7 @@ import {
 
 const REDUCED = '(prefers-reduced-motion: reduce)';
 const NARROW = '(max-width: 1023px)';
+const SMALL = '(max-width: 767px)';
 
 function canvas(contexts: { strict: boolean; loose: boolean }): CanvasLike {
   const gl = { getExtension: () => null };
@@ -32,7 +33,7 @@ interface Harness {
   deps: ModeControllerDeps;
   media: Set<string>;
   storage: ReturnType<typeof memoryStorage>;
-  fireReducedMotion(): void;
+  fireMediaChange(): void;
   watchers(): number;
 }
 
@@ -59,12 +60,12 @@ function harness(
       env,
       storage,
       search: options.search ?? '',
-      watchReducedMotion: (listener) => {
+      watchEnvironment: (listener) => {
         listeners.add(listener);
         return () => void listeners.delete(listener);
       },
     },
-    fireReducedMotion: () => listeners.forEach((listener) => listener()),
+    fireMediaChange: () => listeners.forEach((listener) => listener()),
     watchers: () => listeners.size,
   };
 }
@@ -183,16 +184,35 @@ describe('createModeController: toggle and live updates', () => {
     controller.subscribe(() => modes.push(controller.getSnapshot().decision.reason));
 
     h.media.add(REDUCED);
-    h.fireReducedMotion();
+    h.fireMediaChange();
     expect(controller.getSnapshot().decision).toMatchObject({
       mode: 'static',
       reason: 'reduced-motion',
     });
 
     h.media.delete(REDUCED);
-    h.fireReducedMotion();
+    h.fireMediaChange();
     expect(controller.getSnapshot().decision.mode).toBe('3d');
     expect(modes).toEqual(['reduced-motion', 'default']);
+  });
+
+  it('re-decides when the viewport drops under 768px, and back when it grows', () => {
+    const h = harness({ search: '?3d=1' });
+    const controller = createModeController(h.deps);
+    controller.subscribe(() => {});
+
+    h.media.add(SMALL);
+    h.media.add(NARROW);
+    h.fireMediaChange();
+    expect(controller.getSnapshot().decision).toMatchObject({
+      mode: 'static',
+      reason: 'small-screen',
+      toggle: { available: false },
+    });
+
+    h.media.delete(SMALL);
+    h.fireMediaChange();
+    expect(controller.getSnapshot().decision).toMatchObject({ mode: '3d', reason: 'override-on' });
   });
 
   it('does not notify when a media change leaves the decision unchanged', () => {
@@ -200,7 +220,7 @@ describe('createModeController: toggle and live updates', () => {
     const controller = createModeController(h.deps);
     let calls = 0;
     controller.subscribe(() => void (calls += 1));
-    h.fireReducedMotion();
+    h.fireMediaChange();
     expect(calls).toBe(0);
   });
 

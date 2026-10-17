@@ -36,10 +36,12 @@ export interface EnvDeps {
   createCanvas(): CanvasLike;
 }
 
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 // Matches the 1024px breakpoint used by the hero layout (below it the stage stacks).
 const NARROW_VIEWPORT_QUERY = '(max-width: 1023px)';
 const COARSE_POINTER_QUERY = '(pointer: coarse)';
+/** Under 768px the hero is terminal-first: no desk scene, so no 3D (see `decideMode`). */
+export const SMALL_SCREEN_QUERY = '(max-width: 767px)';
 
 export interface WebglProbe {
   webgl2: boolean;
@@ -81,6 +83,7 @@ export function readEnvSnapshot(deps: EnvDeps = browserEnvDeps()): EnvSnapshot {
     isMobile:
       deps.matchMedia(NARROW_VIEWPORT_QUERY).matches ||
       deps.matchMedia(COARSE_POINTER_QUERY).matches,
+    smallScreen: deps.matchMedia(SMALL_SCREEN_QUERY).matches,
     cores: deps.navigator.hardwareConcurrency,
     memory: deps.navigator.deviceMemory,
   };

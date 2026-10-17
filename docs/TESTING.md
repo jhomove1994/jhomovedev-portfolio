@@ -54,6 +54,9 @@ a hardware WebGL2 context.
 - **Hooks**: `#hero[data-hero-mode]`, `[data-hero-reason]` and `[data-hero-state]`.
 - **Reduced motion**: `await page.emulateMedia({ reducedMotion: 'reduce' })` keeps the hero
   static and removes the toggle. An override cannot bypass it.
+- **Small screens**: under 768px the hero is terminal-first (no still, no canvas). The reason is
+  `small-screen`, the toggle is absent and `?3d=1` cannot bypass it. From 768px to 1023px the
+  default is static with reason `mobile` and the toggle can turn 3D on.
 - **WebGL2 stub**: `stubWebgl2(page, 'none' | 'software' | 'hardware')` in `e2e/helpers.ts`
   replaces `HTMLCanvasElement.prototype.getContext('webgl2')` before any script runs. Call it
   before `page.goto`. `none` is the deterministic way to land on the static hero in any

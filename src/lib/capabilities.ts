@@ -9,6 +9,7 @@ export type ModeOverride = 'on' | 'off' | null;
 export type ModeReason =
   | 'no-webgl2'
   | 'reduced-motion'
+  | 'small-screen'
   | 'override-off'
   | 'override-on'
   | 'mobile'
@@ -26,6 +27,8 @@ export interface EnvSnapshot {
   softwareRenderer?: boolean;
   reducedMotion: boolean;
   isMobile: boolean;
+  /** Viewport under 768px: the terminal-first layout, with no desk scene at all. */
+  smallScreen?: boolean;
   cores?: number;
   /** `navigator.deviceMemory` in GB. */
   memory?: number;
@@ -59,6 +62,7 @@ type Verdict = Pick<ModeDecision, 'mode' | 'reason'>;
 function pickVerdict(input: ModeInput): Verdict {
   if (!input.webgl2) return { mode: 'static', reason: 'no-webgl2' };
   if (input.reducedMotion) return { mode: 'static', reason: 'reduced-motion' };
+  if (input.smallScreen) return { mode: 'static', reason: 'small-screen' };
   if (input.override === 'off') return { mode: 'static', reason: 'override-off' };
   if (input.override === 'on') return { mode: '3d', reason: 'override-on' };
   if (input.isMobile) return { mode: 'static', reason: 'mobile' };
@@ -76,7 +80,7 @@ export function decideMode(input: ModeInput): ModeDecision {
   return {
     ...verdict,
     toggle: {
-      available: input.webgl2 && !input.reducedMotion,
+      available: input.webgl2 && !input.reducedMotion && !input.smallScreen,
       target: verdict.mode === '3d' ? 'static' : '3d',
     },
   };

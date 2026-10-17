@@ -66,8 +66,24 @@ for (const locale of ['es', 'en'] as const) {
       await expect(hero.locator('[data-hero-toggle]')).toHaveCount(0);
     });
 
-    test('mobile is static and labels the toggle for 3D', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'mobile', 'mobile heuristics');
+    test('a small screen is terminal-first: static, no canvas and no toggle, even with ?3d=1', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'mobile', 'small screen');
+      await stubWebgl2(page, 'hardware');
+      await page.goto(`/${locale}/?3d=1`);
+      const hero = page.locator('#hero');
+      await expect(hero).toHaveAttribute('data-hero-reason', 'small-screen');
+      await expect(hero).toHaveAttribute('data-hero-mode', 'static');
+      await expect(hero.locator('[data-hero-toggle]')).toHaveCount(0);
+      await expect(page.locator('canvas')).toHaveCount(0);
+    });
+
+    test('a tablet is static by default and labels the toggle for 3D', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'sets its own viewport');
+      await page.setViewportSize({ width: 800, height: 1024 });
       await stubWebgl2(page, 'hardware');
       await page.goto(`/${locale}/`);
       const hero = page.locator('#hero');
@@ -77,7 +93,10 @@ for (const locale of ['es', 'en'] as const) {
       await expect(page.locator('canvas')).toHaveCount(0);
     });
 
-    test('an explicit ?3d=0 survives a plain visit (override persisted)', async ({ page }) => {
+    test('an explicit ?3d=0 survives a plain visit (override persisted)', async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'a small screen reports small-screen first');
       await stubWebgl2(page, 'hardware');
       await page.goto(`/${locale}/?3d=0`);
       await expect(page.locator('#hero')).toHaveAttribute('data-hero-reason', 'override-off');

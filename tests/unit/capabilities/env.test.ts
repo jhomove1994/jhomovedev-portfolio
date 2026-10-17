@@ -96,6 +96,7 @@ describe('readEnvSnapshot', () => {
       softwareRenderer: false,
       reducedMotion: false,
       isMobile: false,
+      smallScreen: false,
       cores: 8,
       memory: 8,
     });
@@ -114,6 +115,12 @@ describe('readEnvSnapshot', () => {
 
   it('treats a narrow viewport as mobile', () => {
     expect(readEnvSnapshot(deps({ queries: ['(max-width: 1023px)'] })).isMobile).toBe(true);
+  });
+
+  it('flags a viewport under 768px as a small screen, and as mobile too', () => {
+    const snap = readEnvSnapshot(deps({ queries: ['(max-width: 767px)', '(max-width: 1023px)'] }));
+    expect(snap).toMatchObject({ smallScreen: true, isMobile: true });
+    expect(readEnvSnapshot(deps({ queries: ['(max-width: 1023px)'] })).smallScreen).toBe(false);
   });
 
   it('treats a coarse primary pointer as mobile', () => {

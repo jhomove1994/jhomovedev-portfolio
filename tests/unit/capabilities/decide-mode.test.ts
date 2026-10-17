@@ -18,6 +18,13 @@ describe('decideMode: spec render-capabilities scenarios', () => {
     ['no WebGL2', { webgl2: false }, 'static', 'no-webgl2'],
     ['reduced motion', { reducedMotion: true }, 'static', 'reduced-motion'],
     ['mobile default', { isMobile: true }, 'static', 'mobile'],
+    ['small screen (terminal-first layout)', { smallScreen: true }, 'static', 'small-screen'],
+    [
+      'override on cannot bypass a small screen',
+      { smallScreen: true, isMobile: true, override: 'on' },
+      'static',
+      'small-screen',
+    ],
     ['desktop low-end by cores 2', { cores: 2 }, 'static', 'low-end'],
     ['desktop low-end by memory 2', { memory: 2 }, 'static', 'low-end'],
     ['desktop low-end by cores 1', { cores: 1 }, 'static', 'low-end'],
@@ -73,6 +80,14 @@ describe('decideMode: precedence', () => {
     expect(decide({ reducedMotion: true, override: 'off' }).reason).toBe('reduced-motion');
   });
 
+  it('reduced-motion beats a small screen', () => {
+    expect(decide({ reducedMotion: true, smallScreen: true }).reason).toBe('reduced-motion');
+  });
+
+  it('a small screen beats override off', () => {
+    expect(decide({ smallScreen: true, override: 'off' }).reason).toBe('small-screen');
+  });
+
   it('override off beats mobile', () => {
     expect(decide({ isMobile: true, override: 'off' }).reason).toBe('override-off');
   });
@@ -102,6 +117,11 @@ describe('decideMode: toggle', () => {
 
   it('is unavailable without WebGL2', () => {
     expect(decide({ webgl2: false }).toggle.available).toBe(false);
+  });
+
+  it('is unavailable on a small screen, where 3D never mounts', () => {
+    expect(decide({ smallScreen: true }).toggle.available).toBe(false);
+    expect(decide({ smallScreen: true, override: 'on' }).toggle.available).toBe(false);
   });
 
   it('is unavailable under reduced motion, even with override on', () => {
