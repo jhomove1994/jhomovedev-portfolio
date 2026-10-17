@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { projectPoint } from '../../../src/lib/hero/camera';
-import {
-  frameCoversGlass,
-  parseCapturePort,
-  stillAnchorFromQuad,
-} from '../../../src/lib/hero/capture';
+import { parseCapturePort, stillAnchorFromQuad } from '../../../src/lib/hero/capture';
 import { DESKTOP_ASPECT, restCameraFor } from '../../../src/lib/hero/layout';
 import { screenCorners } from '../../../src/lib/hero/monitor';
 import { projectRect, type Quad } from '../../../src/lib/hero/zoom';
@@ -67,22 +63,6 @@ describe('stillAnchorFromQuad', () => {
     expect(anchor.x + anchor.width).toBeLessThan(1);
     expect(anchor.y + anchor.height).toBeLessThan(1);
     expect(anchor.width).toBeGreaterThan(0.1);
-  });
-});
-
-describe('frameCoversGlass', () => {
-  const glass = { x: 0.484, y: 0.204, width: 0.203, height: 0.199 };
-
-  it('accepts a frame that contains the glass, edges included', () => {
-    expect(frameCoversGlass({ x: 0.372, y: 0.13, width: 0.48, height: 0.54 }, glass)).toBe(true);
-    expect(frameCoversGlass(glass, glass)).toBe(true);
-  });
-
-  it('rejects a frame that leaves any side of the glass uncovered', () => {
-    expect(frameCoversGlass({ x: 0.5, y: 0.13, width: 0.48, height: 0.54 }, glass)).toBe(false);
-    expect(frameCoversGlass({ x: 0.372, y: 0.25, width: 0.48, height: 0.54 }, glass)).toBe(false);
-    expect(frameCoversGlass({ x: 0.372, y: 0.13, width: 0.2, height: 0.54 }, glass)).toBe(false);
-    expect(frameCoversGlass({ x: 0.372, y: 0.13, width: 0.48, height: 0.2 }, glass)).toBe(false);
   });
 });
 

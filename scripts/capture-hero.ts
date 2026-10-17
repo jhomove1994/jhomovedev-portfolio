@@ -6,20 +6,21 @@
  * Opens `/es/?3d=1&capture=1` in a fresh Chromium context (so the persisted override of earlier
  * runs cannot leak), waits for the scene and two rendered frames, hides everything but the desk
  * with the `[data-capture]` rule and writes src/assets/hero/hero-still.jpg (JPEG keeps it under
- * the 150 KB image budget). The monitor glass of the rest pose is small (about 20% of the stage),
- * so the static hero's 2D terminal frame (src/lib/hero/still-anchor.json) is deliberately larger
- * and floats over it: the script reads the glass from the live camera through
- * `window.__heroCapture.screenRect()` and fails when that frame would leave part of it uncovered.
+ * the 150 KB image budget). `?capture=1` parks the camera at the still pose (`stillCameraFor`,
+ * much closer than the rest pose, so the monitor glass is large). The script reads the glass from
+ * the live camera through `window.__heroCapture.screenRect()`, fails when it is not a usable
+ * terminal surface (`stillAnchorProblems`) and writes it to src/lib/hero/still-anchor.json: the
+ * static hero lays its 2D terminal exactly on that rect.
  * It serves `dist/` with `astro preview` unless CAPTURE_ORIGIN points at a running server.
  * Software WebGL (SwiftShader) is allowed, so it also works on machines without a GPU.
  * Runs on Node type stripping (>=22.18): keep to erasable TypeScript syntax.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname } from 'node:path';
 import { chromium, type Browser } from '@playwright/test';
-import { frameCoversGlass, parseCapturePort } from '../src/lib/hero/capture.ts';
+import { parseCapturePort, stillAnchorProblems } from '../src/lib/hero/capture.ts';
 
 const STILL_PATH = 'src/assets/hero/hero-still.jpg';
 const ANCHOR_PATH = 'src/lib/hero/still-anchor.json';
@@ -123,11 +124,9 @@ try {
   if (!anchor)
     throw new Error('window.__heroCapture is missing: is ?capture=1 reaching the scene?');
 
-  const frame = JSON.parse(readFileSync(ANCHOR_PATH, 'utf8')) as typeof anchor;
-  if (!frameCoversGlass(frame, anchor)) {
-    throw new Error(
-      `${ANCHOR_PATH} ${JSON.stringify(frame)} does not cover the glass ${JSON.stringify(anchor)}`,
-    );
+  const problems = stillAnchorProblems(anchor);
+  if (problems.length > 0) {
+    throw new Error(`the glass ${JSON.stringify(anchor)} is not usable: ${problems.join('; ')}`);
   }
 
   mkdirSync(dirname(STILL_PATH), { recursive: true });
@@ -146,8 +145,12 @@ try {
   }
   renameSync(tempPath, STILL_PATH);
   tempPath = null;
+  // Same shape and formatting as prettier writes it, so a rerun leaves git clean.
+  const previous = readFileSync(ANCHOR_PATH, 'utf8');
+  const next = `${JSON.stringify(anchor, null, 2)}\n`;
+  if (next !== previous) writeFileSync(ANCHOR_PATH, next);
   console.log(`still  ${STILL_PATH} (${(size / 1024).toFixed(1)} KB)`);
-  console.log(`glass  ${JSON.stringify(anchor)} inside frame ${JSON.stringify(frame)}`);
+  console.log(`glass  ${JSON.stringify(anchor)} written to ${ANCHOR_PATH}`);
 } finally {
   await cleanup();
 }

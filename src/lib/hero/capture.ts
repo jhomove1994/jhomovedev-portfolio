@@ -1,8 +1,8 @@
 /**
  * Measures the projected monitor glass as a stage rect (pure, three-free). The capture script reads
- * it from the live scene and checks that the 2D terminal frame of the static hero (the rect in
- * `still-anchor.json`) covers the glass of the committed still, so the painted screen never shows
- * around the frame.
+ * it from the live scene (rendered from the still camera), checks it with `stillAnchorProblems` and
+ * writes it to `still-anchor.json`: the 2D terminal frame of the static hero is placed exactly on
+ * the glass of the committed still.
  */
 import type { Quad, StageSize } from './zoom';
 
@@ -31,16 +31,30 @@ export function stillAnchorFromQuad(quad: Quad, stage: StageSize): StillAnchor {
   };
 }
 
-const EPSILON = 1e-9;
+/** The glass must hold a readable terminal, clear the hero copy and leave desk below it. */
+const MIN_GLASS_WIDTH = 0.4;
+const COPY_RIGHT_EDGE = 0.33;
+const MAX_RIGHT = 0.97;
+const MAX_BOTTOM = 0.85;
 
-/** True when `frame` contains `glass`, edges included. */
-export function frameCoversGlass(frame: StillAnchor, glass: StillAnchor): boolean {
-  return (
-    glass.x >= frame.x - EPSILON &&
-    glass.y >= frame.y - EPSILON &&
-    glass.x + glass.width <= frame.x + frame.width + EPSILON &&
-    glass.y + glass.height <= frame.y + frame.height + EPSILON
-  );
+/** What is wrong with a glass rect for the static hero; empty when it is usable. */
+export function stillAnchorProblems(anchor: StillAnchor): string[] {
+  const problems: string[] = [];
+  if (anchor.width < MIN_GLASS_WIDTH) {
+    problems.push(`glass width ${anchor.width} is under ${MIN_GLASS_WIDTH} of the stage`);
+  }
+  if (anchor.x < COPY_RIGHT_EDGE) {
+    problems.push(`glass starts at ${anchor.x}, under the hero copy (until ${COPY_RIGHT_EDGE})`);
+  }
+  if (anchor.x + anchor.width > MAX_RIGHT) {
+    problems.push(`glass reaches ${anchor.x + anchor.width}, past the right limit ${MAX_RIGHT}`);
+  }
+  if (anchor.y + anchor.height > MAX_BOTTOM) {
+    problems.push(
+      `glass reaches ${anchor.y + anchor.height}, past the bottom limit ${MAX_BOTTOM}: no desk below`,
+    );
+  }
+  return problems;
 }
 
 /** Reads CAPTURE_PORT: `fallback` when unset or empty, otherwise an integer 1..65535 or an error. */
