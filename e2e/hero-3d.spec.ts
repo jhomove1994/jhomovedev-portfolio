@@ -419,4 +419,64 @@ test.describe('@3d terminal', () => {
     await expect(monitor).toBeVisible();
     await expect(monitor).not.toBeFocused();
   });
+
+  test('is readable at 1440: lines are at least 10 px tall and the box is a fifth of the stage', async ({
+    page,
+  }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    const lineHeight = await term.log
+      .locator('.term-line')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().height);
+    expect(lineHeight).toBeGreaterThanOrEqual(10);
+    const { box, stage } = await page.evaluate(() => ({
+      box: document.querySelector('.monitor-terminal')!.getBoundingClientRect().width,
+      stage: document.querySelector('.hero-screen-layer')!.getBoundingClientRect().width,
+    }));
+    expect(box / stage).toBeGreaterThanOrEqual(0.19);
+  });
+
+  test('focus and keys behave as in the static terminal: click, Tab, Esc', async ({ page }) => {
+    const term = await openMonitor(page);
+    await introDone(page);
+    await term.input.click();
+    await expect(term.input).toBeFocused();
+    await term.input.pressSequentially('wh');
+    await term.input.press('Tab');
+    await expect(term.input).toHaveValue('whoami');
+    await expect(term.input).toBeFocused();
+
+    await term.input.fill('');
+    await term.input.press('Tab');
+    await expect(term.input).not.toBeFocused();
+    await expect(term.windows.getByRole('button').first()).toBeFocused();
+
+    await term.input.focus();
+    await term.input.press('Escape');
+    await expect(term.input).not.toBeFocused();
+  });
+
+  test('the camera follows a fine pointer a little: moving across the page changes the view', async ({
+    page,
+  }) => {
+    await openMonitor(page);
+    await introDone(page);
+    const shot = async (x: number, y: number) => {
+      await page.mouse.move(x, y);
+      await page.waitForTimeout(1_200); // the rig eases toward the pointer
+      return decodePng(await hero(page).locator('canvas').screenshot());
+    };
+    const left = await shot(5, 450);
+    const right = await shot(1435, 450);
+    let differing = 0;
+    for (let i = 0; i < left.rgba.length; i += 4) {
+      const delta =
+        Math.abs(left.rgba[i]! - right.rgba[i]!) +
+        Math.abs(left.rgba[i + 1]! - right.rgba[i + 1]!) +
+        Math.abs(left.rgba[i + 2]! - right.rgba[i + 2]!);
+      if (delta > 30) differing += 1;
+    }
+    expect(differing / (left.width * left.height)).toBeGreaterThan(0.01);
+  });
 });
