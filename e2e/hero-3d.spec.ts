@@ -670,31 +670,6 @@ test.describe('@3d reduced motion', () => {
     await expect(hero(page).locator('canvas')).toHaveCount(1);
   });
 
-  test('frames the monitor with the still camera: terminal text is readable at 1440', async ({
-    page,
-  }) => {
-    const term = await openMonitor(page);
-    await introDone(page);
-    const { box, stage, font } = await page.evaluate(() => {
-      const el = document.querySelector('.monitor-terminal')!;
-      return {
-        box: el.getBoundingClientRect().width,
-        stage: document.querySelector('.hero-screen-layer')!.getBoundingClientRect().width,
-        font: parseFloat(getComputedStyle(el.querySelector('.term-line')!).fontSize),
-      };
-    });
-    await expect(term.log).toBeVisible();
-    // The box is a fifth of the stage at the rest pose (about 8 px text); the still pose doubles it.
-    expect(box / stage).toBeGreaterThanOrEqual(0.4);
-    // The terminal is scaled to the glass: its effective font is the CSS size times the scale.
-    const scale = await page.evaluate(() => {
-      const el = document.querySelector('.monitor-terminal') as HTMLElement;
-      return el.getBoundingClientRect().width / el.offsetWidth;
-    });
-    const effective = font * scale;
-    expect(effective).toBeGreaterThanOrEqual(12);
-  });
-
   test('no Lenis, no pin and native anchors', async ({ page }) => {
     await openMonitor(page);
     expect(await htmlHas(page, 'lenis')).toBe(false);

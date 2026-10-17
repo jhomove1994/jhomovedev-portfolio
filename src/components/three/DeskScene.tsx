@@ -16,7 +16,6 @@ import {
   type Placement,
 } from '../../lib/hero/layout';
 import type { ZoomStore } from '../../lib/hero/zoom';
-import type { HeroMotion } from '../../lib/capabilities';
 import { CameraRig } from './Parallax';
 
 /** Same-origin, Meshopt only: no Draco decoder, so nothing is fetched from a CDN. */
@@ -130,24 +129,15 @@ export interface DeskSceneProps {
   zoom: ZoomStore;
   /** Capture runs: the camera sits at the still pose instead of the rest pose. */
   still?: boolean;
-  /** `reduced` motion frames the monitor closer (still pose) on the wide stage. */
-  motion?: HeroMotion;
 }
 
-export function DeskScene({
-  onReady,
-  shadows,
-  parallax,
-  zoom,
-  still = false,
-  motion = 'full',
-}: DeskSceneProps) {
+export function DeskScene({ onReady, shadows, parallax, zoom, still = false }: DeskSceneProps) {
   const lamp = lampBulbWorld();
   return (
     <>
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, 2.5, 5]} />
-      <CameraRig enabled={parallax && !still} zoom={zoom} still={still} motion={motion} />
+      <CameraRig enabled={parallax && !still} zoom={zoom} still={still} />
       <hemisphereLight args={[SKY, GROUND, 1.2]} />
       <directionalLight position={[-0.6, 1.4, 1.2]} color={MOON} intensity={1} />
       <pointLight position={lamp} color={LAMP_COLOR} intensity={2} decay={2} distance={3.6} />

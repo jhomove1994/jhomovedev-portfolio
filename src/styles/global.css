@@ -355,18 +355,6 @@
     );
     pointer-events: none;
   }
-
-  /* Reduced motion frames the monitor closer (still pose), so the lamp sits under the copy as in
-     the still: use the same scrim there to keep the copy readable. */
-  .hero[data-hero-mode='3d'][data-hero-motion='reduced'] .hero-canvas::after {
-    background: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--color-bg) 94%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 82%, transparent) 22%,
-      transparent 44%
-    );
-    opacity: 1;
-  }
 }
 
 /*

@@ -305,7 +305,6 @@ export function DeskExperience({
               parallax={parallax}
               zoom={zoom}
               still={capture}
-              motion={motion}
               onReady={() => {
                 setReady(true);
                 onReady();
