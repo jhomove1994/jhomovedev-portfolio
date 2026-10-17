@@ -109,7 +109,7 @@ const navItems: NavItem[] = [
   ogImage={ogImage}
 >
   <Header slot="header" locale={locale} brand={profile.brand} items={navItems} />
-  <main id="main" class="mx-auto w-full max-w-5xl px-5 pt-10 lg:px-8 lg:pt-16">
+  <main id="main" class="w-full">
     <Hero
       locale={locale}
       name={profile.name}
@@ -119,16 +119,18 @@ const navItems: NavItem[] = [
       email={profile.contact.email}
       cv={cvButton(mediaByLocale, locale)}
     />
-    <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />
-    <TechLeadPath locale={locale} milestones={milestones} />
-    <Experience locale={locale} roles={roles} />
-    <Certifications locale={locale} groups={credentialGroups} />
-    <Contact
-      locale={locale}
-      email={profile.contact.email}
-      linkedin={profile.contact.linkedin}
-      whatsapp={asText(profile.contact.whatsapp)}
-    />
+    <div class="mx-auto w-full max-w-5xl px-5 pt-10 lg:px-8 lg:pt-16">
+      <About locale={locale} bio={profile.bio} isFallback={localizedProfile.isFallback} />
+      <TechLeadPath locale={locale} milestones={milestones} />
+      <Experience locale={locale} roles={roles} />
+      <Certifications locale={locale} groups={credentialGroups} />
+      <Contact
+        locale={locale}
+        email={profile.contact.email}
+        linkedin={profile.contact.linkedin}
+        whatsapp={asText(profile.contact.whatsapp)}
+      />
+    </div>
   </main>
   <Footer slot="footer" name={profile.name} />
 </BaseLayout>

@@ -1,0 +1,82 @@
+---
+// Static hero backdrop: a committed render of the desk when one exists, otherwise an inline
+// night-desk SVG. Both paint with the page (no JS) and share one 16:10 box so the terminal
+// frame lands on the monitor in either case.
+import type { ImageMetadata } from 'astro';
+import { Picture } from 'astro:assets';
+import type { Locale } from '../../i18n/locales';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const alt = t(locale, 'hero.stillAlt');
+
+// `src/assets/hero/hero-still.*` lands with the capture script (3D change); until then the SVG shows.
+const stills = import.meta.glob<{ default: ImageMetadata }>('../../assets/hero/hero-still.*', {
+  eager: true,
+});
+const still = Object.values(stills)[0]?.default;
+---
+
+<div class="hero-still">
+  {still ? (
+    <Picture
+      src={still}
+      alt={alt}
+      formats={['avif', 'webp']}
+      width={still.width}
+      height={still.height}
+      loading="eager"
+      class="hero-still-media"
+    />
+  ) : (
+    <svg
+      class="hero-still-media"
+      viewBox="0 0 1600 1000"
+      width="1600"
+      height="1000"
+      preserveAspectRatio="xMidYMid slice"
+      role="img"
+      aria-label={alt}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="hs-wall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0a0e0d" />
+          <stop offset="1" stop-color="#17110c" />
+        </linearGradient>
+        <radialGradient id="hs-lamp" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#e3a857" stop-opacity="0.38" />
+          <stop offset="1" stop-color="#e3a857" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="1600" height="1000" fill="url(#hs-wall)" />
+      <ellipse cx="1510" cy="430" rx="330" ry="330" fill="url(#hs-lamp)" />
+      <!-- Monitor: dark glass, the terminal frame sits over the screen in the wide layout. -->
+      <rect x="560" y="96" width="840" height="610" rx="22" style="fill: var(--color-term-bar)" />
+      <rect x="590" y="126" width="780" height="550" rx="8" style="fill: var(--color-term-bg)" />
+      <rect x="940" y="706" width="80" height="70" style="fill: var(--color-term-line)" />
+      <rect x="860" y="766" width="240" height="22" rx="8" style="fill: var(--color-term-bar)" />
+      <!-- Desk. -->
+      <rect x="0" y="790" width="1600" height="210" style="fill: #2a1d13" />
+      <rect x="0" y="790" width="1600" height="10" style="fill: #3a2a1c" />
+      <rect x="640" y="830" width="640" height="50" rx="8" style="fill: var(--color-term-line)" />
+      <!-- Lamp. -->
+      <rect x="1454" y="760" width="90" height="30" rx="6" style="fill: var(--color-term-line)" />
+      <path d="M1500 760 L1430 470 L1500 400" stroke="#4a3826" stroke-width="12" fill="none" />
+      <path
+        d="M1555 380 L1430 360 L1460 440 Z"
+        style="fill: var(--color-term-amber)"
+        opacity="0.9"
+      />
+      <!-- Mug and plant. -->
+      <rect x="420" y="740" width="64" height="52" rx="8" style="fill: var(--color-term-muted)" />
+      <rect x="160" y="700" width="90" height="92" rx="8" style="fill: var(--color-term-rust)" />
+      <path d="M205 700 C160 620 180 560 210 520 C230 580 250 640 205 700 Z" fill="#6b7a3d" />
+      <path d="M205 700 C250 640 280 600 300 580 C290 650 260 690 205 700 Z" fill="#59672f" />
+    </svg>
+  )}
+</div>

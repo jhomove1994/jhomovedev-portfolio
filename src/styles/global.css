@@ -97,3 +97,80 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/*
+ * Hero stage. Narrow screens stack copy, still and terminal; from 1024px the copy and the
+ * terminal (a 2D monitor frame) sit on the still, whose 16:10 box scales with the viewport.
+ * The terminal rect comes from `still-anchor.json` through the --mon-* variables.
+ */
+.hero {
+  background: linear-gradient(to bottom, var(--color-bg), #17110c);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hero-stage {
+  container: hero-stage / inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.hero-copy {
+  padding: 1.5rem 1.25rem 1.25rem;
+}
+
+.hero-copy h1 {
+  font-size: var(--text-3xl);
+}
+
+.hero-headline {
+  font-size: var(--text-lg);
+}
+
+.hero-still {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hero-still-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 1024px) {
+  .hero-stage {
+    position: relative;
+    display: block;
+    /* Fills the viewport under the header, never narrower than the 16:10 minimum below. */
+    width: min(100%, max(60rem, calc((100svh - var(--header-h)) * 1.6)));
+    aspect-ratio: 16 / 10;
+    margin-inline: auto;
+  }
+
+  .hero-still {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+  }
+
+  .hero-copy {
+    position: absolute;
+    top: 11%;
+    left: 3%;
+    z-index: 1;
+    width: 30%;
+    padding: 0;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.75rem, 3.6cqw, 3.25rem);
+  }
+
+  .hero-headline {
+    font-size: clamp(1rem, 1.5cqw, 1.4rem);
+  }
+}
