@@ -98,8 +98,8 @@ catches a runaway accent.
 
 ### Hero still (A10)
 
-The static hero paints a committed render of the desk, `src/assets/hero/hero-still.jpg`, behind
-the 2D terminal. Regenerate it whenever the scene, the palette or the model changes:
+The static hero paints a committed render of the desk, `src/assets/hero/hero-still.jpg`, with
+the 2D terminal laid on its monitor glass. Regenerate it whenever the scene, the palette or the model changes:
 
 ```sh
 pnpm build && pnpm capture:hero
@@ -108,13 +108,21 @@ pnpm build && pnpm capture:hero
 The script serves `dist/` with `astro preview` (or uses `CAPTURE_ORIGIN`), opens
 `/es/?3d=1&capture=1` in a fresh context, waits for `data-hero-state="ready"` plus two frames,
 hides the copy, the terminal and the readability fade with the `[data-capture]` rule, and
-screenshots the 1600x1000 stage as JPEG (about 50 KB; the image budget is 150 KB). Then run
+screenshots the 1600x1000 stage as JPEG (about 75 KB; the image budget is 150 KB). Then run
 `pnpm build` again so Astro emits the AVIF/WebP variants. Never part of `pnpm build`.
 
-- The 2D terminal frame is `src/lib/hero/still-anchor.json`. It is deliberately larger than the
-  monitor of the still (the glass is about 20% of the stage, too small to type in): the script
+- `?capture=1` parks the camera at the still pose (`stillCameraFor` in `src/lib/hero/layout.ts`),
+  much closer than the rest pose, so the glass is about 46% of the stage width. The script
   reads the glass from the live camera (`window.__heroCapture.screenRect()`, only with
-  `capture=1`) and fails if the frame does not cover it.
+  `capture=1`), fails when `stillAnchorProblems` rejects it (too small, under the hero copy,
+  past the right or bottom limit) and writes it to `src/lib/hero/still-anchor.json`: the 2D
+  terminal frame sits exactly on that rect. A rerun leaves git clean.
+- Wide screens (from 1024px) place the frame on the glass; the left of the still fades into the
+  page so the copy stays readable over the lamp. Stacked screens crop the still around the glass
+  (`narrowStillLayout`, `src/lib/hero/still-layout.ts`, as `--n-*` variables in `cqw`), so the
+  terminal is in the first viewport below the name; the frame grows down over the monitor stand
+  to a usable height (`--hero-frame-min`). In 3D the stacked layout is the plain one (canvas box,
+  frame below). `e2e/hero-still.spec.ts` checks all of this.
 - Look at the still after capturing: warm desk, lamp glow, no text, no toggle, green only on the
   glass.
 
