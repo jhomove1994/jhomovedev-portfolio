@@ -2,7 +2,7 @@
 # src/lib/content/schemas.ts (guarded by tests/unit/admin/config-parity.test.ts).
 backend:
   name: github
-  repo: Jhomove/jhomovedev # TODO(autor): confirm owner/repo
+  repo: jhomove1994/jhomovedev-portfolio
   branch: main
 
 media_folder: public/uploads

@@ -18,7 +18,7 @@ The AI assistant (`/api/chat`) is not part of the first release (author decision
 
 | Step | Owner  | Action                                                                                                                                                                         | Blocks                                                  |
 | ---- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| M1   | Author | Create the public GitHub repo and push `main`. If owner/repo is not `Jhomove/jhomovedev`, update `backend.repo` in `public/admin/config.yml`.                                  | Live `/admin`, Workers Builds                           |
+| M1   | Author | Create the public GitHub repo and push `main`. Repo: `jhomove1994/jhomovedev-portfolio` (already set in `public/admin/config.yml`).                                            | Live `/admin`, Workers Builds                           |
 | M2   | Author | Create a fine-grained PAT (see below). Use it to log in at `/admin`. Never commit it.                                                                                          | Editing content from `/admin`                           |
 | M3   | Author | Connect Workers Builds (see below). Confirm the workers.dev subdomain and update `SITE_URL` if it differs (G3).                                                                | Production deploys, correct canonical and hreflang URLs |
 | M4   | Author | CV ES and CV EN and the OG images (1200x630, ES and EN) are in `public/uploads/` and set in the Media entries. Replace the OG image from `/admin` if you want a different one. | Share previews                                          |
@@ -57,7 +57,6 @@ Every save in `/admin` is a commit to `main`, which triggers a build. A save tha
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Leadership | Resolved (2026-10-17): `gisoft-mentoring-and-system-design` replaced the placeholder. Nothing missing.                                                                                                                     |
 | Projects   | Case-study narratives for 4 drafts, all `published: false`: `fraud-pilot`, `legacy-to-nest`, `this-portfolio`, `virtual-card` (ES and EN). Publish each only after writing it, anonymized, with no code or internal names. |
-| Config     | `backend.repo` in `public/admin/config.yml` (confirm owner/repo, see M1).                                                                                                                                                  |
 | Site URL   | `SITE_URL` in `src/lib/site.ts` (G3).                                                                                                                                                                                      |
 
 ## Copy review notes

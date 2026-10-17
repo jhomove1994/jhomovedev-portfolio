@@ -315,8 +315,11 @@ describe('public/admin/config.yml', () => {
     expect(status).toMatchObject({ default: 'completed', required: false });
   });
 
-  it('keeps the repo placeholder flagged until the owner is confirmed', () => {
-    expect(configText()).toMatch(/repo:.*#\s*TODO\(autor\)/);
+  it('points the CMS at the confirmed repository', () => {
+    expect((parse(configText()) as { backend: { repo: string } }).backend.repo).toBe(
+      'jhomove1994/jhomovedev-portfolio',
+    );
+    expect(configText()).not.toMatch(/repo:.*TODO\(autor\)/);
   });
 
   it('contains no personal access token patterns', () => {
