@@ -6,9 +6,6 @@ export type HeroMode = 'static' | '3d';
 /** Explicit user choice: `on` forces 3D where allowed, `off` forces the static hero. */
 export type ModeOverride = 'on' | 'off' | null;
 
-/** How much the 3D hero may move: `reduced` freezes parallax, zoom, smooth scroll and typing. */
-export type HeroMotion = 'full' | 'reduced';
-
 export type ModeReason =
   | 'no-webgl2'
   | 'reduced-motion'
@@ -41,7 +38,6 @@ export interface ModeInput extends EnvSnapshot {
 export interface ModeDecision {
   mode: HeroMode;
   reason: ModeReason;
-  motion: HeroMotion;
   toggle: { available: boolean; target: HeroMode };
 }
 
@@ -73,14 +69,12 @@ function pickVerdict(input: ModeInput): Verdict {
 
 /**
  * Precedence: no WebGL2 > reduced motion > override off > override on > mobile > low-end >
- * software renderer > 3D. An `on` override only bypasses the heuristics, never a hard limit: a
- * motionless 3D scene reads as a photo, so reduced motion gets the static hero and no toggle.
+ * software renderer > 3D. An `on` override only bypasses the heuristics, never a hard limit.
  */
 export function decideMode(input: ModeInput): ModeDecision {
   const verdict = pickVerdict(input);
   return {
     ...verdict,
-    motion: input.reducedMotion ? 'reduced' : 'full',
     toggle: {
       available: input.webgl2 && !input.reducedMotion,
       target: verdict.mode === '3d' ? 'static' : '3d',

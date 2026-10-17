@@ -17,7 +17,7 @@ import {
   type HeroModeController,
   type HeroModeState,
 } from '../../lib/hero/mode-controller';
-import { motionPolicy, reduceScene, resolveHeroView } from '../../lib/hero/scene-state';
+import { reduceScene, resolveHeroView } from '../../lib/hero/scene-state';
 import { createTerminalSession } from '../../lib/terminal/session';
 import type { TerminalData, TerminalLabels } from '../../lib/terminal/types';
 import type { DeskExperienceProps } from '../three/DeskExperience';
@@ -81,8 +81,6 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
   const viewMode = view?.mode;
   const viewReason = view?.reason;
   const viewState = view?.state;
-  const viewMotion = view?.motion;
-  const animateIntro = motionPolicy(mode?.decision.motion ?? 'full').typeIntro;
 
   // The scene chunk is requested only for a 3D decision; a failed import reverts to static.
   useEffect(() => {
@@ -104,12 +102,11 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
   // Hooks for CSS and e2e. Written on the server-rendered section, never replacing its markup.
   useEffect(() => {
     const hero = document.getElementById('hero');
-    if (!hero || !viewMode || !viewReason || !viewState || !viewMotion) return;
+    if (!hero || !viewMode || !viewReason || !viewState) return;
     hero.dataset.heroMode = viewMode;
     hero.dataset.heroReason = viewReason;
     hero.dataset.heroState = viewState;
-    hero.dataset.heroMotion = viewMotion;
-  }, [viewMode, viewReason, viewState, viewMotion]);
+  }, [viewMode, viewReason, viewState]);
 
   const hero = typeof document === 'undefined' ? null : document.getElementById('hero');
   const container = hero?.querySelector<HTMLElement>('.hero-still') ?? null;
@@ -139,8 +136,7 @@ export function HeroIsland({ data, labels, chrome }: HeroIslandProps) {
           onReady={() => dispatch('loaded')}
           onError={() => dispatch('failed')}
           onLowFps={() => dispatch('slow')}
-          motion={mode?.decision.motion ?? 'full'}
-          terminal={desktop ? { session, data, labels, animateIntro } : null}
+          terminal={desktop ? { session, data, labels } : null}
           focusHandoffRef={focusHandoffRef}
         />
       ) : null}

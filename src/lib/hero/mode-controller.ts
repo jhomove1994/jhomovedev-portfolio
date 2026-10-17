@@ -43,7 +43,6 @@ function sameDecision(a: ModeDecision, b: ModeDecision): boolean {
   return (
     a.mode === b.mode &&
     a.reason === b.reason &&
-    a.motion === b.motion &&
     a.toggle.available === b.toggle.available &&
     a.toggle.target === b.toggle.target
   );

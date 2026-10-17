@@ -75,7 +75,6 @@ describe('createModeController: initial decision', () => {
     expect(state.decision).toEqual({
       mode: '3d',
       reason: 'default',
-      motion: 'full',
       toggle: { available: true, target: 'static' },
     });
   });
@@ -85,7 +84,6 @@ describe('createModeController: initial decision', () => {
     expect(state.decision).toEqual({
       mode: 'static',
       reason: 'software-renderer',
-      motion: 'full',
       toggle: { available: true, target: '3d' },
     });
   });

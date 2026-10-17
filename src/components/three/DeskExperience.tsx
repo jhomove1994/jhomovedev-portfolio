@@ -20,13 +20,7 @@ import { Vector3 } from 'three';
 import { stillAnchorFromQuad, type StillAnchor } from '../../lib/hero/capture';
 import { DESKTOP_ASPECT, restCameraFor } from '../../lib/hero/layout';
 import { TERMINAL_ON_SCREEN, screenCorners } from '../../lib/hero/monitor';
-import type { HeroMotion } from '../../lib/capabilities';
-import {
-  captureEnabled,
-  frameloopFor,
-  motionPolicy,
-  probeEnabled,
-} from '../../lib/hero/scene-state';
+import { captureEnabled, frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import {
   BLOOM_SETTINGS,
   FLOOR_TIER,
@@ -69,8 +63,6 @@ export interface DeskExperienceProps {
   onError: () => void;
   /** The floor tier is still too slow (S12): the island reverts to static, once. */
   onLowFps: () => void;
-  /** `reduced`: motionless scene (no parallax, zoom, smooth scroll or typing; frames on demand). */
-  motion: HeroMotion;
   /** The terminal to put on the monitor, or `null` below 1024px where the 2D frame stays. */
   terminal: MonitorTerminalContent | null;
   /** Written when the monitor terminal takes over from a focused 2D input. */
@@ -165,29 +157,7 @@ function useScrollZoom(hero: HTMLElement, zoom: ZoomStore, enabled: boolean): vo
   }, [hero, zoom, enabled]);
 }
 
-/** Frames drawn after a change while rendering on demand: enough for load, layout and glass. */
-const DEMAND_SETTLE_FRAMES = 4;
-
-/**
- * Under `frameloop="demand"` nothing draws until asked: this asks for a few frames whenever
- * `token` changes (scene ready, tier, back in view) so the rest pose and the glass are placed.
- */
-function DemandKick({ token }: { token: string }) {
-  const invalidate = useThree((state) => state.invalidate);
-  const left = useRef(0);
-  useEffect(() => {
-    left.current = DEMAND_SETTLE_FRAMES;
-    invalidate();
-  }, [token, invalidate]);
-  useFrame(() => {
-    if (left.current <= 0) return;
-    left.current -= 1;
-    if (left.current > 0) invalidate();
-  });
-  return null;
-}
-
-function useActive(observed: HTMLElement, motion: HeroMotion): 'always' | 'demand' | 'never' {
+function useActive(observed: HTMLElement): boolean {
   const [inViewport, setInViewport] = useState(true);
   const [documentHidden, setDocumentHidden] = useState(false);
   useEffect(() => {
@@ -203,7 +173,7 @@ function useActive(observed: HTMLElement, motion: HeroMotion): 'always' | 'deman
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [observed]);
-  return frameloopFor({ inViewport, documentHidden, motion });
+  return frameloopFor({ inViewport, documentHidden }) === 'always';
 }
 
 // Before the first frame the rig has not read the canvas size yet; the desktop pose is a good guess.
@@ -216,17 +186,15 @@ export function DeskExperience({
   onReady,
   onError,
   onLowFps,
-  motion,
   terminal,
   focusHandoffRef,
 }: DeskExperienceProps) {
   const [tier, setTier] = useState<Tier>('high');
   const [ready, setReady] = useState(false);
-  const policy = motionPolicy(motion);
-  const frameloop = useActive(observed, motion);
-  const parallax = useParallaxEnabled(policy.parallax);
+  const active = useActive(observed);
+  const parallax = useParallaxEnabled();
   const [zoom] = useState(createZoomStore);
-  useScrollZoom(observed, zoom, ready && terminal !== null && policy.scrollZoom);
+  useScrollZoom(observed, zoom, ready && terminal !== null);
   // The layer is both a ref (drei's `portal`) and state (the overlay portals into it).
   const screenLayerRef = useRef<HTMLDivElement | null>(null);
   const [screenLayer, setScreenLayer] = useState<HTMLDivElement | null>(null);
@@ -246,7 +214,7 @@ export function DeskExperience({
       <div className="hero-canvas" data-ready={ready || undefined} aria-hidden="true">
         <SceneBoundary onError={onError}>
           <Canvas
-            frameloop={frameloop}
+            frameloop={active ? 'always' : 'never'}
             dpr={settings.dpr}
             camera={{
               fov: initialPose.fov,
@@ -264,16 +232,12 @@ export function DeskExperience({
               });
             }}
           >
-            {policy.continuousFrames ? (
-              <PerformanceMonitor
-                flipflops={3}
-                onDecline={() => step('decline')}
-                onIncline={() => step('incline')}
-                onFallback={() => step('fallback')}
-              />
-            ) : (
-              <DemandKick token={`${ready}|${tier}|${frameloop}`} />
-            )}
+            <PerformanceMonitor
+              flipflops={3}
+              onDecline={() => step('decline')}
+              onIncline={() => step('incline')}
+              onFallback={() => step('fallback')}
+            />
             {settings.bloom ? (
               <EffectComposer multisampling={0}>
                 <Bloom
@@ -284,10 +248,7 @@ export function DeskExperience({
                 <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
               </EffectComposer>
             ) : null}
-            {/* Frames are sparse on demand, so frame times say nothing about performance. */}
-            {policy.continuousFrames ? (
-              <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
-            ) : null}
+            <LowFpsWatch atFloor={tier === FLOOR_TIER} onLowFps={onLowFps} />
             {probe ? <RenderProbe /> : null}
             {capture ? <CaptureProbe /> : null}
             {ready && terminal && TERMINAL_ON_SCREEN === 'html' ? (

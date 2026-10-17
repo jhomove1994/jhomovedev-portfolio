@@ -19,8 +19,6 @@ export interface MonitorTerminalContent {
   session: TerminalSession;
   data: TerminalData;
   labels: TerminalLabels;
-  /** Type the intro `whoami`; false prints the finished transcript at once (reduced motion). */
-  animateIntro: boolean;
 }
 
 interface ScreenContentProps {
@@ -40,7 +38,8 @@ function ScreenContent({ content, handoffRef, boxRef }: ScreenContentProps) {
   // Runs once, when the monitor first shows the terminal: type `whoami` unless the visitor already
   // typed (the session refuses) or asked for less motion (it then shows the finished state).
   useEffect(() => {
-    content.session.playIntro({ animate: content.animateIntro });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    content.session.playIntro({ animate: !reduced });
     if (handoffRef.current) {
       handoffRef.current = false;
       const input = box.current?.querySelector('input');
@@ -49,7 +48,7 @@ function ScreenContent({ content, handoffRef, boxRef }: ScreenContentProps) {
         input.setSelectionRange(input.value.length, input.value.length);
       }
     }
-  }, [content.session, content.animateIntro, handoffRef, box]);
+  }, [content.session, handoffRef, box]);
 
   return (
     <div
