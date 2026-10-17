@@ -21,8 +21,8 @@ export interface NarrowStillOptions {
 }
 
 export const NARROW_STILL_DEFAULTS: NarrowStillOptions = {
-  fill: 0.92,
-  padTop: 0.04,
+  fill: 0.9,
+  padTop: 0.08,
   padBottom: 0.14,
   aspect: STILL_ASPECT,
 };

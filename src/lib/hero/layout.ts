@@ -154,7 +154,8 @@ const STILL_SUBJECT_IDS: readonly HeroModelId[] = [
   'computerKeyboard',
   'computerMouse',
 ];
-const STILL_FOV = 28;
+/** The camera rig only moves the camera, so the still shares the rest pose's field of view. */
+const STILL_FOV = REST_FOV;
 const STILL_MARGIN = 0.03;
 /** Nearly level, so the glass (tilted back about 8 degrees) is seen almost head-on. */
 const STILL_ELEVATION = 0.12;

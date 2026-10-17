@@ -3,6 +3,7 @@ import type { Locale } from '../../i18n/locales';
 import { t, terminalLabels } from '../../i18n/ui';
 import type { CvButtonModel } from '../../lib/content/cv';
 import stillAnchor from '../../lib/hero/still-anchor.json';
+import { narrowStillLayout } from '../../lib/hero/still-layout';
 import { shippableLabels } from '../../lib/terminal/labels';
 import type { TerminalData } from '../../lib/terminal/types';
 import { HeroIsland } from '../hero/HeroIsland';
@@ -31,16 +32,28 @@ const chrome = {
   disable3d: t(locale, 'hero.toggleDisable3d'),
   bootLoading: t(locale, 'hero.bootLoading'),
 };
-const monitorStyle = [
+// The glass rect of the committed still. Wide screens place the terminal on it as fractions of the
+// stage; stacked screens crop the still around it (`--n-*`, in `cqw` of the stage width).
+const narrow = narrowStillLayout(stillAnchor);
+const cqw = (fraction: number) => `${(fraction * 100).toFixed(3)}cqw`;
+const stageStyle = [
   `--mon-x:${stillAnchor.x * 100}%`,
   `--mon-y:${stillAnchor.y * 100}%`,
   `--mon-w:${stillAnchor.width * 100}%`,
   `--mon-h:${stillAnchor.height * 100}%`,
+  `--n-media-w:${cqw(narrow.mediaWidth)}`,
+  `--n-media-x:${cqw(narrow.mediaLeft)}`,
+  `--n-media-y:${cqw(narrow.mediaTop)}`,
+  `--n-box-h:${cqw(narrow.boxHeight)}`,
+  `--n-glass-x:${cqw(narrow.glassLeft)}`,
+  `--n-glass-y:${cqw(narrow.glassTop)}`,
+  `--n-glass-w:${cqw(narrow.glassWidth)}`,
+  `--n-glass-h:${cqw(narrow.glassHeight)}`,
 ].join(';');
 ---
 
 <section id="hero" aria-labelledby="hero-title" data-hero-mode="static" class="hero">
-  <div class="hero-stage">
+  <div class="hero-stage" style={stageStyle}>
     <div class="hero-copy">
       <h1 id="hero-title" class="text-balance">
         {name}
@@ -58,7 +71,7 @@ const monitorStyle = [
       </p>
     </div>
     <HeroStill locale={locale} />
-    <div class="hero-monitor" style={monitorStyle}>
+    <div class="hero-monitor">
       <HeroIsland client:visible data={terminal} labels={labels} chrome={chrome} />
     </div>
   </div>
