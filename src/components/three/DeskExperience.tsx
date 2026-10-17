@@ -11,6 +11,7 @@ import { frameloopFor, probeEnabled } from '../../lib/hero/scene-state';
 import { TIER_SETTINGS, reduceTier, type Tier, type TierEvent } from '../../lib/hero/tiers';
 import { BootLoader } from '../hero/BootLoader';
 import { DeskScene } from './DeskScene';
+import { useParallaxEnabled } from './Parallax';
 
 declare global {
   interface Window {
@@ -84,6 +85,7 @@ export function DeskExperience({
   const [tier, setTier] = useState<Tier>('high');
   const [ready, setReady] = useState(false);
   const active = useActive(observed);
+  const parallax = useParallaxEnabled();
   const { progress } = useProgress();
   const [probe] = useState(() => probeEnabled(window.location.search));
   const step = (event: TierEvent) => setTier((current) => reduceTier(current, event).tier);
@@ -120,6 +122,7 @@ export function DeskExperience({
           {probe ? <RenderProbe /> : null}
           <DeskScene
             shadows={settings.contactShadows}
+            parallax={parallax}
             onReady={() => {
               setReady(true);
               onReady();

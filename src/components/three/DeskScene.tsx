@@ -3,14 +3,7 @@
 import { ContactShadows, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Suspense, useLayoutEffect, useMemo, useRef } from 'react';
-import {
-  DoubleSide,
-  type Material,
-  type Mesh,
-  type Object3D,
-  type PerspectiveCamera,
-  type RectAreaLight,
-} from 'three';
+import { DoubleSide, type Material, type Mesh, type Object3D, type RectAreaLight } from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import screenAnchor from '../../lib/hero/screen-anchor.json';
 import {
@@ -18,11 +11,11 @@ import {
   DESK_TOP_Y,
   FLOOR_PLACEMENTS,
   PROP_PLACEMENTS,
-  REST_CAMERA,
   lampBulbWorld,
   screenWorldCenter,
   type Placement,
 } from '../../lib/hero/layout';
+import { CameraRig } from './Parallax';
 
 /** Same-origin, Meshopt only: no Draco decoder, so nothing is fetched from a CDN. */
 export const HERO_GLB_URL = '/models/hero-desk.glb';
@@ -93,16 +86,6 @@ function ScreenGlow() {
   );
 }
 
-/** Aims the camera at the rest pose once; later changes own the camera through useFrame. */
-function RestCamera() {
-  useFrame(({ camera }) => {
-    const cam = camera as PerspectiveCamera;
-    cam.position.set(...REST_CAMERA.position);
-    cam.lookAt(...REST_CAMERA.target);
-  });
-  return null;
-}
-
 function Desk({ onFirstFrame, shadows }: { onFirstFrame: () => void; shadows: boolean }) {
   const { scene } = useGLTF(HERO_GLB_URL, USE_DRACO, USE_MESHOPT);
   const frames = useRef(0);
@@ -137,15 +120,17 @@ export interface DeskSceneProps {
   onReady: () => void;
   /** Contact shadows are baked once and only on the high tier. */
   shadows: boolean;
+  /** Pointer parallax: fine pointers with motion allowed only. */
+  parallax: boolean;
 }
 
-export function DeskScene({ onReady, shadows }: DeskSceneProps) {
+export function DeskScene({ onReady, shadows, parallax }: DeskSceneProps) {
   const lamp = lampBulbWorld();
   return (
     <>
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, 2.5, 5]} />
-      <RestCamera />
+      <CameraRig enabled={parallax} />
       <hemisphereLight args={[SKY, GROUND, 0.9]} />
       <directionalLight position={[-0.6, 1.4, 1.2]} color={MOON} intensity={1} />
       <pointLight position={lamp} color={LAMP_COLOR} intensity={1} decay={2} distance={2.2} />
