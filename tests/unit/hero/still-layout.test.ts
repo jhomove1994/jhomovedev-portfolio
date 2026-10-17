@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stillAnchorProblems, type StillAnchor } from '../../../src/lib/hero/capture';
-import { narrowStillLayout } from '../../../src/lib/hero/still-layout';
+import { SCENE_STILL_CROP, narrowStillLayout } from '../../../src/lib/hero/still-layout';
 import stillAnchor from '../../../src/lib/hero/still-anchor.json';
 
 const anchor = (patch: Partial<StillAnchor> = {}): StillAnchor => ({
@@ -82,6 +82,27 @@ describe('narrowStillLayout', () => {
   it('puts the committed glass above the fold on a 390x844 phone below the copy (box under 1 width)', () => {
     const l = narrowStillLayout(stillAnchor);
     expect(l.boxHeight).toBeLessThan(1);
+  });
+});
+
+describe('narrowStillLayout: scene crop from 768px', () => {
+  it('places the glass off-centre by `align` of the free width', () => {
+    const a = anchor({ x: 0.3 });
+    const l = narrowStillLayout(a, { fill: 0.6, align: 0.8, padTop: 0, padBottom: 0 });
+    expect(l.glassLeft).toBeCloseTo(0.8 * 0.4, 6);
+    expect(narrowStillLayout(a, { fill: 0.6, align: 0.5 }).glassLeft).toBeCloseTo(0.2, 6);
+  });
+
+  it('gives the committed glass most of the scene, with the lamp side kept on the left', () => {
+    const l = narrowStillLayout(stillAnchor, SCENE_STILL_CROP);
+    expect(l.glassWidth).toBeGreaterThanOrEqual(0.68);
+    expect(l.glassLeft).toBeGreaterThan(0.18);
+    expect(1 - l.glassLeft - l.glassWidth).toBeLessThan(l.glassLeft);
+    // About 1.5:1, so a scene column of 690 px is about 450 px tall and fits a 700 px viewport.
+    expect(1 / l.boxHeight).toBeGreaterThan(1.45);
+    expect(1 / l.boxHeight).toBeLessThan(1.75);
+    // A 690 px column gives a glass at least 288 px tall: the terminal's minimum height.
+    expect(l.glassHeight * 690).toBeGreaterThanOrEqual(288);
   });
 });
 

@@ -1,8 +1,8 @@
 /**
- * Crop of the static still for stacked (narrow) screens, pure and DOM-free. The monitor glass
- * (`still-anchor.json`) is scaled up to fill most of the stage width and the image is cropped
- * around it, so the 2D terminal sits on the glass inside the first viewport instead of below an
- * empty monitor. Every value is a fraction of the stage width (CSS turns them into `cqw`).
+ * Crop of the static still around the monitor, pure and DOM-free. The monitor glass
+ * (`still-anchor.json`) is scaled up to fill most of the scene width and the image is cropped
+ * around it, so the 2D terminal on the glass is large enough to read. Every value is a fraction
+ * of the scene width (CSS turns them into `cqw`).
  */
 import type { StillAnchor } from './capture';
 
@@ -18,6 +18,8 @@ export interface NarrowStillOptions {
   padBottom: number;
   /** Width over height of the still image. */
   aspect: number;
+  /** Share of the free width left of the glass: 0.5 centres it, more keeps the left side. */
+  align: number;
 }
 
 export const NARROW_STILL_DEFAULTS: NarrowStillOptions = {
@@ -25,6 +27,19 @@ export const NARROW_STILL_DEFAULTS: NarrowStillOptions = {
   padTop: 0.08,
   padBottom: 0.14,
   aspect: STILL_ASPECT,
+  align: 0.5,
+};
+
+/**
+ * The scene from 768px: the glass takes 70% of the scene and sits right of centre, so the lamp
+ * on its left stays in the crop next to the copy column (the copy never covers the scene). The
+ * keyboard shows below the glass and the radio is mostly cropped out.
+ */
+export const SCENE_STILL_CROP: Partial<NarrowStillOptions> = {
+  fill: 0.7,
+  align: 0.82,
+  padTop: 0.05,
+  padBottom: 0.15,
 };
 
 export interface NarrowStillLayout {
@@ -48,12 +63,12 @@ export function narrowStillLayout(
   anchor: StillAnchor,
   options: Partial<NarrowStillOptions> = {},
 ): NarrowStillLayout {
-  const { fill, padTop, padBottom, aspect } = { ...NARROW_STILL_DEFAULTS, ...options };
+  const { fill, padTop, padBottom, aspect, align } = { ...NARROW_STILL_DEFAULTS, ...options };
   const mediaWidth = fill / anchor.width;
   const mediaHeight = mediaWidth / aspect;
 
-  // Centre the glass, but never reveal anything outside the image.
-  const mediaLeft = clamp((1 - fill) / 2 - anchor.x * mediaWidth, 1 - mediaWidth, 0);
+  // Place the glass (centred by default), but never reveal anything outside the image.
+  const mediaLeft = clamp((1 - fill) * align - anchor.x * mediaWidth, 1 - mediaWidth, 0);
   const glassTopInMedia = anchor.y * mediaHeight;
   const glassHeight = anchor.height * mediaHeight;
   const boxTop = Math.max(0, glassTopInMedia - padTop);
