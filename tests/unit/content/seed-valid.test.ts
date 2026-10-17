@@ -196,6 +196,18 @@ describe('seed: media', () => {
   );
 });
 
+describe('seed: share image', () => {
+  it.each(['es', 'en'])('%s media points to its own 1200x630 PNG under 300 KB', (locale) => {
+    const file = media.find((entry) => entry.id === `${locale}/index`);
+    const path = join('public', String(file?.data.ogImage));
+    expect(path).toBe(`public/uploads/og-jhonatan-moreno-${locale}.png`);
+    const png = readFileSync(path);
+    expect(png.subarray(1, 4).toString()).toBe('PNG');
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+    expect(png.length).toBeLessThan(300 * 1024);
+  });
+});
+
 const leadership = loadCollection('leadership');
 const certifications = loadCollection('certifications');
 

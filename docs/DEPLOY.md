@@ -16,14 +16,14 @@ The AI assistant (`/api/chat`) is not part of the first release (author decision
 
 ## Manual steps
 
-| Step | Owner  | Action                                                                                                                                        | Blocks                                                  |
-| ---- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| M1   | Author | Create the public GitHub repo and push `main`. If owner/repo is not `Jhomove/jhomovedev`, update `backend.repo` in `public/admin/config.yml`. | Live `/admin`, Workers Builds                           |
-| M2   | Author | Create a fine-grained PAT (see below). Use it to log in at `/admin`. Never commit it.                                                         | Editing content from `/admin`                           |
-| M3   | Author | Connect Workers Builds (see below). Confirm the workers.dev subdomain and update `SITE_URL` if it differs (G3).                               | Production deploys, correct canonical and hreflang URLs |
-| M4   | Author | CV ES and CV EN are in `public/uploads/`. Still missing: the OG image (Media entry, both locales), uploaded from `/admin`.                    | Share previews                                          |
-| M5   | Author | Review ES/EN copy and replace every `TODO(autor)` (inventory below). Confirm each `published` flag.                                           | Honest public content                                   |
-| M6   | Author | Decide G1 to G5 (next section).                                                                                                               | Final copy and URLs                                     |
+| Step | Owner  | Action                                                                                                                                                                         | Blocks                                                  |
+| ---- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| M1   | Author | Create the public GitHub repo and push `main`. If owner/repo is not `Jhomove/jhomovedev`, update `backend.repo` in `public/admin/config.yml`.                                  | Live `/admin`, Workers Builds                           |
+| M2   | Author | Create a fine-grained PAT (see below). Use it to log in at `/admin`. Never commit it.                                                                                          | Editing content from `/admin`                           |
+| M3   | Author | Connect Workers Builds (see below). Confirm the workers.dev subdomain and update `SITE_URL` if it differs (G3).                                                                | Production deploys, correct canonical and hreflang URLs |
+| M4   | Author | CV ES and CV EN and the OG images (1200x630, ES and EN) are in `public/uploads/` and set in the Media entries. Replace the OG image from `/admin` if you want a different one. | Share previews                                          |
+| M5   | Author | Review ES/EN copy and replace every `TODO(autor)` (inventory below). Confirm each `published` flag.                                                                            | Honest public content                                   |
+| M6   | Author | Decide G1 to G5 (next section).                                                                                                                                                | Final copy and URLs                                     |
 
 ### M2: fine-grained PAT
 
@@ -79,7 +79,7 @@ pnpm wrangler deploy --dry-run   # expect only the ASSETS binding
 - [ ] M1 repo created and `main` pushed
 - [ ] M2 PAT created (this repo only, Contents read/write) and `/admin` login works
 - [ ] M3 Workers Builds connected, `SITE_URL` matches the real subdomain
-- [ ] M4 OG image uploaded (CV ES and EN already published)
+- [x] M4 OG image and CV uploaded (ES and EN)
 - [ ] M5 every `TODO(autor)` resolved, `published` flags confirmed
 - [ ] M6 G1 to G5 decided
 - [ ] A CV uploaded in `/admin` is served by production within ~2 minutes and the CV button points to it

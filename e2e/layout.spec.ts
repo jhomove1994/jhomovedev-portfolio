@@ -36,8 +36,11 @@ for (const { locale, other, ogLocale, ogAlternate } of LOCALES) {
       expect(await content('meta[property="og:locale:alternate"]')).toBe(ogAlternate);
       expect(await content('meta[property="og:title"]')).toBeTruthy();
       expect(await content('meta[name="description"]')).toBeTruthy();
-      // No media.ogImage is uploaded yet: an empty og:image must never be emitted.
-      await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
+      // Each locale shares its own absolute image URL, rendered as a large Twitter card.
+      expect(await content('meta[property="og:image"]')).toMatch(
+        new RegExp(`^https://[^/]+/uploads/og-jhonatan-moreno-${locale}\\.png$`),
+      );
+      expect(await content('meta[name="twitter:card"]')).toBe('summary_large_image');
     });
 
     test('loads the self-hosted fonts without third-party requests', async ({ page }) => {
