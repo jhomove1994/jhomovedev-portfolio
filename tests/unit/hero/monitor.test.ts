@@ -6,6 +6,7 @@ import {
   TERMINAL_CSS_WIDTH,
   TERMINAL_ON_SCREEN,
   monitorMount,
+  monitorZoomPose,
   screenCorners,
 } from '../../../src/lib/hero/monitor';
 import screenAnchor from '../../../src/lib/hero/screen-anchor.json';
@@ -99,5 +100,20 @@ describe('screenCorners', () => {
     const dotNormal = up.reduce((sum, v, i) => sum + v * screenAnchor.normal[i]!, 0);
     expect(dotNormal).toBeCloseTo(0, 6); // the edge is perpendicular to the normal
     expect(up[2]).toBeLessThan(0); // the top is further from the viewer than the bottom
+  });
+});
+
+describe('monitorZoomPose', () => {
+  it('ends facing the glass head-on with the terminal at least 60% of the canvas wide', () => {
+    for (const aspect of [1.6, 2]) {
+      const pose = monitorZoomPose(aspect, 32, 0.6);
+      const { position } = monitorMount();
+      const toCamera = pose.position.map((v, i) => v - position[i]!);
+      const distance = Math.hypot(...toCamera);
+      const tan = Math.tan((32 * Math.PI) / 360);
+      expect(screenAnchor.width / (2 * distance * tan * aspect)).toBeGreaterThanOrEqual(0.6 - 1e-9);
+      // The camera sits on the glass normal.
+      toCamera.forEach((v, i) => expect(v / distance).toBeCloseTo(screenAnchor.normal[i]!, 4));
+    }
   });
 });

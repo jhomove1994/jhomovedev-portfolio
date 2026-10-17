@@ -2,9 +2,10 @@
  * Projecting the monitor glass to stage pixels and turning that quad into a CSS `matrix3d`
  * (pure, three-free). The overlay renderer of the terminal uses it every frame: the camera is
  * injected as a `project` function, so the same maths works for the rest pose, parallax and the
- * scroll zoom of a later change.
+ * scroll zoom.
  */
 import type { Ndc } from './camera';
+import type { CameraPose } from './layout';
 import type { Vec3 } from './screen-anchor';
 
 export interface Point {
@@ -94,4 +95,117 @@ const decimal = (value: number): string =>
 
 export function matrix3dCss(values: readonly number[]): string {
   return `matrix3d(${values.map(decimal).join(',')})`;
+}
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+export interface ZoomRange {
+  /** Scroll offset (px) where the zoom begins. */
+  start: number;
+  /** Scroll offset (px) where the camera has arrived. */
+  end: number;
+}
+
+/** 0 at and before `start`, 1 at and after `end`, linear between. An empty range is a step. */
+export function zoomProgress(scroll: number, { start, end }: ZoomRange): number {
+  if (end <= start) return scroll >= end ? 1 : 0;
+  return clamp01((scroll - start) / (end - start));
+}
+
+/** Slow in, slow out: the dolly starts and lands gently. Input is clamped to 0..1. */
+export function easeInOutCubic(t: number): number {
+  const x = clamp01(t);
+  return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+}
+
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+const mixVec = (a: Vec3, b: Vec3, t: number): Vec3 => [
+  mix(a[0], b[0], t),
+  mix(a[1], b[1], t),
+  mix(a[2], b[2], t),
+];
+
+/** Straight blend of two camera poses; `t` is clamped, so the endpoints are returned exactly. */
+export function interpolatePose(from: CameraPose, to: CameraPose, t: number): CameraPose {
+  const k = clamp01(t);
+  if (k === 0) return from;
+  if (k === 1) return to;
+  return {
+    position: mixVec(from.position, to.position, k),
+    target: mixVec(from.target, to.target, k),
+    fov: mix(from.fov, to.fov, k),
+  };
+}
+
+export interface FillRequest {
+  /** World size of the subject along the measured axis, metres. */
+  extent: number;
+  /** Vertical field of view, degrees. */
+  fov: number;
+  /** Width over height of the view for a width; 1 for a height. */
+  aspect: number;
+  /** Share of the view the extent should cover, 0..1. */
+  fraction: number;
+}
+
+/** Distance in front of a flat subject at which `extent` covers `fraction` of the view axis. */
+export function screenFillDistance({ extent, fov, aspect, fraction }: FillRequest): number {
+  return extent / (2 * Math.tan((fov * Math.PI) / 360) * aspect * fraction);
+}
+
+export interface ZoomEndRequest {
+  /** Glass centre, world space. */
+  center: Vec3;
+  /** Unit normal of the glass, pointing at the viewer. */
+  normal: Vec3;
+  glassWidth: number;
+  glassHeight: number;
+  fov: number;
+  /** Canvas width over height. */
+  aspect: number;
+  /** The glass must cover at least this share of the canvas width (S10). */
+  minWidthFraction: number;
+  /** ...and is not allowed to cover more than this share of the canvas height. */
+  heightFraction: number;
+}
+
+/**
+ * Where the camera ends the zoom: on the glass normal, as close as the height allows but never so
+ * far that the glass drops under the minimum width. When both cannot hold (a tall glass) the
+ * width minimum wins, so the terminal is always at least `minWidthFraction` of the canvas wide.
+ */
+export function zoomEndPose(request: ZoomEndRequest): CameraPose {
+  const { center, normal, glassWidth, glassHeight, fov, aspect } = request;
+  const forHeight = screenFillDistance({
+    extent: glassHeight,
+    fov,
+    aspect: 1,
+    fraction: request.heightFraction,
+  });
+  const forWidth = screenFillDistance({
+    extent: glassWidth,
+    fov,
+    aspect,
+    fraction: request.minWidthFraction,
+  });
+  const distance = Math.min(forHeight, forWidth);
+  return {
+    position: [
+      center[0] + normal[0] * distance,
+      center[1] + normal[1] * distance,
+      center[2] + normal[2] * distance,
+    ],
+    target: center,
+    fov,
+  };
+}
+
+/** Scroll-driven state the frame loop reads: written by the scroll trigger, never re-rendered. */
+export interface ZoomStore {
+  /** 0 at rest, 1 when the camera has arrived at the glass. */
+  progress: number;
+}
+
+export function createZoomStore(): ZoomStore {
+  return { progress: 0 };
 }

@@ -3,9 +3,10 @@
  * drei's `<Html transform>` lays a CSS box in the scene: the box is `cssWidth` px wide, one world
  * unit spans `1 / pxToUnit` px at scale 1, and `scale` stretches it to the glass.
  */
-import { screenWorldCenter } from './layout';
+import { screenWorldCenter, type CameraPose } from './layout';
 import screenAnchor from './screen-anchor.json';
 import type { Vec3 } from './screen-anchor';
+import { zoomEndPose } from './zoom';
 
 /**
  * How the terminal reaches the screen. `html` renders it through drei `<Html transform occlude>`;
@@ -86,4 +87,24 @@ export function screenCorners({ lift = SCREEN_LIFT }: { lift?: number } = {}): C
     position[2] + right[2] * halfW * sx + up[2] * halfH * sy,
   ];
   return [at(-1, 1), at(1, 1), at(1, -1), at(-1, -1)];
+}
+
+/** Share of the canvas height the glass may fill at the end of the zoom. */
+const ZOOM_HEIGHT_FRACTION = 0.85;
+
+/**
+ * Camera pose that ends the scroll zoom: head-on to the glass, the terminal covering at least
+ * `minWidthFraction` of the canvas width (S10).
+ */
+export function monitorZoomPose(aspect: number, fov: number, minWidthFraction: number): CameraPose {
+  return zoomEndPose({
+    center: monitorMount().position,
+    normal: screenAnchor.normal as unknown as Vec3,
+    glassWidth: screenAnchor.width,
+    glassHeight: screenAnchor.height,
+    fov,
+    aspect,
+    minWidthFraction,
+    heightFraction: ZOOM_HEIGHT_FRACTION,
+  });
 }

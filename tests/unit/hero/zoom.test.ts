@@ -3,9 +3,15 @@ import { projectPoint } from '../../../src/lib/hero/camera';
 import { DESKTOP_ASPECT, restCameraFor } from '../../../src/lib/hero/layout';
 import { screenCorners } from '../../../src/lib/hero/monitor';
 import {
+  createZoomStore,
+  easeInOutCubic,
+  interpolatePose,
   matrix3dCss,
   projectRect,
   quadToMatrix3d,
+  screenFillDistance,
+  zoomEndPose,
+  zoomProgress,
   type Point,
   type Quad,
 } from '../../../src/lib/hero/zoom';
@@ -139,5 +145,138 @@ describe('projectRect', () => {
     const [first, second] = projectRect(corners, fake, STAGE);
     expect(first).toEqual({ x: STAGE.width, y: 0 });
     expect(second).toEqual({ x: STAGE.width / 2, y: STAGE.height / 2 });
+  });
+});
+
+describe('zoomProgress', () => {
+  const range = { start: 0, end: 1000 };
+
+  it('is 0 before and at the start, 1 at and past the end', () => {
+    expect(zoomProgress(-50, range)).toBe(0);
+    expect(zoomProgress(0, range)).toBe(0);
+    expect(zoomProgress(1000, range)).toBe(1);
+    expect(zoomProgress(1500, range)).toBe(1);
+  });
+
+  it('is strictly between 0 and 1 inside the range and never goes back as scroll grows', () => {
+    expect(zoomProgress(250, range)).toBeCloseTo(0.25, 12);
+    const samples = [-100, 0, 100, 400, 999, 1000, 2000].map((y) => zoomProgress(y, range));
+    samples.slice(1).forEach((value, i) => expect(value).toBeGreaterThanOrEqual(samples[i]!));
+  });
+
+  it('honours an offset start and survives an empty range', () => {
+    expect(zoomProgress(300, { start: 200, end: 400 })).toBeCloseTo(0.5, 12);
+    expect(zoomProgress(10, { start: 100, end: 100 })).toBe(0);
+    expect(zoomProgress(100, { start: 100, end: 100 })).toBe(1);
+  });
+});
+
+describe('easeInOutCubic', () => {
+  it('keeps the endpoints, is 0.5 at the middle and is monotonic', () => {
+    expect(easeInOutCubic(0)).toBe(0);
+    expect(easeInOutCubic(1)).toBe(1);
+    expect(easeInOutCubic(0.5)).toBeCloseTo(0.5, 12);
+    expect(easeInOutCubic(0.25)).toBeLessThan(0.25);
+    expect(easeInOutCubic(0.75)).toBeGreaterThan(0.75);
+    expect(easeInOutCubic(-1)).toBe(0);
+    expect(easeInOutCubic(2)).toBe(1);
+  });
+});
+
+describe('interpolatePose', () => {
+  const from = { position: [0, 1, 4], target: [0, 0, 0], fov: 32 } as const;
+  const to = { position: [2, 3, 1], target: [1, 1, -1], fov: 20 } as const;
+
+  it('returns the endpoints at 0 and 1 and clamps outside', () => {
+    expect(interpolatePose(from, to, 0)).toEqual(from);
+    expect(interpolatePose(from, to, 1)).toEqual(to);
+    expect(interpolatePose(from, to, -3)).toEqual(from);
+    expect(interpolatePose(from, to, 7)).toEqual(to);
+  });
+
+  it('blends position, target and fov linearly at the middle', () => {
+    const mid = interpolatePose(from, to, 0.5);
+    expect(mid.position).toEqual([1, 2, 2.5]);
+    expect(mid.target).toEqual([0.5, 0.5, -0.5]);
+    expect(mid.fov).toBe(26);
+  });
+});
+
+describe('screenFillDistance', () => {
+  it('is the distance at which an extent fills the given fraction of the view', () => {
+    const fov = 40;
+    const tan = Math.tan((fov * Math.PI) / 360);
+    expect(screenFillDistance({ extent: 1, fov, aspect: 1, fraction: 1 })).toBeCloseTo(
+      1 / (2 * tan),
+      12,
+    );
+    // Half the fraction needs twice the distance; a wider view needs less for a width.
+    expect(screenFillDistance({ extent: 1, fov, aspect: 1, fraction: 0.5 })).toBeCloseTo(
+      1 / tan,
+      12,
+    );
+    expect(screenFillDistance({ extent: 1, fov, aspect: 2, fraction: 1 })).toBeCloseTo(
+      1 / (4 * tan),
+      12,
+    );
+  });
+});
+
+describe('zoomEndPose', () => {
+  const base = {
+    center: [0.2, 0.4, -0.1],
+    normal: [0, 0.6, 0.8],
+    fov: 32,
+    aspect: 1.6,
+    minWidthFraction: 0.6,
+    heightFraction: 0.85,
+  } as const;
+  const widthShare = (glassWidth: number, glassHeight: number, aspect: number = base.aspect) => {
+    const pose = zoomEndPose({ ...base, aspect, glassWidth, glassHeight });
+    const distance = Math.hypot(...pose.position.map((v, i) => v - base.center[i]!));
+    const tan = Math.tan((base.fov * Math.PI) / 360);
+    return {
+      width: glassWidth / (2 * distance * tan * aspect),
+      height: glassHeight / (2 * distance * tan),
+      pose,
+    };
+  };
+
+  it('looks straight at the glass along its normal', () => {
+    const { pose } = widthShare(0.38, 0.234);
+    expect(pose.target).toEqual([0.2, 0.4, -0.1]);
+    const offset = pose.position.map((v, i) => v - base.center[i]!);
+    const length = Math.hypot(...offset);
+    offset.forEach((v, i) => expect(v / length).toBeCloseTo(base.normal[i]!, 9));
+    expect(pose.fov).toBe(32);
+  });
+
+  it('fills the height up to the fraction when that keeps the width above the minimum', () => {
+    const { width, height } = widthShare(0.38, 0.234);
+    expect(height).toBeCloseTo(0.85, 9);
+    expect(width).toBeGreaterThanOrEqual(0.6);
+  });
+
+  it('lets the width minimum win for a tall glass (S10)', () => {
+    const { width, height } = widthShare(0.2, 0.4);
+    expect(width).toBeGreaterThanOrEqual(0.6 - 1e-9);
+    expect(width).toBeCloseTo(0.6, 9);
+    expect(height).toBeGreaterThan(0.85);
+  });
+
+  it('gives a terminal at least 60% of the width on any stage aspect', () => {
+    for (const aspect of [1.2, 1.6, 2.4]) {
+      expect(widthShare(0.38, 0.234, aspect).width).toBeGreaterThanOrEqual(0.6 - 1e-9);
+    }
+  });
+});
+
+describe('createZoomStore', () => {
+  it('starts at rest and is a plain mutable record the frame loop can read', () => {
+    const store = createZoomStore();
+    expect(store.progress).toBe(0);
+    store.progress = 0.4;
+    expect(store.progress).toBe(0.4);
+    expect(createZoomStore().progress).toBe(0);
   });
 });
