@@ -29,8 +29,11 @@ for (const { locale, about, path } of LOCALES) {
       await expect(hero.getByRole('log')).toContainText(profile.whoami);
     });
 
-    test('never renders the availability value', async ({ page }) => {
+    test('renders the availability as a label, never as the raw enum value', async ({ page }) => {
       await page.goto(`/${locale}/`);
+      await expect(page.locator('#hero [data-availability]')).toHaveText(
+        locale === 'es' ? 'Abierto a ofertas' : 'Open to offers',
+      );
       const text = (await page.locator('body').innerText()).toLowerCase();
       expect(text).not.toContain('open-to-offers');
       expect(text).not.toContain('freelance');

@@ -23,6 +23,7 @@ import {
   getProjects,
   getStack,
 } from '../../lib/content/queries';
+import { availabilityLabel } from '../../lib/content/availability';
 import { cvButton } from '../../lib/content/cv';
 import { parseEntryId } from '../../lib/content/entry-id';
 import { groupByKind } from '../../lib/content/group';
@@ -136,6 +137,7 @@ const navItems: NavItem[] = [
       headline={profile.headline}
       location={profile.location}
       remote={profile.remote}
+      availability={availabilityLabel(locale, profile.availability)}
       email={profile.contact.email}
       cv={cvButton(mediaByLocale, locale)}
       terminal={terminal}

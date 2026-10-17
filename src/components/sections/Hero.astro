@@ -16,6 +16,8 @@ interface Props {
   headline: string;
   location: string;
   remote: boolean;
+  /** Already-localized availability label; `null` renders nothing. */
+  availability: string | null;
   email: string;
   /** `null` until a CV is uploaded; the button is then omitted. */
   cv: CvButtonModel | null;
@@ -23,8 +25,7 @@ interface Props {
   terminal: TerminalData;
 }
 
-// Availability is deliberately not a prop: it is not rendered until the author confirms the value.
-const { locale, name, headline, location, remote, email, cv, terminal } = Astro.props;
+const { locale, name, headline, location, remote, availability, email, cv, terminal } = Astro.props;
 
 const labels = shippableLabels(terminalLabels(locale), terminal);
 const chrome = {
@@ -58,6 +59,12 @@ const sceneStyle = [
       <p class="hero-place mt-6 flex flex-wrap gap-x-6 gap-y-1 text-muted">
         <span>{location}</span>
         {remote && <span>{t(locale, 'labels.remote')}</span>}
+        {availability && (
+          <span class="inline-flex items-center gap-2" data-availability>
+            <span aria-hidden="true" class="size-1.5 rounded-full bg-accent" />
+            {availability}
+          </span>
+        )}
       </p>
       <p class="hero-cta mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
         <CvButton button={cv} />

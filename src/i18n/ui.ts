@@ -29,6 +29,10 @@ export interface UiDict {
   };
   clusters: Record<(typeof CLUSTERS)[number] | 'languages' | 'tools', string>;
   certificationKinds: Record<(typeof CERTIFICATION_KINDS)[number], string>;
+  availability: {
+    openToOffers: string;
+    freelance: string;
+  };
   labels: {
     spanishSuffix: string;
     present: string;
@@ -103,6 +107,10 @@ export const ui = {
       certification: 'Certificación',
       education: 'Educación',
       training: 'Curso',
+    },
+    availability: {
+      openToOffers: 'Abierto a ofertas',
+      freelance: 'Disponible para proyectos freelance',
     },
     labels: {
       spanishSuffix: '(Español)',
@@ -222,6 +230,10 @@ export const ui = {
       certification: 'Certification',
       education: 'Education',
       training: 'Course',
+    },
+    availability: {
+      openToOffers: 'Open to offers',
+      freelance: 'Available for freelance work',
     },
     labels: {
       spanishSuffix: '(Spanish)',
