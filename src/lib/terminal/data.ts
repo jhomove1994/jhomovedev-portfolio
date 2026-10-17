@@ -9,6 +9,8 @@ import { parseBulletList } from '../content/markdown-list';
 import { formatPeriod } from '../content/period';
 import { CLUSTERS } from '../content/schemas';
 import { resolveStackNames, type StackCatalogEntry } from '../content/stack-names';
+import { withTodoVisibility } from '../content/todo';
+import { isTodo } from '../text';
 import { localizedPath } from '../i18n/paths';
 import type { TerminalCert, TerminalData, TerminalExperience, TerminalProject } from './types';
 
@@ -18,6 +20,11 @@ interface Ordered {
 
 export interface TerminalContent {
   locale: Locale;
+  /**
+   * Development build: `TODO(autor)` placeholders stay visible so the author can spot them.
+   * Anything else (the default) hides them, matching the rest of the site (gate G1).
+   */
+  isDev?: boolean;
   profile: {
     name: string;
     brand: string;
@@ -69,33 +76,61 @@ export interface TerminalContent {
 const asText = (value: unknown): string | undefined =>
   typeof value === 'string' && value !== '' ? value : undefined;
 
+/** Keeps placeholder items in development and drops them in production (gate G1). */
+function visible<T>(items: readonly T[], textsOf: (item: T) => readonly unknown[], isDev: boolean) {
+  return withTodoVisibility(items, textsOf, isDev).map(({ item }) => item);
+}
+
+/** A list field (bullets) loses only its placeholder entries; the rest of the item stays. */
+function visibleBullets(markdown: string, isDev: boolean): string[] {
+  return parseBulletList(markdown).filter((bullet) => isDev || !isTodo(bullet));
+}
+
+/** An optional detail field disappears when it is a placeholder in production. */
+function visibleText(value: string, isDev: boolean): string | undefined {
+  return isDev || !isTodo(value) ? value : undefined;
+}
+
 function buildExperience(content: TerminalContent): TerminalExperience[] {
-  const { locale } = content;
+  const { locale, isDev = false } = content;
   const present = t(locale, 'labels.present');
   // `order` 1 is the most recent role in the content model.
-  return sortByOrder(content.experience).map(({ data }) => ({
+  return visible(
+    sortByOrder(content.experience),
+    ({ data }) => [data.role, data.company, data.location],
+    isDev,
+  ).map(({ data }) => ({
     role: data.role,
     company: data.company,
     location: data.location,
     period: formatPeriod(data.start, data.end, locale, present),
-    achievements: parseBulletList(data.achievements),
+    achievements: visibleBullets(data.achievements, isDev),
   }));
 }
 
 function buildProjects(content: TerminalContent): TerminalProject[] {
-  return sortByOrder(content.projects.filter(({ data }) => data.published)).map(
-    ({ slug, data }) => ({
+  const { isDev = false } = content;
+  return visible(
+    sortByOrder(content.projects.filter(({ data }) => data.published)),
+    ({ data }) => [data.title, data.summary],
+    isDev,
+  ).map(({ slug, data }) => {
+    const optional = {
+      context: visibleText(data.context, isDev),
+      challenge: visibleText(data.challenge, isDev),
+      role: visibleText(data.role, isDev),
+      result: visibleText(data.result, isDev),
+    };
+    return {
       id: slug,
       title: data.title,
       summary: data.summary,
       stack: resolveStackNames(data.stack, content.stackCatalog),
-      context: data.context,
-      challenge: data.challenge,
-      role: data.role,
-      decisions: parseBulletList(data.decisions),
-      result: data.result,
-    }),
-  );
+      // Absent keys, not `undefined` values: the data stays serializable and exact-optional safe.
+      ...Object.fromEntries(Object.entries(optional).filter(([, value]) => value !== undefined)),
+      decisions: visibleBullets(data.decisions, isDev),
+    };
+  });
 }
 
 function buildStack(content: TerminalContent): TerminalData['stack'] {
@@ -109,7 +144,11 @@ function buildStack(content: TerminalContent): TerminalData['stack'] {
 }
 
 function buildCerts(content: TerminalContent): TerminalCert[] {
-  return sortByOrder(content.certifications).map(({ data }) => {
+  return visible(
+    sortByOrder(content.certifications),
+    ({ data }) => [data.name, data.issuer],
+    content.isDev ?? false,
+  ).map(({ data }) => {
     const url = asText(data.credentialUrl);
     return {
       name: data.name,
@@ -123,7 +162,7 @@ function buildCerts(content: TerminalContent): TerminalCert[] {
 }
 
 export function buildTerminalData(content: TerminalContent): TerminalData {
-  const { locale, profile } = content;
+  const { locale, profile, isDev = false } = content;
   const other = LOCALES.find((candidate) => candidate !== locale) ?? locale;
   const experience = buildExperience(content);
   const whatsapp = asText(profile.contact.whatsapp);
@@ -135,7 +174,8 @@ export function buildTerminalData(content: TerminalContent): TerminalData {
   return {
     locale,
     prompt: profile.brand.toLowerCase(),
-    whoami: profile.whoami,
+    // A placeholder whoami would print the author's TODO; the headline is real content.
+    whoami: isDev || !isTodo(profile.whoami) ? profile.whoami : profile.headline,
     name: profile.name,
     headline: profile.headline,
     experience,

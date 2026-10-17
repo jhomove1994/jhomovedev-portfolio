@@ -295,3 +295,99 @@ describe('buildTerminalData: cv, locale switch and anchors', () => {
     expect(data.whoami).toBe('Fixture whoami');
   });
 });
+
+describe('buildTerminalData: TODO(autor) placeholders (G1)', () => {
+  const todo = 'TODO(autor): write the real copy';
+
+  function withPlaceholders(isDev?: boolean): TerminalContent {
+    const base = makeContent('en');
+    const project = base.projects[0];
+    const role = base.experience[1];
+    if (project === undefined || role === undefined) throw new Error('fixture shape changed');
+    return {
+      ...base,
+      ...(isDev === undefined ? {} : { isDev }),
+      profile: { ...base.profile, whoami: todo },
+      experience: [
+        ...base.experience,
+        { data: { ...role.data, role: todo, order: 4 } },
+        { data: { ...role.data, achievements: `- Real win\n- ${todo}`, order: 2 } },
+      ],
+      projects: [
+        ...base.projects,
+        { slug: 'todo-summary', data: { ...project.data, summary: todo, order: 3 } },
+        {
+          slug: 'todo-detail',
+          data: {
+            ...project.data,
+            context: todo,
+            decisions: `- Real decision\n- ${todo}`,
+            order: 4,
+          },
+        },
+      ],
+      certifications: [
+        ...base.certifications,
+        {
+          data: {
+            kind: 'training',
+            name: todo,
+            issuer: 'Issuer C',
+            year: 2026,
+            status: 'completed',
+          },
+        },
+      ],
+    };
+  }
+
+  it('hides placeholders in production, which is the default', () => {
+    const production = buildTerminalData(withPlaceholders(false));
+    const implicit = buildTerminalData(withPlaceholders());
+    expect(implicit).toEqual(production);
+    expect(JSON.stringify(production)).not.toContain('TODO(autor)');
+  });
+
+  it('falls back to the headline when whoami is a placeholder', () => {
+    expect(buildTerminalData(withPlaceholders(false)).whoami).toBe('Fixture headline');
+  });
+
+  it('drops experience entries whose role is a placeholder and filters placeholder bullets', () => {
+    const { experience } = buildTerminalData(withPlaceholders(false));
+    expect(experience.map(({ role }) => role)).toEqual([
+      'Role Newest',
+      'Role Newest',
+      'Role Oldest',
+    ]);
+    expect(experience[1]?.achievements).toEqual(['Real win']);
+  });
+
+  it('drops projects with a placeholder summary and only the placeholder detail fields', () => {
+    const { projects } = buildTerminalData(withPlaceholders(false));
+    expect(projects.map(({ id }) => id)).toEqual(['virtual-card', 'todo-detail']);
+    const detail = projects[1];
+    expect(detail?.context).toBeUndefined();
+    expect(detail?.decisions).toEqual(['Real decision']);
+    expect(detail?.challenge).toBe('Fixture challenge');
+  });
+
+  it('drops certifications whose name is a placeholder', () => {
+    const { certs } = buildTerminalData(withPlaceholders(false));
+    expect(certs.map(({ name }) => name)).toEqual(['Cert One', 'Course Two']);
+  });
+
+  it('keeps every placeholder visible in development', () => {
+    const data = buildTerminalData(withPlaceholders(true));
+    expect(data.whoami).toBe(todo);
+    expect(data.experience).toHaveLength(4);
+    expect(data.experience.map(({ role }) => role)).toContain(todo);
+    expect(data.experience.flatMap(({ achievements }) => achievements)).toContain(todo);
+    expect(data.projects.map(({ id }) => id)).toEqual([
+      'virtual-card',
+      'todo-summary',
+      'todo-detail',
+    ]);
+    expect(data.projects[2]?.context).toBe(todo);
+    expect(data.certs.map(({ name }) => name)).toContain(todo);
+  });
+});
