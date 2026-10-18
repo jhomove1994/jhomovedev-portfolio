@@ -2,11 +2,11 @@
   "name": "Jhonatan Moreno Velásquez",
   "brand": "JhomoveDev",
   "headline": "Senior Full Stack Developer · camino a Tech Lead",
-  "bio": "Soy desarrollador Full Stack Senior con más de 6 años de experiencia en el diseño, desarrollo y mantenimiento de aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel, AWS y microservicios. Construyo soluciones serverless con Lambda, Step Functions, API Gateway y DynamoDB, con infraestructura como código en Terraform. En el frontend trabajo con Angular, React y React Native, y aplico Scrum, CI/CD y buenas prácticas de rendimiento, escalabilidad y seguridad.",
-  "whoami": "Soy desarrollador Full Stack Senior con más de 6 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.",
+  "bio": "Soy desarrollador Full Stack Senior con más de 7 años de experiencia en el diseño, desarrollo y mantenimiento de aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel, AWS y microservicios. Construyo soluciones serverless con Lambda, Step Functions, API Gateway y DynamoDB, con infraestructura como código en Terraform. En el frontend trabajo con Angular, React y React Native, y aplico Scrum, CI/CD y buenas prácticas de rendimiento, escalabilidad y seguridad.",
+  "whoami": "Soy desarrollador Full Stack Senior con más de 7 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.",
   "location": "Bogotá, Colombia",
   "remote": true,
-  "yearsExperience": 6,
+  "yearsExperience": 7,
   "availability": "open-to-offers",
   "languages": [
     { "name": "Español", "level": "Nativo" },
@@ -18,6 +18,6 @@
   },
   "seo": {
     "title": "Jhonatan Moreno Velásquez · Senior Full Stack Developer",
-    "description": "Desarrollador Full Stack Senior con más de 6 años de experiencia en aplicaciones web escalables y soluciones cloud-native con Node.js, NestJS, Laravel y AWS."
+    "description": "Desarrollador Full Stack Senior con más de 7 años de experiencia en aplicaciones web escalables y soluciones cloud-native con Node.js, NestJS, Laravel y AWS."
   }
 }

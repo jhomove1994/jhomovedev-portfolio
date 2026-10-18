@@ -104,6 +104,22 @@ describe('seed: profile', () => {
     expect(profile.map((file) => file.id).sort()).toEqual(['en/index', 'es/index']);
   });
 
+  it.each(profile.map((file) => [file.id, file] as const))(
+    '%s states the same years of experience in every text that mentions them',
+    (_id, file) => {
+      const data = file.data as {
+        yearsExperience: number;
+        bio: string;
+        whoami: string;
+        seo: { description: string };
+      };
+      for (const text of [data.bio, data.whoami, data.seo.description]) {
+        const stated = [...text.matchAll(/(\d+)\+? (?:años|years)/g)].map((m) => Number(m[1]));
+        for (const years of stated) expect(years).toBe(data.yearsExperience);
+      }
+    },
+  );
+
   it.each(profile.map((file) => [file.id, file] as const))('%s validates', (_id, file) => {
     const result = profileSchema.safeParse(file.data);
     expect(result.error?.issues ?? []).toEqual([]);
@@ -142,10 +158,10 @@ describe('seed: profile', () => {
       profile.map((file) => [parseEntryId(file.id).locale, file]),
     );
     expect(byLocale.es?.data.whoami).toBe(
-      'Soy desarrollador Full Stack Senior con más de 6 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.',
+      'Soy desarrollador Full Stack Senior con más de 7 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.',
     );
     expect(byLocale.en?.data.whoami).toBe(
-      "I'm a Senior Full Stack Developer with 6+ years of experience in scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel and AWS.",
+      "I'm a Senior Full Stack Developer with 7+ years of experience in scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel and AWS.",
     );
   });
 
