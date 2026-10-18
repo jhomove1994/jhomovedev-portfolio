@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { seededProfile } from './helpers';
 
 const LOCALES = [
   { locale: 'es', other: 'en', ogLocale: 'es_CO', ogAlternate: 'en_US' },
@@ -41,6 +42,30 @@ for (const { locale, other, ogLocale, ogAlternate } of LOCALES) {
         new RegExp(`^https://[^/]+/uploads/og-jhonatan-moreno-${locale}\\.png$`),
       );
       expect(await content('meta[name="twitter:card"]')).toBe('summary_large_image');
+      expect(await content('meta[property="og:image:width"]')).toBe('1200');
+      expect(await content('meta[property="og:image:height"]')).toBe('630');
+      expect(await content('meta[property="og:image:type"]')).toBe('image/png');
+      const profile = seededProfile(locale);
+      expect(await content('meta[property="og:image:alt"]')).toBe(
+        `${profile.name} · ${profile.headline}`,
+      );
+    });
+
+    test('embeds exactly one Person JSON-LD built from the profile', async ({ page }) => {
+      await page.goto(`/${locale}/`);
+      const scripts = page.locator('script[type="application/ld+json"]');
+      await expect(scripts).toHaveCount(1);
+      const person = JSON.parse((await scripts.textContent()) ?? '');
+      const profile = seededProfile(locale);
+      expect(person['@context']).toBe('https://schema.org');
+      expect(person['@type']).toBe('Person');
+      expect(person.name).toBe(profile.name);
+      expect(profile.headline.startsWith(person.jobTitle)).toBe(true);
+      expect(person.url).toMatch(new RegExp(`^https://[^/]+/${locale}/$`));
+      expect(person.image).toMatch(/\/uploads\/og-jhonatan-moreno-\w+\.png$/);
+      expect(person.sameAs).toEqual([expect.stringContaining('linkedin.com/in/')]);
+      expect(person.address['@type']).toBe('PostalAddress');
+      expect(person.knowsLanguage.length).toBeGreaterThan(0);
     });
 
     test('loads the self-hosted fonts without third-party requests', async ({ page }) => {
@@ -140,4 +165,24 @@ test('--header-h matches the sticky header height where the stage is viewport-si
     return { token, header: document.querySelector('header')!.getBoundingClientRect().height };
   });
   expect(Math.abs(token - header)).toBeLessThanOrEqual(1);
+});
+
+test.describe('crawler files', () => {
+  test('sitemap.xml lists both locale homes with hreflang alternates', async ({ request }) => {
+    const response = await request.get('/sitemap.xml');
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('xml');
+    const body = await response.text();
+    expect(body).toMatch(/<loc>https:\/\/[^<]+\/es\/<\/loc>/);
+    expect(body).toMatch(/<loc>https:\/\/[^<]+\/en\/<\/loc>/);
+    for (const hreflang of ['es', 'en', 'x-default']) {
+      expect(body).toContain(`hreflang="${hreflang}"`);
+    }
+  });
+
+  test('robots.txt advertises the sitemap and still disallows /admin', async ({ request }) => {
+    const body = await (await request.get('/robots.txt')).text();
+    expect(body).toMatch(/^Sitemap:\s*https:\/\/\S+\/sitemap\.xml$/m);
+    expect(body).toMatch(/^Disallow:\s*\/admin\/?\s*$/m);
+  });
 });

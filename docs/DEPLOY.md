@@ -72,6 +72,12 @@ E2E_PORT=4399 pnpm test:e2e      # browser checks at 1440px and 390px
 pnpm wrangler deploy --dry-run   # expect only the ASSETS binding
 ```
 
+## After deploy: Search Console
+
+1. In Google Search Console add a **URL-prefix** property for the production origin (`SITE_URL` in `src/lib/site.ts`) and verify it.
+2. Under Sitemaps, submit `sitemap.xml`. It lists `/es/` and `/en/` with hreflang alternates, and `robots.txt` points to it.
+3. Optionally inspect both locale URLs and request indexing.
+
 ## Checklist
 
 - [ ] M1 repo created and `main` pushed
