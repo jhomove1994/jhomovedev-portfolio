@@ -22,7 +22,7 @@ export type HeadMeta = {
   ogImage?: string;
 };
 
-function origin(site: string | undefined): string {
+export function origin(site: string | undefined): string {
   if (typeof site !== 'string' || site.trim() === '') {
     throw new Error('Missing site URL: set `site` in astro.config.mjs (see src/lib/site.ts)');
   }
