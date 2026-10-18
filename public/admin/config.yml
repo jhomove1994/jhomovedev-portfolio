@@ -61,11 +61,15 @@ collections:
           - { name: name, label: Name, widget: string, i18n: duplicate }
           - { name: brand, label: Brand, widget: string, i18n: duplicate }
           - { name: headline, label: Headline, widget: string, i18n: true }
-          - { name: bio, label: Bio, widget: text, i18n: true }
+          - name: bio
+            label: Bio
+            widget: text
+            hint: 'Write {years} where the years of experience go; it is filled from "Years of experience".'
+            i18n: true
           - name: whoami
             label: Terminal whoami
             widget: text
-            hint: One or two lines printed by the terminal whoami command (1 to 280 characters).
+            hint: 'One or two lines printed by the terminal whoami command (1 to 280 characters). Write {years} where the years of experience go; it is filled from "Years of experience".'
             i18n: true
           - { name: location, label: Location, widget: string, i18n: true }
           - { name: remote, label: Open to remote work, widget: boolean, i18n: duplicate }
@@ -75,6 +79,7 @@ collections:
               widget: number,
               value_type: int,
               min: 1,
+              hint: 'Fills every {years} in Bio, Terminal whoami and SEO description.',
               i18n: duplicate,
             }
           - name: availability
@@ -108,7 +113,10 @@ collections:
             i18n: true
             fields:
               - { name: title, label: Title, widget: string }
-              - { name: description, label: Description, widget: text }
+              - name: description
+                label: Description
+                widget: text
+                hint: 'Write {years} where the years of experience go; it is filled from "Years of experience".'
       - name: media
         label: Media
         file: src/content/media/{{locale}}.json

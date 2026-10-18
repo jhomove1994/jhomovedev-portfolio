@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { Page } from '@playwright/test';
+import { withYears } from '../src/lib/content/years';
 
 export type PageLocale = 'es' | 'en';
 
@@ -13,12 +14,17 @@ export interface SeededProfile {
   location: string;
   remote: boolean;
   bio: string;
+  yearsExperience: number;
+  seo: { title: string; description: string };
 }
 
-/** Seeded profile of one locale, so expectations follow `src/content/` instead of copying facts. */
+/**
+ * Seeded profile of one locale, so expectations follow `src/content/` instead of copying facts.
+ * `{years}` is filled the same way the page fills it.
+ */
 export function seededProfile(locale: PageLocale): SeededProfile {
   const file = join(process.cwd(), 'src/content/profile', `${locale}.json`);
-  return JSON.parse(readFileSync(file, 'utf8')) as SeededProfile;
+  return withYears(JSON.parse(readFileSync(file, 'utf8')) as SeededProfile);
 }
 
 export interface SeededMilestone {

@@ -16,6 +16,7 @@ import {
 } from '../../../src/lib/content/schemas';
 import { SHARED_FIELDS, findSharedMismatches } from '../../../src/lib/content/shared-fields';
 import { isTodo } from '../../../src/lib/text';
+import { YEARS_TOKEN, fillYears } from '../../../src/lib/content/years';
 import { loadCollection } from '../../helpers/load-content';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -105,17 +106,12 @@ describe('seed: profile', () => {
   });
 
   it.each(profile.map((file) => [file.id, file] as const))(
-    '%s states the same years of experience in every text that mentions them',
+    '%s writes {years} instead of a hardcoded number of years',
     (_id, file) => {
-      const data = file.data as {
-        yearsExperience: number;
-        bio: string;
-        whoami: string;
-        seo: { description: string };
-      };
+      const data = file.data as { bio: string; whoami: string; seo: { description: string } };
       for (const text of [data.bio, data.whoami, data.seo.description]) {
-        const stated = [...text.matchAll(/(\d+)\+? (?:años|years)/g)].map((m) => Number(m[1]));
-        for (const years of stated) expect(years).toBe(data.yearsExperience);
+        expect(text).not.toMatch(/\d+\+? (?:años|years)/);
+        expect(text).toContain(YEARS_TOKEN);
       }
     },
   );
@@ -157,10 +153,15 @@ describe('seed: profile', () => {
     const byLocale = Object.fromEntries(
       profile.map((file) => [parseEntryId(file.id).locale, file]),
     );
-    expect(byLocale.es?.data.whoami).toBe(
+    const whoami = (locale: string) =>
+      fillYears(
+        String(byLocale[locale]?.data.whoami),
+        Number(byLocale[locale]?.data.yearsExperience),
+      );
+    expect(whoami('es')).toBe(
       'Soy desarrollador Full Stack Senior con más de 7 años de experiencia en aplicaciones web escalables y soluciones cloud-native. Me enfoco en el backend con Node.js, NestJS, Laravel y AWS.',
     );
-    expect(byLocale.en?.data.whoami).toBe(
+    expect(whoami('en')).toBe(
       "I'm a Senior Full Stack Developer with 7+ years of experience in scalable web applications and cloud-native solutions. My focus is the backend with Node.js, NestJS, Laravel and AWS.",
     );
   });
