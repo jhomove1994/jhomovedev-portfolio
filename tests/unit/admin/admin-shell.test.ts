@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+import { SITE_URL } from '../../../src/lib/site';
+import { buildRobots } from '../../../src/lib/seo/robots';
+
 const read = (path: string): string => readFileSync(path, 'utf8');
 
 /** Directives of the `User-agent: *` group, ignoring comments and blank lines. */
@@ -36,13 +39,13 @@ describe('public/admin/index.html', () => {
   });
 });
 
-describe('public/robots.txt', () => {
+describe('robots.txt (built from SITE_URL)', () => {
   it('disallows /admin for every crawler', () => {
-    expect(wildcardDisallows(read('public/robots.txt'))).toContain('/admin');
+    expect(wildcardDisallows(buildRobots(SITE_URL))).toContain('/admin');
   });
 
   it('does not disallow the whole site', () => {
-    expect(wildcardDisallows(read('public/robots.txt'))).not.toContain('/');
+    expect(wildcardDisallows(buildRobots(SITE_URL))).not.toContain('/');
   });
 });
 

@@ -1,6 +1,8 @@
 ---
 import type { Locale } from '../../i18n/locales';
 import { buildHeadMeta } from '../../lib/seo/alternates';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogImageAlt, ogImageType } from '../../lib/seo/og-image';
+import { buildPersonJsonLd, serializeJsonLd, type PersonInput } from '../../lib/seo/person';
 
 interface Props {
   locale: Locale;
@@ -10,12 +12,26 @@ interface Props {
   description?: string | undefined;
   /** Public path or absolute URL; the og:image tags are omitted when unset. */
   ogImage?: string | undefined;
+  /** Profile content for the Person JSON-LD and the og:image alt text; both are omitted when unset. */
+  profile?: Omit<PersonInput, 'url' | 'image' | 'description'> | undefined;
   /** Utility pages (404) are not indexable and carry no canonical or alternates. */
   noindex?: boolean;
 }
 
-const { locale, path, title, description, ogImage, noindex = false } = Astro.props;
+const { locale, path, title, description, ogImage, profile, noindex = false } = Astro.props;
 const meta = noindex ? undefined : buildHeadMeta({ site: Astro.site?.href, locale, path, ogImage });
+const imageType = meta?.ogImage ? ogImageType(meta.ogImage) : undefined;
+const personJsonLd =
+  meta && profile
+    ? serializeJsonLd(
+        buildPersonJsonLd({
+          ...profile,
+          description: description ?? '',
+          url: meta.canonical,
+          image: meta.ogImage,
+        }),
+      )
+    : undefined;
 ---
 
 <meta charset="utf-8" />
@@ -42,6 +58,13 @@ const meta = noindex ? undefined : buildHeadMeta({ site: Astro.site?.href, local
       <meta property="og:locale:alternate" content={alternate} />
     ))}
     {meta.ogImage && <meta property="og:image" content={meta.ogImage} />}
+    {meta.ogImage && <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />}
+    {meta.ogImage && <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />}
+    {meta.ogImage && imageType && <meta property="og:image:type" content={imageType} />}
+    {meta.ogImage && profile && (
+      <meta property="og:image:alt" content={ogImageAlt(profile.name, profile.headline)} />
+    )}
     <meta name="twitter:card" content={meta.ogImage ? 'summary_large_image' : 'summary'} />
   </>
 )}
+{personJsonLd && <script type="application/ld+json" set:html={personJsonLd} />}

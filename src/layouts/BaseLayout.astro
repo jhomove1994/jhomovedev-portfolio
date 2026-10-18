@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Head from '../components/seo/Head.astro';
+import type { ComponentProps } from 'astro/types';
 import { t } from '../i18n/ui';
 import type { Locale } from '../i18n/locales';
 
@@ -9,10 +10,11 @@ interface Props {
   title: string;
   description?: string | undefined;
   ogImage?: string | undefined;
+  profile?: ComponentProps<typeof Head>['profile'];
   noindex?: boolean;
 }
 
-const { locale, title, description, ogImage, noindex } = Astro.props;
+const { locale, title, description, ogImage, profile, noindex } = Astro.props;
 ---
 
 <html lang={locale}>
@@ -23,6 +25,7 @@ const { locale, title, description, ogImage, noindex } = Astro.props;
       title={title}
       description={description}
       ogImage={ogImage}
+      profile={profile}
       noindex={noindex}
     />
     <slot name="head" />
