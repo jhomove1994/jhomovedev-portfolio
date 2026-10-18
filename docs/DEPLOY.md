@@ -47,7 +47,7 @@ Every save in `/admin` is a commit to `main`, which triggers a build. A save tha
 | --- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | G1  | `TODO(autor)` placeholders | Hidden in production, drawn with a dashed outline in dev. One helper owns this.                                                                                      | `src/lib/content/todo.ts`          |
 | G2  | Profile `availability`     | Confirmed by the author (2026-10-17): `open-to-offers`, rendered in the hero meta line (`not-available` renders nothing).                                            | `src/content/profile/{es,en}.json` |
-| G3  | Site URL                   | `https://jhomovedev.jhomovedev.workers.dev` is assumed. Confirm your workers.dev subdomain. `astro.config.mjs` `site` reads it.                                      | `src/lib/site.ts`                  |
+| G3  | Site URL                   | Confirmed: `https://jhomovedev.aplicacionesjmoreno.workers.dev`. Regenerate the OG images if it changes. `astro.config.mjs` `site` reads it.                         | `src/lib/site.ts`                  |
 | G4  | 3D on software rendering   | Machines without a GPU (software renderer) get the static hero plus a visible "Enable 3D" toggle; their explicit choice forces 3D. Drop the signal to default to 3D. | `src/lib/capabilities.ts`          |
 | G5  | GSAP license               | GSAP is under its "Standard no-charge license", not MIT (noted in the credits). Confirm it is acceptable for this site.                                              | `public/models/CREDITS.md`         |
 
@@ -57,7 +57,6 @@ Every save in `/admin` is a commit to `main`, which triggers a build. A save tha
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Leadership | Resolved (2026-10-17): `gisoft-mentoring-and-system-design` replaced the placeholder. Nothing missing.                                                                                                                     |
 | Projects   | Case-study narratives for 4 drafts, all `published: false`: `fraud-pilot`, `legacy-to-nest`, `this-portfolio`, `virtual-card` (ES and EN). Publish each only after writing it, anonymized, with no code or internal names. |
-| Site URL   | `SITE_URL` in `src/lib/site.ts` (G3).                                                                                                                                                                                      |
 
 ## Copy review notes
 
