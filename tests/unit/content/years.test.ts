@@ -38,3 +38,23 @@ describe('withYears', () => {
     expect(profile.bio).toBe('con más de {years} años');
   });
 });
+
+describe('withYears guards against mistyped tokens', () => {
+  const base = {
+    yearsExperience: 7,
+    bio: 'ok',
+    whoami: 'ok',
+    seo: { title: 'Title', description: 'ok' },
+  };
+
+  it.each(['{year}', '{ years }', '{Years}', '{yeras}'])(
+    'fails the build when a text still holds %s after filling',
+    (typo) => {
+      expect(() => withYears({ ...base, bio: `más de ${typo} años` })).toThrow(/\{years\}/);
+    },
+  );
+
+  it('accepts texts with no braces at all', () => {
+    expect(() => withYears(base)).not.toThrow();
+  });
+});

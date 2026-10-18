@@ -2,6 +2,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import type { Locale } from '../../i18n/locales';
 import { isPublished, sortByOrder } from './filters';
 import { localizeCollection, localizeSingleton, type Localized } from './localize';
+import { withYears } from './years';
 
 /** Fallback to the default locale is only worth a signal while authoring; never in a build. */
 const onFallback = import.meta.env.DEV
@@ -25,8 +26,10 @@ export async function getStack(): Promise<CollectionEntry<'stack'>[]> {
   return sortByOrder(await getCollection('stack'));
 }
 
+/** The profile with `{years}` already filled, so no consumer can print the raw token. */
 export async function getProfile(locale: Locale): Promise<Localized<CollectionEntry<'profile'>>> {
-  return localizeSingleton(await getCollection('profile'), locale, options);
+  const localized = localizeSingleton(await getCollection('profile'), locale, options);
+  return { ...localized, entry: { ...localized.entry, data: withYears(localized.entry.data) } };
 }
 
 /** Media is optional until the author uploads a CV or share image, so an empty set is valid. */

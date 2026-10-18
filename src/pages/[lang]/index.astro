@@ -23,7 +23,6 @@ import {
   getProjects,
   getStack,
 } from '../../lib/content/queries';
-import { withYears } from '../../lib/content/years';
 import { availabilityLabel } from '../../lib/content/availability';
 import { cvButton } from '../../lib/content/cv';
 import { parseEntryId } from '../../lib/content/entry-id';
@@ -41,8 +40,7 @@ export const getStaticPaths = (() =>
 
 const locale = Astro.params.lang as Locale;
 const localizedProfile = await getProfile(locale);
-// `{years}` in the profile texts becomes the single `yearsExperience` number.
-const profile = withYears(localizedProfile.entry.data);
+const profile = localizedProfile.entry.data;
 // The share image falls back to the default locale when this locale has none.
 // Only a locale's own media file counts: a fallback copy would hide that its CV is Spanish.
 const ownMedia = async (mediaLocale: Locale) => {
